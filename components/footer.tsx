@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { Wine, Mail, Phone, MapPin, Facebook, Instagram, Twitter } from "lucide-react"
+import Image from "next/image"
+import { Mail, Phone, MapPin, Facebook, Instagram, Twitter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { NewsletterForm } from "@/components/ui/newsletter-form"
 import { useTranslations } from "@/lib/providers/translations-provider"
@@ -16,8 +17,13 @@ export default function Footer() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div>
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <Wine className="h-6 w-6" />
-              <span className="font-bold text-xl">Vino Rodante</span>
+              <Image 
+                src="/logo/logo2.svg" 
+                alt="Vino Rodante Logo" 
+                width={160} 
+                height={50} 
+                className="h-12 w-auto invert"  // Inverted color for dark background
+              />
             </Link>
             <p className="text-primary-foreground/70 mb-6">
               Trayendo vinos excepcionales de todo el mundo a tu puerta.

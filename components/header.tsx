@@ -2,8 +2,9 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { ShoppingCart, Menu, Search, User, Wine, LogOut } from "lucide-react"
+import { ShoppingCart, Menu, Search, User, LogOut } from "lucide-react"
 import { useCart } from "@/lib/hooks/use-cart"
 import { useAuth } from "@/lib/providers/auth-provider"
 import { useTranslations } from "@/lib/providers/translations-provider"
@@ -37,8 +38,13 @@ export default function Header() {
         </Button>
 
         <Link href="/" className="flex items-center gap-2">
-          <Wine className="h-6 w-6 text-primary" />
-          <span className="font-bold text-xl text-primary">Vino Rodante</span>
+          <Image 
+            src="/logo/logo_vr.svg" 
+            alt="Vino Rodante Logo" 
+            width={120} 
+            height={40} 
+            className="h-10 w-auto" 
+          />
         </Link>
 
         <div className="mx-6 flex-1">

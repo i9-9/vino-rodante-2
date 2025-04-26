@@ -27,7 +27,7 @@ export const en = {
     quantity: "Quantity",
     total: "Total",
     subtotal: "Subtotal",
-    tax: "Tax",
+    tax: "Taxes",
     shipping: "Shipping",
     free: "Free",
   },
@@ -53,31 +53,30 @@ export const en = {
   },
   home: {
     hero: {
-      title: "Discover the Finest Selection of Wines",
+      title: "Discover the Finest Wine Selection",
       subtitle:
         "Vino Rodante brings you exceptional wines from around the world, carefully selected for the most discerning palates.",
-      cta: "Shop Collection",
+      cta: "Explore Collection",
       secondaryCta: "Our Story",
     },
     featuredWines: {
       title: "Featured Wines",
-      subtitle:
-        "Explore our handpicked selection of exceptional wines, each with its own unique story and flavor profile.",
+      subtitle: "Explore our selection of exceptional wines, each with its own story and unique flavor profile.",
       viewAll: "View All Wines",
+      description: "Explore our handpicked selection of exceptional wines, each with its own unique story and flavor profile."
     },
     about: {
       title: "Our Story",
       paragraph1:
-        "Vino Rodante was born from a passion for exceptional wines and a desire to share them with the world. Our journey began in the rolling vineyards of Argentina, where we discovered the magic that happens when tradition meets innovation.",
+        "Vino Rodante was born from a passion for exceptional wines and a desire to share them with the world. Our journey began in the vineyards of Argentina, where we discovered the magic that happens when tradition meets innovation.",
       paragraph2:
-        "Today, we travel the world in search of unique wines with character and story. Each bottle in our collection represents not just a wine, but a journey, a tradition, and the passionate people behind it.",
+        "Today, we travel the world in search of unique wines with character and history. Every bottle in our collection represents not just a wine, but a journey, a tradition, and the passionate people behind it.",
       cta: "Learn More About Us",
     },
   },
   products: {
     title: "Our Wine Collection",
-    subtitle:
-      "Explore our handpicked selection of exceptional wines from around the world, each with its own unique story and flavor profile.",
+    subtitle: "Explore our selection of exceptional wines from around the world, each with its own story and unique flavor profile.",
     categories: "Categories",
     priceRange: "Price Range",
     region: "Region",
@@ -102,6 +101,8 @@ export const en = {
     contactInfo: "Contact Information",
     shippingAddress: "Shipping Address",
     paymentInfo: "Payment Information",
+    paymentInformation: "Payment Information",
+    paymentDescription: "Please complete your payment using Mercado Pago.",
     completeOrder: "Complete Order",
     orderSummary: "Order Summary",
     fullName: "Full Name",
@@ -116,10 +117,15 @@ export const en = {
     expiration: "Expiration (MM/YY)",
     cvc: "CVC",
     processing: "Processing...",
-    continueToPayment: "Continue to Payment",
-    selectPaymentMethod: "Select your payment method below",
-    allFieldsRequired: "All required fields must be completed",
-    paymentError: "An error occurred while processing your payment",
+    proceedToPayment: "Proceed to Payment",
+    allFieldsRequired: "All fields are required",
+    paymentError: "Error processing payment",
+    subtotal: "Subtotal",
+    tax: "Taxes (21% VAT)",
+    shipping: "Shipping",
+    free: "Free",
+    total: "Total",
+    backToInformation: "Back to Information",
   },
   confirmation: {
     title: "Thank You for Your Order!",
@@ -129,13 +135,13 @@ export const en = {
     orderDate: "Order Date",
     shippingMethod: "Shipping Method",
     paymentMethod: "Payment Method",
-    whatNext: "What Happens Next?",
+    whatNext: "What's Next?",
     step1: "Order Processing",
     step1Detail: "We're preparing your wines for shipment.",
     step2: "Shipping Confirmation",
-    step2Detail: "You'll receive an email with tracking information once your order ships.",
+    step2Detail: "You'll receive an email with tracking information once your order has been shipped.",
     step3: "Delivery",
-    step3Detail: "Your wines will be delivered to your doorstep. Please note that an adult signature is required.",
+    step3Detail: "Your wines will be delivered to your door. Please note that an adult signature is required.",
     contactUs: "If you have any questions about your order, please contact our customer service team.",
   },
   auth: {
@@ -154,7 +160,7 @@ export const en = {
     },
     signUpSuccess: {
       title: "Registration Successful!",
-      message: "Thank you for creating an account with Vino Rodante. Please check your email to verify your account.",
+      message: "Thank you for creating an account with Vino Rodante. Please check your email to activate your account.",
     },
   },
   account: {
@@ -163,7 +169,7 @@ export const en = {
     orders: "Orders",
     addresses: "Addresses",
     profileInfo: "Profile Information",
-    updateProfile: "Update your account details",
+    updateProfile: "Update your account information",
     emailCannotChange: "Email cannot be changed",
     orderHistory: "Order History",
     noOrders: "You haven't placed any orders yet.",
@@ -173,7 +179,7 @@ export const en = {
   },
   newsletter: {
     title: "Subscribe to our newsletter",
-    subtitle: "Receive updates on new arrivals, special promotions, and invitations to exclusive tasting events.",
+    subtitle: "Get updates on new arrivals, special promotions, and invitations to exclusive tasting events.",
     placeholder: "Your email address",
     button: "Subscribe",
     success: "Thank you for subscribing!",

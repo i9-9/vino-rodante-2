@@ -2,44 +2,77 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import custom fonts */
+@font-face {
+  font-family: 'Neue Haas Unica Pro';
+  src: url('/fonts/NeueHaasUnicaPro-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Neue Haas Unica Pro';
+  src: url('/fonts/NeueHaasUnicaPro-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Neue Haas Unica Pro';
+  src: url('/fonts/NeueHaasUnicaPro-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pinot Grigio';
+  src: url('/fonts/pinot-grigio.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     /* Base colors */
     --background: 0 0% 100%;
-    --foreground: 31 31 31;
+    --foreground: 240 10% 3.9%;
 
     /* Card colors */
     --card: 0 0% 100%;
-    --card-foreground: 31 31 31;
+    --card-foreground: 240 10% 3.9%;
 
     /* Popover colors */
     --popover: 0 0% 100%;
-    --popover-foreground: 31 31 31;
+    --popover-foreground: 240 10% 3.9%;
 
     /* Primary colors - Burgundy */
-    --primary: 342 73% 21%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 346 73% 21%;
+    --primary-foreground: 0 0% 98%;
 
     /* Secondary colors - Wine Red */
-    --secondary: 2 49% 43%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 0 59% 44%;
+    --secondary-foreground: 0 0% 98%;
 
     /* Accent colors - Orange */
-    --accent: 28 77% 54%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
 
     /* Muted colors */
-    --muted: 0 0% 95%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
 
     /* UI colors */
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 342 73% 21%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 346 73% 21%;
 
     /* Destructive colors */
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
 
     /* Status colors */
     --success: 142 76% 36%;
@@ -61,30 +94,30 @@
   }
 
   .dark {
-    --background: 31 31 31;
+    --background: 20 14.3% 4.1%;
     --foreground: 0 0% 95%;
 
-    --card: 31 31 31;
+    --card: 24 9.8% 10%;
     --card-foreground: 0 0% 95%;
 
-    --popover: 31 31 31;
+    --popover: 0 0% 9%;
     --popover-foreground: 0 0% 95%;
 
-    --primary: 342 73% 21%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 346 73% 21%;
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 2 49% 43%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 0 59% 44%;
+    --secondary-foreground: 0 0% 98%;
 
-    --accent: 28 77% 54%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 12 6.5% 15.1%;
+    --accent-foreground: 0 0% 98%;
 
     --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 65%;
+    --muted-foreground: 240 5% 64.9%;
 
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 342 73% 21%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 346 73% 21%;
   }
 }
 
@@ -94,6 +127,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Neue Haas Unica Pro', system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   h1,
@@ -102,6 +136,9 @@
   h4,
   h5,
   h6 {
-    @apply font-heading;
+    font-family: 'Pinot Grigio', serif;
+    text-transform: uppercase;
+    font-weight: 400 !important;
+    font-style: normal;
   }
 }

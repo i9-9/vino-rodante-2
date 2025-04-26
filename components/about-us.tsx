@@ -1,25 +1,27 @@
+"use client"
+
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { useTranslations } from "@/lib/providers/translations-provider"
 
 export default function AboutUs() {
+  const t = useTranslations()
+  
   return (
     <section className="w-full py-16 bg-[#D9D3C8]/30">
       <div className="container px-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="order-2 lg:order-1">
-            <h2 className="text-3xl font-bold text-[#5B0E2D] mb-4">Our Story</h2>
+            <h2 className="text-3xl font-bold text-[#5B0E2D] mb-4">{t.home.about.title}</h2>
             <p className="text-[#1F1F1F]/80 mb-4">
-              Vino Rodante was born from a passion for exceptional wines and a desire to share them with the world. Our
-              journey began in the rolling vineyards of Argentina, where we discovered the magic that happens when
-              tradition meets innovation.
+              {t.home.about.paragraph1}
             </p>
             <p className="text-[#1F1F1F]/80 mb-6">
-              Today, we travel the world in search of unique wines with character and story. Each bottle in our
-              collection represents not just a wine, but a journey, a tradition, and the passionate people behind it.
+              {t.home.about.paragraph2}
             </p>
             <Button className="bg-[#AB434C] hover:bg-[#AB434C]/90 text-white" asChild>
-              <Link href="/about">Learn More About Us</Link>
+              <Link href="/about">{t.home.about.cta}</Link>
             </Button>
           </div>
           <div className="order-1 lg:order-2 relative">

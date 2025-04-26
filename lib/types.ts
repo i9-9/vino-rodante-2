@@ -17,14 +17,26 @@ export interface CartItem extends Product {
   quantity: number
 }
 
+export interface OrderItem {
+  id: string
+  order_id: string
+  product_id: string
+  product_name?: string
+  quantity: number
+  price: number
+}
+
 export interface Order {
   id: string
+  user_id: string
   items: CartItem[]
   subtotal: number
   tax: number
   shipping: number
   total: number
   status: "pending" | "processing" | "shipped" | "delivered"
+  created_at?: string
+  order_items?: OrderItem[]
   customer: {
     name: string
     email: string
@@ -41,5 +53,4 @@ export interface Order {
     method: string
     transaction_id: string
   }
-  created_at: string
 }

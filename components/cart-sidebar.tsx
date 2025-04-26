@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose, SheetFooter } from "@/components/ui/sheet"
 import { useCart } from "@/lib/hooks/use-cart"
 import { formatCurrency } from "@/lib/utils"
-import { removeFromCart, updateCartItemQuantity } from "@/lib/actions"
 
 export default function CartSidebar({
   open,
@@ -16,7 +15,7 @@ export default function CartSidebar({
   open: boolean
   onClose: () => void
 }) {
-  const { cartItems, subtotal } = useCart()
+  const { cartItems, subtotal, removeFromCart, updateCartItemQuantity } = useCart()
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
@@ -68,35 +67,33 @@ export default function CartSidebar({
 
                     <div className="flex flex-1 items-end justify-between text-sm">
                       <div className="flex items-center border rounded">
-                        <form action={updateCartItemQuantity}>
-                          <input type="hidden" name="productId" value={item.id} />
-                          <input type="hidden" name="quantity" value={Math.max(1, item.quantity - 1)} />
-                          <Button
-                            type="submit"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            disabled={item.quantity <= 1}
-                          >
-                            -
-                          </Button>
-                        </form>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          disabled={item.quantity <= 1}
+                          onClick={() => updateCartItemQuantity(item.id, Math.max(1, item.quantity - 1))}
+                        >
+                          -
+                        </Button>
                         <span className="w-8 text-center">{item.quantity}</span>
-                        <form action={updateCartItemQuantity}>
-                          <input type="hidden" name="productId" value={item.id} />
-                          <input type="hidden" name="quantity" value={item.quantity + 1} />
-                          <Button type="submit" variant="ghost" size="icon" className="h-8 w-8">
-                            +
-                          </Button>
-                        </form>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => updateCartItemQuantity(item.id, item.quantity + 1)}
+                        >
+                          +
+                        </Button>
                       </div>
 
-                      <form action={removeFromCart}>
-                        <input type="hidden" name="productId" value={item.id} />
-                        <Button type="submit" variant="ghost" className="text-[#A83935]">
-                          Remove
-                        </Button>
-                      </form>
+                      <Button 
+                        variant="ghost" 
+                        className="text-[#A83935]"
+                        onClick={() => removeFromCart(item.id)}
+                      >
+                        Remove
+                      </Button>
                     </div>
                   </div>
                 </li>

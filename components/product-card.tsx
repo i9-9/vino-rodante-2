@@ -1,10 +1,16 @@
+"use client"
+
 import type { Product } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import Link from "next/link"
-import { addToCart } from "@/lib/actions"
+import { useCart } from "@/lib/hooks/use-cart"
+import { useTranslations } from "@/lib/providers/translations-provider"
 
 export default function ProductCard({ product }: { product: Product }) {
+  const { addToCart } = useCart()
+  const t = useTranslations()
+
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md">
       <Link href={`/products/${product.slug}`} className="aspect-square overflow-hidden bg-gray-100">
@@ -26,12 +32,13 @@ export default function ProductCard({ product }: { product: Product }) {
         </p>
         <div className="mt-auto pt-4 flex items-center justify-between">
           <p className="font-medium text-[#1F1F1F]">${product.price.toFixed(2)}</p>
-          <form action={addToCart}>
-            <input type="hidden" name="productId" value={product.id} />
-            <Button type="submit" size="sm" className="bg-[#A83935] hover:bg-[#A83935]/90 text-white">
-              Add to Cart
-            </Button>
-          </form>
+          <Button 
+            onClick={() => addToCart(product)} 
+            size="sm" 
+            className="bg-[#A83935] hover:bg-[#A83935]/90 text-white"
+          >
+            {t.products.addToCart}
+          </Button>
         </div>
       </div>
     </div>

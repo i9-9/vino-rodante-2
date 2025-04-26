@@ -1,79 +1,126 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { useTranslations } from "@/lib/providers/translations-provider"
-import { Loader2 } from "lucide-react"
-import Script from "next/script"
+import React, { useState, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useTranslations } from '@/lib/providers/translations-provider';
 
-interface MercadoPagoCheckoutProps {
-  preferenceId: string
-  onPaymentSuccess: () => void
-  onPaymentError: (error: string) => void
+// Define window interface to include MercadoPago
+declare global {
+  interface Window {
+    MercadoPago: {
+      new (publicKey: string, options?: { locale: string }): {
+        checkout: (options: {
+          preference: { id: string },
+          autoOpen?: boolean,
+          render: {
+            container: string,
+            label: string,
+            installments?: boolean
+          }
+        }) => {
+          on: (event: string, callback: (data?: any) => void) => void
+        }
+      }
+    };
+  }
 }
 
-export function MercadoPagoCheckout({ preferenceId, onPaymentSuccess, onPaymentError }: MercadoPagoCheckoutProps) {
-  const t = useTranslations()
-  const [isLoading, setIsLoading] = useState(true)
-  const [isScriptLoaded, setIsScriptLoaded] = useState(false)
+interface MercadoPagoCheckoutProps {
+  preferenceId: string;
+  onSuccess?: (data: any) => void;
+  onError?: (error: any) => void;
+}
+
+export function MercadoPagoCheckout({
+  preferenceId,
+  onSuccess,
+  onError,
+}: MercadoPagoCheckoutProps) {
+  const [loading, setLoading] = useState(false);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const t = useTranslations();
 
   useEffect(() => {
-    if (isScriptLoaded && preferenceId) {
-      setIsLoading(false)
-    }
-  }, [isScriptLoaded, preferenceId])
+    setLoading(scriptLoaded && !!preferenceId);
+  }, [scriptLoaded, preferenceId]);
 
   const handleScriptLoad = () => {
-    setIsScriptLoaded(true)
-  }
+    console.log("Mercado Pago script loaded");
+    setScriptLoaded(true);
+  };
 
   const handlePayment = () => {
-    if (!window.MercadoPago) {
-      onPaymentError("Error al cargar Mercado Pago")
-      return
+    try {
+      if (!preferenceId) return;
+
+      const mp = new window.MercadoPago('APP_USR-cb682995-6da4-474b-8f26-02dc26c36771', {
+        locale: 'es-AR',
+      });
+
+      const checkout = mp.checkout({
+        preference: {
+          id: preferenceId,
+        },
+        autoOpen: true,
+        render: {
+          container: '.cho-container',
+          label: 'Pagar con Mercado Pago',
+          installments: true,
+        },
+      });
+
+      checkout.on('payment_submitted', (data: any) => {
+        console.log("Payment submitted", data);
+        onSuccess?.(data);
+      });
+
+      checkout.on('close', () => {
+        console.log("Mercado Pago widget closed");
+      });
+    } catch (error) {
+      console.error("Error initializing Mercado Pago", error);
+      onError?.(error);
     }
+  };
 
-    const mp = new window.MercadoPago(process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY!, {
-      locale: "es-AR",
-    })
+  // Load Mercado Pago script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://sdk.mercadopago.com/js/v2';
+    script.async = true;
+    script.onload = handleScriptLoad;
+    document.body.appendChild(script);
 
-    mp.checkout({
-      preference: {
-        id: preferenceId,
-      },
-      render: {
-        container: ".mercadopago-button-container",
-        label: "Pagar con Mercado Pago",
-      },
-      callbacks: {
-        onError: (error: any) => {
-          console.error("Mercado Pago error:", error)
-          onPaymentError("Error al procesar el pago")
-        },
-        onSubmit: () => {
-          setIsLoading(true)
-        },
-      },
-    })
-  }
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  // Initialize payment when script is loaded and we have a preference ID
+  useEffect(() => {
+    if (scriptLoaded && preferenceId) {
+      handlePayment();
+    }
+  }, [scriptLoaded, preferenceId]);
 
   return (
-    <div>
-      <Script
-        src="https://sdk.mercadopago.com/js/v2"
-        onLoad={handleScriptLoad}
-        onReady={handlePayment}
-        strategy="lazyOnload"
-      />
-
-      {isLoading ? (
-        <Button disabled className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          {t.common.loading}
-        </Button>
+    <div className="my-4">
+      {loading ? (
+        <div className="cho-container w-full" />
       ) : (
-        <div className="mercadopago-button-container"></div>
+        <button
+          className={cn(
+            'flex items-center justify-center w-full py-3 px-4 rounded-md',
+            'bg-[#5B0E2D] text-white hover:bg-[#4a0b24] transition-colors',
+            'disabled:opacity-50 disabled:cursor-not-allowed'
+          )}
+          disabled={true}
+        >
+          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          <span>{"Cargando pasarela de pago..."}</span>
+        </button>
       )}
     </div>
-  )
+  );
 }

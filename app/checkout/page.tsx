@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,13 +15,14 @@ import { supabase } from "@/lib/supabase"
 import { useTranslations } from "@/lib/providers/translations-provider"
 import { MercadoPagoCheckout } from "@/components/ui/mercado-pago-checkout"
 import { useToast } from "@/components/ui/use-toast"
+import { useCart } from "@/lib/hooks/use-cart"
 
 export default function CheckoutPage() {
   const router = useRouter()
   const t = useTranslations()
   const { toast } = useToast()
   const { user, isLoading } = useAuth()
-  const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const { cartItems, subtotal, clearCart } = useCart()
   const [customerInfo, setCustomerInfo] = useState({
     name: "",
     email: "",
@@ -37,37 +39,16 @@ export default function CheckoutPage() {
   const [step, setStep] = useState<"info" | "payment">("info")
 
   // Calculate totals
-  const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
   const tax = subtotal * 0.21 // 21% IVA in Argentina
   const shipping = subtotal > 10000 ? 0 : 1500 // Free shipping over 10,000 ARS
   const total = subtotal + tax + shipping
 
   useEffect(() => {
-    // Get cart from cookies
-    const getCart = () => {
-      const cartCookie = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("cart="))
-        ?.split("=")[1]
-
-      if (cartCookie) {
-        try {
-          const cart = JSON.parse(decodeURIComponent(cartCookie))
-          setCartItems(cart)
-
-          if (cart.length === 0) {
-            router.push("/products")
-          }
-        } catch (error) {
-          console.error("Error parsing cart cookie:", error)
-          router.push("/products")
-        }
-      } else {
-        router.push("/products")
-      }
+    // Redirect if cart is empty
+    if (cartItems.length === 0) {
+      router.push("/products");
+      return;
     }
-
-    getCart()
 
     // If user is logged in, fetch their information
     if (user && !isLoading) {
@@ -100,7 +81,7 @@ export default function CheckoutPage() {
 
       fetchUserInfo()
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, router, cartItems.length])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -125,7 +106,7 @@ export default function CheckoutPage() {
       !customerInfo.postalCode ||
       !customerInfo.country
     ) {
-      setError(t.checkout.allFieldsRequired)
+      setError(t.checkout.allFieldsRequired || "All fields are required")
       setIsSubmitting(false)
       return
     }
@@ -154,21 +135,24 @@ export default function CheckoutPage() {
 
       setPreferenceId(data.preferenceId)
       setStep("payment")
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating payment preference:", error)
-      setError(t.checkout.paymentError)
+      setError(error.message || t.checkout.paymentError || "Payment error")
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const handlePaymentSuccess = () => {
-    // The user will be redirected to the success URL by Mercado Pago
+    // Clear the cart after successful payment
+    clearCart();
+    // Redirect to confirmation page
+    router.push("/checkout/confirmation");
   }
 
   const handlePaymentError = (errorMessage: string) => {
     toast({
-      title: t.common.error,
+      title: t.common?.error || "Error",
       description: errorMessage,
       variant: "destructive",
     })
@@ -176,29 +160,37 @@ export default function CheckoutPage() {
   }
 
   if (cartItems.length === 0) {
-    return null // Will redirect in useEffect
+    return (
+      <div className="container py-16 text-center">
+        <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
+        <p className="mb-6">Add some products to your cart before proceeding to checkout.</p>
+        <Button onClick={() => router.push("/products")} className="bg-[#A83935] hover:bg-[#A83935]/90 text-white">
+          Browse Products
+        </Button>
+      </div>
+    )
   }
 
   return (
     <div className="container px-4 py-12">
-      <h1 className="text-3xl font-bold text-primary mb-8">{t.checkout.title}</h1>
+      <h1 className="text-3xl font-bold text-primary mb-8">{t.checkout?.title || "Checkout"}</h1>
 
       {step === "info" ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <form onSubmit={handleSubmitInfo}>
-              {error && <div className="mb-6 p-4 bg-error/10 text-error rounded-md">{error}</div>}
+              {error && <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-md">{error}</div>}
 
               <div className="space-y-8">
                 <div className="border rounded-lg p-6">
-                  <h2 className="text-xl font-semibold mb-4">{t.checkout.contactInfo}</h2>
+                  <h2 className="text-xl font-semibold mb-4">{t.checkout?.contactInfo || "Contact Information"}</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">{t.checkout.fullName}</Label>
+                      <Label htmlFor="name">{t.checkout?.fullName || "Full Name"}</Label>
                       <Input id="name" name="name" required value={customerInfo.name} onChange={handleInputChange} />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="email">{t.checkout.email}</Label>
+                      <Label htmlFor="email">{t.checkout?.email || "Email"}</Label>
                       <Input
                         id="email"
                         name="email"
@@ -214,10 +206,10 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="border rounded-lg p-6">
-                  <h2 className="text-xl font-semibold mb-4">{t.checkout.shippingAddress}</h2>
+                  <h2 className="text-xl font-semibold mb-4">{t.checkout?.shippingAddress || "Shipping Address"}</h2>
                   <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="address1">{t.checkout.address1}</Label>
+                      <Label htmlFor="address1">{t.checkout?.address1 || "Address Line 1"}</Label>
                       <Input
                         id="address1"
                         name="address1"
@@ -227,16 +219,16 @@ export default function CheckoutPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="address2">{t.checkout.address2}</Label>
+                      <Label htmlFor="address2">{t.checkout?.address2 || "Address Line 2 (Optional)"}</Label>
                       <Input id="address2" name="address2" value={customerInfo.address2} onChange={handleInputChange} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="city">{t.checkout.city}</Label>
+                        <Label htmlFor="city">{t.checkout?.city || "City"}</Label>
                         <Input id="city" name="city" required value={customerInfo.city} onChange={handleInputChange} />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="state">{t.checkout.state}</Label>
+                        <Label htmlFor="state">{t.checkout?.state || "State/Province"}</Label>
                         <Input
                           id="state"
                           name="state"
@@ -248,7 +240,7 @@ export default function CheckoutPage() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="postalCode">{t.checkout.postalCode}</Label>
+                        <Label htmlFor="postalCode">{t.checkout?.postalCode || "Postal Code"}</Label>
                         <Input
                           id="postalCode"
                           name="postalCode"
@@ -258,7 +250,7 @@ export default function CheckoutPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="country">{t.checkout.country}</Label>
+                        <Label htmlFor="country">{t.checkout?.country || "Country"}</Label>
                         <Input
                           id="country"
                           name="country"
@@ -270,52 +262,63 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                 </div>
-
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? t.common.loading : t.checkout.continueToPayment}
-                </Button>
               </div>
+
+              <Button
+                type="submit"
+                className="mt-8 w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (t.checkout?.processing || "Processing...") : (t.checkout?.proceedToPayment || "Proceed to Payment")}
+              </Button>
             </form>
           </div>
 
           <div className="lg:col-span-1">
             <div className="border rounded-lg p-6 sticky top-20">
-              <h2 className="text-xl font-semibold mb-4">{t.checkout.orderSummary}</h2>
+              <h2 className="text-xl font-semibold mb-4">{t.checkout?.orderSummary || "Order Summary"}</h2>
 
               <div className="divide-y">
                 {cartItems.map((item) => (
-                  <div key={item.id} className="py-3 flex justify-between">
-                    <div>
-                      <p className="font-medium">{item.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {t.common.quantity}: {item.quantity}
-                      </p>
+                  <div key={item.id} className="py-3 flex gap-3">
+                    <div className="w-16 h-16 rounded border overflow-hidden flex-shrink-0">
+                      <Image
+                        src={item.image || "/placeholder.svg"}
+                        alt={item.name}
+                        width={64}
+                        height={64}
+                        className="object-cover w-full h-full"
+                      />
                     </div>
-                    <p className="font-medium">{formatCurrency(item.price * item.quantity)}</p>
+                    <div className="flex-1">
+                      <p className="font-medium">{item.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {item.year} • {item.varietal}
+                      </p>
+                      <div className="flex justify-between mt-1">
+                        <p className="text-sm">Qty: {item.quantity}</p>
+                        <p className="font-medium">{formatCurrency(item.price * item.quantity)}</p>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
 
               <div className="border-t mt-4 pt-4 space-y-2">
                 <div className="flex justify-between">
-                  <p>{t.common.subtotal}</p>
+                  <p>{t.checkout?.subtotal || "Subtotal"}</p>
                   <p>{formatCurrency(subtotal)}</p>
                 </div>
                 <div className="flex justify-between">
-                  <p>{t.common.tax}</p>
+                  <p>{t.checkout?.tax || "Tax (21% IVA)"}</p>
                   <p>{formatCurrency(tax)}</p>
                 </div>
                 <div className="flex justify-between">
-                  <p>{t.common.shipping}</p>
-                  <p>{shipping === 0 ? t.common.free : formatCurrency(shipping)}</p>
+                  <p>{t.checkout?.shipping || "Shipping"}</p>
+                  <p>{shipping === 0 ? (t.checkout?.free || "Free") : formatCurrency(shipping)}</p>
                 </div>
                 <div className="flex justify-between font-bold text-lg pt-2 border-t">
-                  <p>{t.common.total}</p>
+                  <p>{t.checkout?.total || "Total"}</p>
                   <p>{formatCurrency(total)}</p>
                 </div>
               </div>
@@ -323,21 +326,27 @@ export default function CheckoutPage() {
           </div>
         </div>
       ) : (
-        <div className="max-w-md mx-auto">
-          <div className="border rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">{t.checkout.paymentInfo}</h2>
-            <p className="mb-6 text-muted-foreground">{t.checkout.selectPaymentMethod}</p>
-
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-gray-50 p-6 rounded-lg mb-6">
+            <h2 className="text-xl font-semibold mb-4">{t.checkout?.paymentInformation || "Payment Information"}</h2>
+            <p className="mb-4">{t.checkout?.paymentDescription || "Please complete your payment using Mercado Pago."}</p>
+            
             {preferenceId && (
-              <MercadoPagoCheckout
-                preferenceId={preferenceId}
-                onPaymentSuccess={handlePaymentSuccess}
-                onPaymentError={handlePaymentError}
-              />
+              <div className="py-4">
+                <MercadoPagoCheckout 
+                  preferenceId={preferenceId} 
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                />
+              </div>
             )}
-
-            <Button variant="outline" className="w-full mt-4" onClick={() => setStep("info")}>
-              {t.common.back}
+            
+            <Button
+              onClick={() => setStep("info")}
+              variant="outline"
+              className="mt-4"
+            >
+              {t.checkout?.backToInformation || "Back to Information"}
             </Button>
           </div>
         </div>

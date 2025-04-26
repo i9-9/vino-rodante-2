@@ -46,7 +46,7 @@ export const es = {
   },
   home: {
     hero: {
-      title: "Descubre la Mejor Selección de Vinos",
+      title: "Descubrí la Mejor Selección de Vinos",
       subtitle:
         "Vino Rodante te trae vinos excepcionales de todo el mundo, cuidadosamente seleccionados para los paladares más exigentes.",
       cta: "Explorar Colección",
@@ -57,6 +57,7 @@ export const es = {
       subtitle:
         "Explora nuestra selección de vinos excepcionales, cada uno con su propia historia y perfil de sabor único.",
       viewAll: "Ver Todos los Vinos",
+      description: "Explora nuestra selección cuidadosamente elegida de vinos excepcionales, cada uno con su propia historia única y perfil de sabor."
     },
     about: {
       title: "Nuestra Historia",
@@ -65,7 +66,47 @@ export const es = {
       paragraph2:
         "Hoy, viajamos por el mundo en busca de vinos únicos con carácter e historia. Cada botella en nuestra colección representa no solo un vino, sino un viaje, una tradición y las personas apasionadas detrás de él.",
       cta: "Conoce Más Sobre Nosotros",
+      tagline: "Apasionados por el vino, dedicados a la calidad, comprometidos a compartir los mejores vinos del mundo."
     },
+  },
+  about: {
+    title: "Nuestra Historia",
+    tagline: "Apasionados por el vino, dedicados a la calidad, comprometidos a compartir los mejores vinos del mundo.",
+    journey: {
+      title: "Nuestro Viaje",
+      paragraph1: "Vino Rodante nació de una pasión por los vinos excepcionales y el deseo de compartirlos con el mundo. Nuestro viaje comenzó en los exuberantes viñedos de Argentina, donde descubrimos la magia que ocurre cuando la tradición se encuentra con la innovación.",
+      paragraph2: "Fundada en 2015 por la sommelier María Rodríguez y el enólogo Carlos Mendoza, Vino Rodante comenzó como una pequeña tienda boutique de vinos en Buenos Aires. La visión de nuestros fundadores era crear un espacio donde los entusiastas del vino pudieran descubrir vinos únicos y de alta calidad de pequeños productores de todo el mundo.",
+      paragraph3: "Hoy, hemos crecido hasta convertirnos en un minorista online internacional, pero nuestra misión sigue siendo la misma: llevar vinos excepcionales a paladares exigentes y compartir las historias y la pasión detrás de cada botella que vendemos."
+    },
+    values: {
+      title: "Nuestros Valores",
+      subtitle: "En Vino Rodante, nos guiamos por un conjunto de valores fundamentales que informan todo lo que hacemos.",
+      quality: {
+        title: "Calidad",
+        description: "Seleccionamos meticulosamente cada vino en nuestra colección, asegurando que cada botella cumpla con nuestros altos estándares de calidad y carácter."
+      },
+      authenticity: {
+        title: "Autenticidad",
+        description: "Valoramos los vinos que expresan su terroir y la visión única de sus creadores, mostrando el carácter auténtico de su origen."
+      },
+      sustainability: {
+        title: "Sostenibilidad",
+        description: "Priorizamos vinos de productores que practican viticultura sostenible, orgánica o biodinámica, respetando tanto la tierra como a las personas."
+      }
+    },
+    selection: {
+      title: "Nuestro Proceso de Selección",
+      paragraph1: "Cada vino en nuestra colección ha sido cuidadosamente seleccionado a través de un riguroso proceso de cata. Nuestro equipo de sommeliers y expertos en vinos viaja por el mundo, visitando viñedos y reuniéndose con enólogos para descubrir vinos excepcionales con carácter e historia.",
+      paragraph2: "Buscamos vinos que no solo tengan un sabor excepcional sino que también cuenten una historia – sobre la tierra de la que provienen, las personas que los elaboraron y las tradiciones que representan.",
+      paragraph3: "Este compromiso con la calidad y la autenticidad significa que nuestra colección evoluciona constantemente, con nuevos descubrimientos que se añaden regularmente junto a nuestros favoritos de confianza.",
+      cta: "Explora Nuestra Colección"
+    },
+    newsletter: {
+      title: "Únete a Nuestro Viaje Vinícola",
+      subtitle: "Suscríbete a nuestro boletín para recibir actualizaciones sobre nuevas llegadas, promociones especiales e invitaciones a eventos exclusivos de cata.",
+      placeholder: "Tu dirección de correo electrónico",
+      button: "Suscribirse"
+    }
   },
   products: {
     title: "Nuestra Colección de Vinos",
@@ -95,6 +136,8 @@ export const es = {
     contactInfo: "Información de Contacto",
     shippingAddress: "Dirección de Envío",
     paymentInfo: "Información de Pago",
+    paymentInformation: "Información de Pago",
+    paymentDescription: "Por favor completa tu pago usando Mercado Pago.",
     completeOrder: "Completar Pedido",
     orderSummary: "Resumen del Pedido",
     fullName: "Nombre Completo",
@@ -109,6 +152,15 @@ export const es = {
     expiration: "Vencimiento (MM/AA)",
     cvc: "CVC",
     processing: "Procesando...",
+    proceedToPayment: "Proceder al Pago",
+    allFieldsRequired: "Todos los campos son obligatorios",
+    paymentError: "Error al procesar el pago",
+    subtotal: "Subtotal",
+    tax: "Impuestos (21% IVA)",
+    shipping: "Envío",
+    free: "Gratis",
+    total: "Total",
+    backToInformation: "Volver a Información",
   },
   confirmation: {
     title: "¡Gracias por tu Pedido!",
