@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Base colors */
+    --background: 0 0% 100%;
+    --foreground: 31 31 31;
+
+    /* Card colors */
+    --card: 0 0% 100%;
+    --card-foreground: 31 31 31;
+
+    /* Popover colors */
+    --popover: 0 0% 100%;
+    --popover-foreground: 31 31 31;
+
+    /* Primary colors - Burgundy */
+    --primary: 342 73% 21%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary colors - Wine Red */
+    --secondary: 2 49% 43%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Accent colors - Orange */
+    --accent: 28 77% 54%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Muted colors */
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 45%;
+
+    /* UI colors */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 342 73% 21%;
+
+    /* Destructive colors */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Status colors */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Neutral colors - Beige */
+    --neutral: 39 32% 73%;
+    --neutral-foreground: 31 31 31;
+
+    /* Typography */
+    --font-sans: "var(--font-primary)", system-ui, sans-serif;
+    --font-heading: "var(--font-secondary)", var(--font-sans);
+
+    /* Radius */
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 31 31 31;
+    --foreground: 0 0% 95%;
+
+    --card: 31 31 31;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 31 31 31;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 342 73% 21%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 2 49% 43%;
+    --secondary-foreground: 0 0% 100%;
+
+    --accent: 28 77% 54%;
+    --accent-foreground: 0 0% 100%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 342 73% 21%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading;
+  }
+}
