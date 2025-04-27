@@ -259,18 +259,18 @@ export default function CheckoutPage() {
                           onChange={handleInputChange}
                         />
                       </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <Button
-                type="submit"
+                <Button
+                  type="submit"
                 className="mt-8 w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white"
-                disabled={isSubmitting}
-              >
+                  disabled={isSubmitting}
+                >
                 {isSubmitting ? (t.checkout?.processing || "Processing...") : (t.checkout?.proceedToPayment || "Proceed to Payment")}
-              </Button>
+                </Button>
             </form>
           </div>
 
@@ -330,11 +330,11 @@ export default function CheckoutPage() {
           <div className="bg-gray-50 p-6 rounded-lg mb-6">
             <h2 className="text-xl font-semibold mb-4">{t.checkout?.paymentInformation || "Payment Information"}</h2>
             <p className="mb-4">{t.checkout?.paymentDescription || "Please complete your payment using Mercado Pago."}</p>
-            
+
             {preferenceId && (
               <div className="py-4">
-                <MercadoPagoCheckout 
-                  preferenceId={preferenceId} 
+              <MercadoPagoCheckout
+                preferenceId={preferenceId}
                   onSuccess={handlePaymentSuccess}
                   onError={handlePaymentError}
                 />

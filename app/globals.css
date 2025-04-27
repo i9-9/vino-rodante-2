@@ -141,4 +141,28 @@
     font-weight: 400 !important;
     font-style: normal;
   }
+  
+  /* Ensure all elements with Pinot Grigio font are uppercase and never bold */
+  [style*="font-family: 'Pinot Grigio'"],
+  [style*='font-family: Pinot Grigio'],
+  [class*="font-pinot"],
+  [class*="font-heading"],
+  [font-family*="Pinot Grigio"] {
+    text-transform: uppercase !important;
+    font-weight: 400 !important;
+    font-style: normal !important;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .font-pinot-grigio {
+    font-family: 'Pinot Grigio', serif;
+    text-transform: uppercase;
+    font-weight: 400 !important;
+    font-style: normal;
+  }
 }

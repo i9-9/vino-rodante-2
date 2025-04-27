@@ -72,6 +72,7 @@ module.exports = {
       fontFamily: {
         sans: ["var(--font-sans)"],
         heading: ["var(--font-heading)"],
+        "pinot-grigio": ["Pinot Grigio", "serif"],
       },
       keyframes: {
         "accordion-down": {

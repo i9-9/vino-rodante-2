@@ -22,7 +22,7 @@ export default function Footer() {
                 alt="Vino Rodante Logo" 
                 width={160} 
                 height={50} 
-                className="h-12 w-auto invert"  // Inverted color for dark background
+                className="h-12 w-auto brightness-0 invert"
               />
             </Link>
             <p className="text-primary-foreground/70 mb-6">
