@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { Mail, Phone, MapPin, Facebook, Instagram, Twitter } from "lucide-react"
+import { Mail, Phone, MapPin, Instagram, Twitter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { NewsletterForm } from "@/components/ui/newsletter-form"
 import { useTranslations } from "@/lib/providers/translations-provider"
@@ -26,18 +26,14 @@ export default function Footer() {
               />
             </Link>
             <p className="text-primary-foreground/70 mb-6">
-              Trayendo vinos excepcionales de todo el mundo a tu puerta.
+              Trayendo vinos excepcionales de Argentina a tu puerta.
             </p>
             <div className="flex space-x-4">
-              <Button variant="ghost" size="icon" className="hover:text-accent">
-                <Facebook className="h-5 w-5" />
-                <span className="sr-only">Facebook</span>
-              </Button>
-              <Button variant="ghost" size="icon" className="hover:text-accent">
+              <Button variant="ghost" size="icon" className="hover:bg-white/10 hover:text-white/80">
                 <Instagram className="h-5 w-5" />
                 <span className="sr-only">Instagram</span>
               </Button>
-              <Button variant="ghost" size="icon" className="hover:text-accent">
+              <Button variant="ghost" size="icon" className="hover:bg-white/10 hover:text-white/80">
                 <Twitter className="h-5 w-5" />
                 <span className="sr-only">Twitter</span>
               </Button>

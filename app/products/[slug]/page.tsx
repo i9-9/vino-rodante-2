@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { notFound } from "next/navigation"
 import { addToCart } from "@/lib/actions"
+import { getTranslations } from "@/lib/get-translations"
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const product = await getProductBySlug(params.slug)
@@ -30,6 +31,7 @@ export async function generateStaticParams() {
 
 export default async function ProductPage({ params }: { params: { slug: string } }) {
   const product = await getProductBySlug(params.slug)
+  const t = await getTranslations()
 
   if (!product) {
     notFound()
@@ -60,35 +62,40 @@ export default async function ProductPage({ params }: { params: { slug: string }
             <form action={addToCart} className="mb-6">
               <input type="hidden" name="productId" value={product.id} />
               <Button type="submit" size="lg" className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white">
-                Add to Cart
+                {t.products.addToCart}
               </Button>
             </form>
 
             <div className="flex items-center text-sm text-[#1F1F1F]/70 mb-4">
               <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-              <span>{product.stock > 0 ? `In Stock (${product.stock} available)` : "Out of Stock"}</span>
+              <span>
+                {product.stock > 0 
+                  ? `${t.products.inStock} (${product.stock} ${t.products.available})` 
+                  : t.products.outOfStock
+                }
+              </span>
             </div>
           </div>
 
           <div className="border-t pt-6">
-            <h2 className="text-xl font-semibold mb-3">Description</h2>
+            <h2 className="text-xl font-semibold mb-3">{t.products.description}</h2>
             <p className="text-[#1F1F1F]/80 mb-6">{product.description}</p>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <h3 className="font-medium text-[#5B0E2D]">Varietal</h3>
+                <h3 className="font-medium text-[#5B0E2D]">{t.products.varietal}</h3>
                 <p className="text-[#1F1F1F]/70">{product.varietal}</p>
               </div>
               <div>
-                <h3 className="font-medium text-[#5B0E2D]">Region</h3>
+                <h3 className="font-medium text-[#5B0E2D]">{t.products.region}</h3>
                 <p className="text-[#1F1F1F]/70">{product.region}</p>
               </div>
               <div>
-                <h3 className="font-medium text-[#5B0E2D]">Year</h3>
+                <h3 className="font-medium text-[#5B0E2D]">{t.products.year}</h3>
                 <p className="text-[#1F1F1F]/70">{product.year}</p>
               </div>
               <div>
-                <h3 className="font-medium text-[#5B0E2D]">Category</h3>
+                <h3 className="font-medium text-[#5B0E2D]">{t.products.category}</h3>
                 <p className="text-[#1F1F1F]/70">
                   {product.category.charAt(0).toUpperCase() + product.category.slice(1)}
                 </p>

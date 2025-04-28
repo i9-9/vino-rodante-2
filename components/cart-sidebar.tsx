@@ -4,9 +4,10 @@ import { X } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose, SheetFooter } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet"
 import { useCart } from "@/lib/hooks/use-cart"
 import { formatCurrency } from "@/lib/utils"
+import { useTranslations } from "@/lib/providers/translations-provider"
 
 export default function CartSidebar({
   open,
@@ -16,24 +17,21 @@ export default function CartSidebar({
   onClose: () => void
 }) {
   const { cartItems, subtotal, removeFromCart, updateCartItemQuantity } = useCart()
+  const t = useTranslations()
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent side="right" className="w-full sm:max-w-md flex flex-col">
         <SheetHeader className="border-b pb-4">
-          <SheetTitle>Your Cart</SheetTitle>
-          <SheetClose className="absolute right-4 top-4">
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </SheetClose>
+          <SheetTitle>{t.cart.title}</SheetTitle>
         </SheetHeader>
 
         <div className="flex-1 overflow-auto py-6">
           {cartItems.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
-              <p className="mb-4 text-lg font-medium">Your cart is empty</p>
+              <p className="mb-4 text-lg font-medium">{t.cart.empty}</p>
               <Button onClick={onClose} className="bg-[#A83935] hover:bg-[#A83935]/90 text-white">
-                Continue Shopping
+                {t.cart.continueShopping}
               </Button>
             </div>
           ) : (
@@ -92,7 +90,7 @@ export default function CartSidebar({
                         className="text-[#A83935]"
                         onClick={() => removeFromCart(item.id)}
                       >
-                        Remove
+                        {t.common.remove}
                       </Button>
                     </div>
                   </div>
@@ -106,17 +104,17 @@ export default function CartSidebar({
           <SheetFooter className="border-t pt-4">
             <div className="w-full">
               <div className="flex justify-between py-2 text-base font-medium">
-                <p>Subtotal</p>
+                <p>{t.common.subtotal}</p>
                 <p>{formatCurrency(subtotal)}</p>
               </div>
-              <p className="text-sm text-gray-500 mb-4">Shipping and taxes calculated at checkout</p>
+              <p className="text-sm text-gray-500 mb-4">{t.cart.shippingTaxes}</p>
               <Button className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white" size="lg" asChild>
                 <Link href="/checkout" onClick={onClose}>
-                  Checkout
+                  {t.cart.checkout}
                 </Link>
               </Button>
               <Button variant="outline" className="mt-2 w-full" onClick={onClose}>
-                Continue Shopping
+                {t.cart.continueShopping}
               </Button>
             </div>
           </SheetFooter>

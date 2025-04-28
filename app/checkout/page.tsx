@@ -143,14 +143,14 @@ export default function CheckoutPage() {
     }
   }
 
-  const handlePaymentSuccess = () => {
+  const onSuccess = () => {
     // Clear the cart after successful payment
     clearCart();
     // Redirect to confirmation page
     router.push("/checkout/confirmation");
   }
 
-  const handlePaymentError = (errorMessage: string) => {
+  const onError = (errorMessage: string) => {
     toast({
       title: t.common?.error || "Error",
       description: errorMessage,
@@ -162,10 +162,10 @@ export default function CheckoutPage() {
   if (cartItems.length === 0) {
     return (
       <div className="container py-16 text-center">
-        <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
-        <p className="mb-6">Add some products to your cart before proceeding to checkout.</p>
+        <h1 className="text-2xl font-bold mb-4">{t.cart.empty}</h1>
+        <p className="mb-6">{t.checkout?.emptyCartMessage || "Añade productos a tu carrito antes de continuar con la compra."}</p>
         <Button onClick={() => router.push("/products")} className="bg-[#A83935] hover:bg-[#A83935]/90 text-white">
-          Browse Products
+          {t.navigation.products}
         </Button>
       </div>
     )
@@ -296,7 +296,7 @@ export default function CheckoutPage() {
                         {item.year} • {item.varietal}
                       </p>
                       <div className="flex justify-between mt-1">
-                        <p className="text-sm">Qty: {item.quantity}</p>
+                        <p className="text-sm">{t.common.quantity}: {item.quantity}</p>
                         <p className="font-medium">{formatCurrency(item.price * item.quantity)}</p>
                       </div>
                     </div>
@@ -335,8 +335,8 @@ export default function CheckoutPage() {
               <div className="py-4">
               <MercadoPagoCheckout
                 preferenceId={preferenceId}
-                  onSuccess={handlePaymentSuccess}
-                  onError={handlePaymentError}
+                onSuccess={onSuccess}
+                onError={onError}
                 />
               </div>
             )}

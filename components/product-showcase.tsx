@@ -13,9 +13,9 @@ export default function ProductShowcase({ products }: { products: Product[] }) {
     <section className="w-full py-16 bg-[#F2F2F2]">
       <div className="container px-4">
         <div className="mb-10 text-center">
-          <h2 className="text-3xl font-bold text-[#5B0E2D] mb-4">Weekly Wine</h2>
+          <h2 className="text-3xl font-bold text-[#5B0E2D] mb-4">{t.home.featuredWines.title}</h2>
           <p className="text-[#1F1F1F]/70 max-w-2xl mx-auto">
-            En Vino Rodante presentamos nuestro Weekly Wine, una propuesta semanal que va más allá de la recomendación del vino. Con esta guía, cada copa se convierte en una cápsula de historia y pasión.
+            {t.home.featuredWines.description}
           </p>
         </div>
 
@@ -25,9 +25,9 @@ export default function ProductShowcase({ products }: { products: Product[] }) {
           ))}
         </div>
 
-        <div className="mt-12 text-center">
-          <Button size="lg" className="bg-[#A83935] hover:bg-[#A83935]/90 text-white" asChild>
-            <Link href="/products">Ver Todos los Vinos</Link>
+        <div className="mt-8 text-center">
+          <Button variant="primary" asChild>
+            <Link href="/products">{t.home.featuredWines.viewAll}</Link>
           </Button>
         </div>
       </div>

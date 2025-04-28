@@ -49,7 +49,7 @@ export default function Header() {
           />
         </Link>
 
-        <div className="mx-6 flex-1">
+        <div className="mx-auto flex flex-1 justify-center">
           <MegaMenu />
         </div>
 

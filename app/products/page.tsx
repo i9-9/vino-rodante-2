@@ -1,83 +1,88 @@
 import { getProducts } from "@/lib/products"
 import ProductCard from "@/components/product-card"
 import { Button } from "@/components/ui/button"
+import { getTranslations } from "@/lib/get-translations"
 
-export const metadata = {
-  title: "All Wines | Vino Rodante",
-  description: "Browse our complete collection of exceptional wines from around the world.",
+export async function generateMetadata() {
+  const t = await getTranslations()
+  
+  return {
+    title: `${t.products.title} | Vino Rodante`,
+    description: t.products.subtitle,
+  }
 }
 
 export default async function ProductsPage() {
   const products = await getProducts()
+  const t = await getTranslations()
 
   return (
     <div className="container px-4 py-12">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[#5B0E2D] mb-4">Our Wine Collection</h1>
+        <h1 className="text-3xl font-bold text-[#5B0E2D] mb-4">{t.products.title}</h1>
         <p className="text-[#1F1F1F]/70 max-w-3xl">
-          Explore our handpicked selection of exceptional wines from around the world, each with its own unique story
-          and flavor profile.
+          {t.products.subtitle}
         </p>
       </div>
 
       <div className="flex flex-col md:flex-row gap-6 mb-8">
         <div className="w-full md:w-64 space-y-4">
           <div className="border rounded-lg p-4">
-            <h2 className="font-medium text-lg mb-3">Categories</h2>
+            <h2 className="font-medium text-lg mb-3">{t.products.categories}</h2>
             <div className="space-y-2">
               <Button variant="ghost" className="w-full justify-start">
-                All Wines
+                {t.navigation.allWines}
               </Button>
               <Button variant="ghost" className="w-full justify-start">
-                Red Wines
+                {t.navigation.redWines}
               </Button>
               <Button variant="ghost" className="w-full justify-start">
-                White Wines
+                {t.navigation.whiteWines}
               </Button>
               <Button variant="ghost" className="w-full justify-start">
-                Sparkling Wines
+                {t.navigation.sparklingWines}
               </Button>
             </div>
           </div>
 
           <div className="border rounded-lg p-4">
-            <h2 className="font-medium text-lg mb-3">Price Range</h2>
+            <h2 className="font-medium text-lg mb-3">{t.products.priceRange}</h2>
             <div className="space-y-2">
               <Button variant="ghost" className="w-full justify-start">
-                Under $30
+                {t.filters?.under30 || "Menos de $30"}
               </Button>
               <Button variant="ghost" className="w-full justify-start">
-                $30 - $50
+                {t.filters?.between30and50 || "$30 - $50"}
               </Button>
               <Button variant="ghost" className="w-full justify-start">
-                $50 - $100
+                {t.filters?.between50and100 || "$50 - $100"}
               </Button>
               <Button variant="ghost" className="w-full justify-start">
-                Over $100
+                {t.filters?.over100 || "Más de $100"}
               </Button>
             </div>
           </div>
 
           <div className="border rounded-lg p-4">
-            <h2 className="font-medium text-lg mb-3">Region</h2>
+            <h2 className="font-medium text-lg mb-3">{t.products.region}</h2>
             <div className="space-y-2">
               <Button variant="ghost" className="w-full justify-start">
-                France
+                {t.wineRegions.france}
               </Button>
               <Button variant="ghost" className="w-full justify-start">
-                Italy
+                {t.wineRegions.italy}
               </Button>
               <Button variant="ghost" className="w-full justify-start">
-                Spain
+                {t.wineRegions.spain}
               </Button>
               <Button variant="ghost" className="w-full justify-start">
-                United States
+                {t.wineRegions.unitedStates}
               </Button>
               <Button variant="ghost" className="w-full justify-start">
-                Argentina
+                {t.wineRegions.argentina}
               </Button>
               <Button variant="ghost" className="w-full justify-start">
-                Chile
+                {t.wineRegions.chile}
               </Button>
             </div>
           </div>

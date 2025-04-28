@@ -55,28 +55,28 @@ export const en = {
     hero: {
       title: "Discover the Finest Wine Selection",
       subtitle:
-        "Vino Rodante brings you exceptional wines from around the world, carefully selected for the most discerning palates.",
+        "Vino Rodante brings you exceptional wines from Argentina's best wine regions, carefully selected for the most discerning palates.",
       cta: "Explore Collection",
       secondaryCta: "Our Story",
     },
     featuredWines: {
       title: "Featured Wines",
-      subtitle: "Explore our selection of exceptional wines, each with its own story and unique flavor profile.",
+      subtitle: "Explore our selection of exceptional Argentine wines, each with its own story and unique flavor profile.",
       viewAll: "View All Wines",
-      description: "Explore our handpicked selection of exceptional wines, each with its own unique story and flavor profile."
+      description: "Explore our handpicked selection of exceptional Argentine wines, each with its own unique story and flavor profile."
     },
     about: {
       title: "Our Story",
       paragraph1:
         "Vino Rodante was born from a passion for exceptional wines and a desire to share them with the world. Our journey began in the vineyards of Argentina, where we discovered the magic that happens when tradition meets innovation.",
       paragraph2:
-        "Today, we travel the world in search of unique wines with character and history. Every bottle in our collection represents not just a wine, but a journey, a tradition, and the passionate people behind it.",
+        "Today, we travel throughout Argentina's wine regions in search of unique wines with character and history. Every bottle in our collection represents not just a wine, but a journey, a tradition, and the passionate people behind it.",
       cta: "Learn More About Us",
     },
   },
   products: {
     title: "Our Wine Collection",
-    subtitle: "Explore our selection of exceptional wines from around the world, each with its own story and unique flavor profile.",
+    subtitle: "Explore our selection of exceptional wines from Argentina's wine regions, each with its own story and unique flavor profile.",
     categories: "Categories",
     priceRange: "Price Range",
     region: "Region",
@@ -88,6 +88,12 @@ export const en = {
     varietal: "Varietal",
     year: "Year",
     category: "Category",
+  },
+  filters: {
+    under30: "Under $30",
+    between30and50: "$30 - $50",
+    between50and100: "$50 - $100",
+    over100: "Over $100"
   },
   cart: {
     title: "Your Cart",
@@ -126,6 +132,7 @@ export const en = {
     free: "Free",
     total: "Total",
     backToInformation: "Back to Information",
+    emptyCartMessage: "Add some products to your cart before proceeding to checkout.",
   },
   confirmation: {
     title: "Thank You for Your Order!",
@@ -202,5 +209,53 @@ export const en = {
     collections: "Collections",
     featuredProduct: "Featured Product",
     viewDetails: "View Details",
+    featured: "Featured",
+    newArrivals: "New Arrivals",
+    bestsellers: "Bestsellers",
+    giftSets: "Gift Sets"
   },
+  wineRegions: {
+    mendoza: "Mendoza",
+    valleDeUco: "Valle de Uco",
+    sanJuan: "San Juan",
+    salta: "Salta",
+    rioNegro: "Río Negro",
+    neuquen: "Neuquén",
+    laPampa: "La Pampa",
+    catamarca: "Catamarca",
+    cordoba: "Córdoba",
+    jujuy: "Jujuy",
+    all: "All Regions",
+    patagonia: "Patagonia",
+    cuyana: "Cuyana",
+    noroeste: "Northwest",
+    centro: "Central",
+    litoral: "Littoral"
+  },
+  wineVarietals: {
+    malbec: "Malbec",
+    cabernetSauvignon: "Cabernet Sauvignon",
+    merlot: "Merlot",
+    pinotNoir: "Pinot Noir",
+    chardonnay: "Chardonnay",
+    sauvignonBlanc: "Sauvignon Blanc",
+    riesling: "Riesling",
+    syrah: "Syrah"
+  },
+  wineTypes: {
+    red: "Red",
+    white: "White",
+    sparkling: "Sparkling",
+    rose: "Rosé",
+    dessert: "Dessert",
+    fortified: "Fortified"
+  },
+  featuredProducts: {
+    malbecReserve: "Malbec Reserve 2018",
+    malbecDesc: "A bold and robust Malbec with notes of blackberry, plum, and a hint of chocolate.",
+    chardonnayEstate: "Chardonnay Estate 2020",
+    chardonnayDesc: "Elegant and crisp with balanced acidity and notes of green apple, pear, and vanilla.",
+    cabernetSauvignon: "Cabernet Sauvignon 2016",
+    cabernetDesc: "Full-bodied with rich tannins and complex flavors of black currant, cedar, and spice."
+  }
 }
