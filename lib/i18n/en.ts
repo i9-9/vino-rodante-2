@@ -30,6 +30,13 @@ export const en = {
     tax: "Taxes",
     shipping: "Shipping",
     free: "Free",
+    noResults: "No results found",
+    default: "Default",
+    setAsDefault: "Set as Default",
+    pending: "Pending",
+    processing: "Processing",
+    shipped: "Shipped",
+    delivered: "Delivered",
   },
   navigation: {
     home: "Home",

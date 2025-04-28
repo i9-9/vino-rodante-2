@@ -30,6 +30,13 @@ export const es = {
     tax: "Impuestos",
     shipping: "Envío",
     free: "Gratis",
+    noResults: "No se encontraron resultados",
+    default: "Predeterminado",
+    setAsDefault: "Marcar como predeterminado",
+    pending: "Pendiente",
+    processing: "Procesando",
+    shipped: "Enviado",
+    delivered: "Entregado",
   },
   navigation: {
     home: "Inicio",

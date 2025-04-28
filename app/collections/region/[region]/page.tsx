@@ -3,7 +3,7 @@
 import { useTranslations } from "@/lib/providers/translations-provider"
 import { getProducts } from "@/lib/products"
 import ProductCard from "@/components/product-card"
-import { useEffect, useState } from "react"
+import { useEffect, useState, use } from "react"
 import type { Product } from "@/lib/types"
 
 export default function RegionPage({ params }: { params: { region: string } }) {
@@ -11,6 +11,8 @@ export default function RegionPage({ params }: { params: { region: string } }) {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   
+  const { region } = use(params)
+
   // Mapeo de regiones a títulos
   const regionTitles: Record<string, string> = {
     mendoza: t.wineRegions.mendoza,
@@ -30,21 +32,34 @@ export default function RegionPage({ params }: { params: { region: string } }) {
     litoral: t.wineRegions.litoral
   }
 
-  const title = regionTitles[params.region] || params.region
+  const title = regionTitles[region] || region
+
+  // Función para normalizar strings (sin tildes, minúsculas, sin guiones, sin espacios dobles)
+  function normalize(str: string) {
+    return str
+      .toLowerCase()
+      .normalize('NFD').replace(/[\f0-\x7f]/g, c => c.normalize('NFD').replace(/\p{Diacritic}/gu, ''))
+      .replace(/[\u0300-\u036f]/g, '') // quita tildes
+      .replace(/-/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  }
+
+  const regionParam = normalize(region)
 
   useEffect(() => {
     async function loadProducts() {
       setLoading(true)
       const allProducts = await getProducts()
-      // Filtrar productos por región
+      // Filtrar productos por región (robusto)
       const filteredProducts = allProducts.filter(
-        product => product.region.toLowerCase().includes(params.region.replace("-", " "))
+        product => normalize(product.region).includes(regionParam)
       )
       setProducts(filteredProducts)
       setLoading(false)
     }
     loadProducts()
-  }, [params.region])
+  }, [region])
 
   return (
     <div className="container mx-auto px-4 py-8">

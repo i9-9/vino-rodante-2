@@ -56,9 +56,9 @@ export function NewsletterForm({ className }: { className?: string }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="bg-primary-foreground text-primary"
+          className="bg-primary-foreground text-primary h-12 rounded-md"
         />
-        <Button type="submit" disabled={isLoading} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+        <Button type="submit" disabled={isLoading} className="bg-accent hover:bg-accent/90 text-accent-foreground h-12 rounded-md px-6">
           {isLoading ? t.common.loading : t.newsletter.button}
         </Button>
       </div>

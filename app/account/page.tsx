@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Trash, Plus, Check, MapPin, Package } from "lucide-react"
 import { format } from "date-fns"
 import type { Order } from "@/lib/types"
+import { useTranslations } from "@/lib/providers/translations-provider"
 
 interface Address {
   id: string
@@ -31,6 +32,7 @@ interface Address {
 
 export default function AccountPage() {
   const router = useRouter()
+  const t = useTranslations()
   const { user, isLoading, signOut } = useAuth()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -215,16 +217,16 @@ export default function AccountPage() {
     router.push("/")
   }
 
-  const getOrderStatusBadge = (status: string) => {
+  const getOrderStatusBadge = (status: string, t: any) => {
     switch(status) {
       case 'pending':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">{t.common.pending || "Pendiente"}</Badge>
       case 'processing':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Processing</Badge>
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">{t.common.processing || "Procesando"}</Badge>
       case 'shipped':
-        return <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">Shipped</Badge>
+        return <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">{t.common.shipped || "Enviado"}</Badge>
       case 'delivered':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Delivered</Badge>
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">{t.common.delivered || "Entregado"}</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
     }
@@ -250,20 +252,20 @@ export default function AccountPage() {
 
   return (
     <div className="container py-12">
-      <h1 className="text-3xl font-bold text-[#5B0E2D] mb-8">My Account</h1>
+      <h1 className="text-3xl font-bold text-[#5B0E2D] mb-8">{t.account.title}</h1>
 
       <Tabs defaultValue="profile" className="max-w-4xl">
         <TabsList>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="orders">Orders</TabsTrigger>
-          <TabsTrigger value="addresses">Addresses</TabsTrigger>
+          <TabsTrigger value="profile">{t.account.profile}</TabsTrigger>
+          <TabsTrigger value="orders">{t.account.orders}</TabsTrigger>
+          <TabsTrigger value="addresses">{t.account.addresses}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Profile Information</CardTitle>
-              <CardDescription>Update your account details</CardDescription>
+              <CardTitle>{t.account.profileInfo}</CardTitle>
+              <CardDescription>{t.account.updateProfile}</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleUpdateProfile} className="space-y-6">
@@ -278,22 +280,22 @@ export default function AccountPage() {
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="name">{t.checkout.fullName}</Label>
                   <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t.checkout.email}</Label>
                   <Input id="email" value={email} disabled className="bg-gray-100" />
-                  <p className="text-sm text-gray-500">Email cannot be changed</p>
+                  <p className="text-sm text-gray-500">{t.account.emailCannotChange}</p>
                 </div>
 
                 <div className="flex justify-between">
                   <Button type="submit" className="bg-[#A83935] hover:bg-[#A83935]/90 text-white" disabled={isUpdating}>
-                    {isUpdating ? "Updating..." : "Update Profile"}
+                    {isUpdating ? t.common.update + "..." : t.common.update}
                   </Button>
                   <Button type="button" variant="outline" onClick={handleSignOut}>
-                    Sign Out
+                    {t.common.signOut}
                   </Button>
                 </div>
               </form>
@@ -304,24 +306,24 @@ export default function AccountPage() {
         <TabsContent value="orders" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Order History</CardTitle>
-              <CardDescription>View your past orders</CardDescription>
+              <CardTitle>{t.account.orderHistory}</CardTitle>
+              <CardDescription>{t.account.orders}</CardDescription>
             </CardHeader>
             <CardContent>
               {isLoadingOrders ? (
                 <div className="py-4 text-center">
                   <div className="inline-block w-6 h-6 border-2 border-[#A83935] border-t-transparent rounded-full animate-spin"></div>
-                  <p className="mt-2 text-sm text-gray-500">Loading your orders...</p>
+                  <p className="mt-2 text-sm text-gray-500">{t.common.loading}</p>
                 </div>
               ) : orders.length === 0 ? (
                 <div className="text-center py-8">
                   <Package className="mx-auto h-12 w-12 text-gray-400" />
-                  <p className="mt-4 text-gray-500">You haven't placed any orders yet.</p>
+                  <p className="mt-4 text-gray-500">{t.account.noOrders}</p>
                   <Button 
                     className="mt-4 bg-[#A83935] hover:bg-[#A83935]/90 text-white"
                     onClick={() => router.push('/products')}
                   >
-                    Browse Products
+                    {t.navigation.products}
                   </Button>
                 </div>
               ) : (
@@ -331,13 +333,13 @@ export default function AccountPage() {
                       <CardHeader className="bg-gray-50 py-4">
                         <div className="flex justify-between items-center">
                           <div>
-                            <p className="text-sm text-gray-500">Order #{order.id.slice(0, 8)}</p>
+                            <p className="text-sm text-gray-500">{t.account.orders} #{order.id.slice(0, 8)}</p>
                             <p className="text-sm text-gray-500">
                               {order.created_at && format(new Date(order.created_at), 'MMM dd, yyyy')}
                             </p>
                           </div>
                           <div className="flex items-center">
-                            {getOrderStatusBadge(order.status)}
+                            {getOrderStatusBadge(order.status, t)}
                           </div>
                         </div>
                       </CardHeader>
@@ -346,8 +348,8 @@ export default function AccountPage() {
                           {order.order_items && order.order_items.map((item: any) => (
                             <div key={item.id} className="flex justify-between items-center">
                               <div>
-                                <p className="font-medium">{item.product_name || 'Product'}</p>
-                                <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
+                                <p className="font-medium">{item.product_name || t.products.title}</p>
+                                <p className="text-sm text-gray-500">{t.common.quantity}: {item.quantity}</p>
                               </div>
                               <p>{formatCurrency(item.price * item.quantity)}</p>
                             </div>
@@ -355,7 +357,7 @@ export default function AccountPage() {
                         </div>
                       </CardContent>
                       <CardFooter className="bg-gray-50 py-3 flex justify-between">
-                        <p className="font-medium">Total</p>
+                        <p className="font-medium">{t.common.total}</p>
                         <p className="font-medium">{formatCurrency(order.total)}</p>
                       </CardFooter>
                     </Card>
@@ -370,28 +372,28 @@ export default function AccountPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Saved Addresses</CardTitle>
-                <CardDescription>Manage your shipping addresses</CardDescription>
+                <CardTitle>{t.account.savedAddresses}</CardTitle>
+                <CardDescription>{t.account.noAddresses}</CardDescription>
               </div>
               
               <Dialog open={addressDialogOpen} onOpenChange={setAddressDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="bg-[#A83935] hover:bg-[#A83935]/90 text-white">
                     <Plus className="mr-2 h-4 w-4" />
-                    Add New Address
+                    {t.account.addNewAddress}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Add New Address</DialogTitle>
+                    <DialogTitle>{t.account.addNewAddress}</DialogTitle>
                     <DialogDescription>
-                      Enter your shipping address details below
+                      {t.account.updateProfile}
                     </DialogDescription>
                   </DialogHeader>
                   
                   <form onSubmit={handleAddAddress} className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <Label htmlFor="line1">Address Line 1</Label>
+                      <Label htmlFor="line1">{t.checkout.address1}</Label>
                       <Input 
                         id="line1" 
                         name="line1" 
@@ -402,7 +404,7 @@ export default function AccountPage() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="line2">Address Line 2 (Optional)</Label>
+                      <Label htmlFor="line2">{t.checkout.address2}</Label>
                       <Input 
                         id="line2" 
                         name="line2" 
@@ -413,7 +415,7 @@ export default function AccountPage() {
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="city">City</Label>
+                        <Label htmlFor="city">{t.checkout.city}</Label>
                         <Input 
                           id="city" 
                           name="city" 
@@ -424,7 +426,7 @@ export default function AccountPage() {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="state">State/Province</Label>
+                        <Label htmlFor="state">{t.checkout.state}</Label>
                         <Input 
                           id="state" 
                           name="state" 
@@ -437,7 +439,7 @@ export default function AccountPage() {
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="postal_code">Postal Code</Label>
+                        <Label htmlFor="postal_code">{t.checkout.postalCode}</Label>
                         <Input 
                           id="postal_code" 
                           name="postal_code" 
@@ -448,7 +450,7 @@ export default function AccountPage() {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="country">Country</Label>
+                        <Label htmlFor="country">{t.checkout.country}</Label>
                         <Input 
                           id="country" 
                           name="country" 
@@ -465,7 +467,7 @@ export default function AccountPage() {
                         className="bg-[#A83935] hover:bg-[#A83935]/90 text-white"
                         disabled={isUpdating}
                       >
-                        {isUpdating ? "Adding..." : "Add Address"}
+                        {isUpdating ? t.common.add + "..." : t.account.addNewAddress}
                       </Button>
                     </DialogFooter>
                   </form>
@@ -476,12 +478,12 @@ export default function AccountPage() {
               {isLoadingAddresses ? (
                 <div className="py-4 text-center">
                   <div className="inline-block w-6 h-6 border-2 border-[#A83935] border-t-transparent rounded-full animate-spin"></div>
-                  <p className="mt-2 text-sm text-gray-500">Loading your addresses...</p>
+                  <p className="mt-2 text-sm text-gray-500">{t.common.loading}</p>
                 </div>
               ) : addresses.length === 0 ? (
                 <div className="text-center py-8">
                   <MapPin className="mx-auto h-12 w-12 text-gray-400" />
-                  <p className="mt-4 text-gray-500">You don't have any saved addresses yet.</p>
+                  <p className="mt-4 text-gray-500">{t.account.noAddresses}</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -491,7 +493,7 @@ export default function AccountPage() {
                         <div className="flex justify-between items-start">
                           <div>
                             {address.is_default && (
-                              <Badge className="mb-2 bg-[#5B0E2D]">Default</Badge>
+                              <Badge className="mb-2 bg-[#5B0E2D]">{t.common.default || "Default"}</Badge>
                             )}
                             <p className="font-medium">{name}</p>
                             <p className="text-sm text-gray-500">{address.line1}</p>
@@ -511,7 +513,7 @@ export default function AccountPage() {
                                 disabled={isUpdating}
                               >
                                 <Check className="mr-1 h-4 w-4" />
-                                Set as Default
+                                {t.common.setAsDefault || "Set as Default"}
                               </Button>
                             )}
                             

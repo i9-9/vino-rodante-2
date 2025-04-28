@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { ShoppingCart, Menu, Search, User, LogOut } from "lucide-react"
+import { ShoppingCart, Menu, User, LogOut } from "lucide-react"
 import { useCart } from "@/lib/hooks/use-cart"
 import { useAuth } from "@/lib/providers/auth-provider"
 import { useTranslations } from "@/lib/providers/translations-provider"
@@ -12,6 +12,7 @@ import MobileMenu from "./mobile-menu"
 import CartSidebar from "./cart-sidebar"
 import MegaMenu from "./mega-menu"
 import LanguageSwitcher from "./language-switcher"
+import SearchDialog from "./search-dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,11 +56,7 @@ export default function Header() {
 
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
-
-          <Button variant="ghost" size="icon">
-            <Search className="h-5 w-5" />
-            <span className="sr-only">{t.common.search}</span>
-          </Button>
+          <SearchDialog />
 
           {user ? (
             <DropdownMenu>
