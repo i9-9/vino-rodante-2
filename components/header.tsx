@@ -44,7 +44,7 @@ export default function Header() {
             alt="Vino Rodante Logo" 
             width={120} 
             height={40} 
-            className="h-10 w-auto" 
+            style={{ height: 40, width: 'auto' }}
             priority
             quality={100}
           />

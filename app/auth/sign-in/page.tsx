@@ -10,10 +10,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/lib/providers/auth-provider"
 import { Wine } from "lucide-react"
+import { useTranslations } from "@/lib/providers/translations-provider"
 
 export default function SignIn() {
   const router = useRouter()
   const { signIn } = useAuth()
+  const t = useTranslations()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -45,8 +47,8 @@ export default function SignIn() {
       <div className="w-full max-w-md space-y-8 px-4">
         <div className="flex flex-col items-center text-center">
           <Wine className="h-12 w-12 text-[#5B0E2D]" />
-          <h1 className="mt-4 text-3xl font-bold text-[#5B0E2D]">Sign in to your account</h1>
-          <p className="mt-2 text-gray-600">Welcome back to Vino Rodante</p>
+          <h1 className="mt-4 text-3xl font-bold text-[#5B0E2D]">{t.auth.signIn.title || "Iniciar sesión"}</h1>
+          <p className="mt-2 text-gray-600">{t.auth.signIn.subtitle || "Bienvenido de nuevo a Vino Rodante"}</p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -54,7 +56,7 @@ export default function SignIn() {
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="email">Email address</Label>
+              <Label htmlFor="email">{t.auth.email || "Email"}</Label>
               <Input
                 id="email"
                 name="email"
@@ -69,12 +71,12 @@ export default function SignIn() {
 
             <div>
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t.auth.password || "Contraseña"}</Label>
                 <Link
-                  href="/auth/forgot-password"
+                  href="/auth/reset-password"
                   className="text-sm font-medium text-[#A83935] hover:text-[#A83935]/80"
                 >
-                  Forgot your password?
+                  {t.auth.signIn.forgotPassword || "¿Olvidaste tu contraseña?"}
                 </Link>
               </div>
               <Input
@@ -91,13 +93,13 @@ export default function SignIn() {
           </div>
 
           <Button type="submit" className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white" disabled={isLoading}>
-            {isLoading ? "Signing in..." : "Sign in"}
+            {isLoading ? t.common.loading || "Ingresando..." : t.auth.signIn.title || "Iniciar sesión"}
           </Button>
 
           <div className="text-center text-sm">
-            Don't have an account?{" "}
+            {t.auth.signIn.noAccount || "¿No tienes cuenta?"} {" "}
             <Link href="/auth/sign-up" className="font-medium text-[#A83935] hover:text-[#A83935]/80">
-              Sign up
+              {t.auth.signIn.createAccount || "Crear cuenta"}
             </Link>
           </div>
         </form>

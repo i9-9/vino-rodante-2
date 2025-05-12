@@ -3,8 +3,11 @@
 import type React from "react"
 
 import { createContext, useContext, useEffect, useState } from "react"
-import type { Session, User } from "@supabase/supabase-js"
+import type { Session, User as SupabaseUser } from "@supabase/supabase-js"
 import { supabase } from "@/lib/supabase"
+
+// Extiendo el tipo de usuario para incluir is_admin
+export type User = SupabaseUser & { is_admin?: boolean }
 
 type AuthContextType = {
   user: User | null
@@ -29,7 +32,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         data: { session },
       } = await supabase.auth.getSession()
       setSession(session)
-      setUser(session?.user ?? null)
+      if (session?.user) {
+        // Fetch is_admin from customers
+        const { data: customer } = await supabase
+          .from("customers")
+          .select("is_admin")
+          .eq("id", session.user.id)
+          .single()
+        setUser({ ...session.user, is_admin: customer?.is_admin })
+      } else {
+        setUser(null)
+      }
       setIsLoading(false)
     }
 
@@ -38,9 +51,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session)
-      setUser(session?.user ?? null)
+      if (session?.user) {
+        const { data: customer } = await supabase
+          .from("customers")
+          .select("is_admin")
+          .eq("id", session.user.id)
+          .single()
+        setUser({ ...session.user, is_admin: customer?.is_admin })
+      } else {
+        setUser(null)
+      }
       setIsLoading(false)
     })
 

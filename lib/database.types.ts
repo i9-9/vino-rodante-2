@@ -95,18 +95,21 @@ export interface Database {
           name: string
           email: string
           created_at: string
+          is_admin: boolean
         }
         Insert: {
           id?: string
           name: string
           email: string
           created_at?: string
+          is_admin: boolean
         }
         Update: {
           id?: string
           name?: string
           email?: string
           created_at?: string
+          is_admin: boolean
         }
       }
       addresses: {

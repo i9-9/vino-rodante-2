@@ -9,8 +9,7 @@ export default function LanguageSwitcher() {
   const { language, setLanguage } = useLanguage()
 
   const handleLanguageChange = (lang: "en" | "es") => {
-    document.cookie = `language=${lang}; path=/`;
-    window.location.reload();
+    setLanguage(lang);
   };
 
   return (

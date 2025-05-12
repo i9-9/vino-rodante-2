@@ -18,29 +18,24 @@ interface TranslationsContextType {
 const TranslationsContext = createContext<TranslationsContextType | undefined>(undefined)
 
 export function TranslationsProvider({ children }: { children: React.ReactNode }) {
-  // Get initial language from localStorage or default to Spanish
+  // Initialize state with a default value
   const [language, setLanguageState] = useState<Language>("es")
   const [translations, setTranslations] = useState<Translations>(es)
 
-  // Update translations when language changes
+  // Load initial language from localStorage on mount
   useEffect(() => {
-    // Get stored language preference from localStorage if available
-    const storedLanguage = typeof window !== "undefined" ? (localStorage.getItem("language") as Language) : null
-    const initialLanguage = storedLanguage || "es"
-
-    setLanguageState(initialLanguage)
-    setTranslations(initialLanguage === "en" ? en : es)
+    const storedLanguage = localStorage.getItem("language") as Language
+    if (storedLanguage) {
+      setLanguageState(storedLanguage)
+      setTranslations(storedLanguage === "en" ? en : es)
+    }
   }, [])
 
   // Function to change language
   const setLanguage = (lang: Language) => {
     setLanguageState(lang)
     setTranslations(lang === "en" ? en : es)
-
-    // Store language preference
-    if (typeof window !== "undefined") {
-      localStorage.setItem("language", lang)
-    }
+    localStorage.setItem("language", lang)
   }
 
   return (

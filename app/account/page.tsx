@@ -16,8 +16,10 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Trash, Plus, Check, MapPin, Package } from "lucide-react"
 import { format } from "date-fns"
-import type { Order } from "@/lib/types"
+import type { Order, Product } from "@/lib/types"
 import { useTranslations } from "@/lib/providers/translations-provider"
+import { getProducts, createProduct, deleteProduct } from "@/lib/products"
+import { Table } from "@/components/ui/table"
 
 interface Address {
   id: string
@@ -51,6 +53,23 @@ export default function AccountPage() {
     country: "Argentina",
   })
   const [addressDialogOpen, setAddressDialogOpen] = useState(false)
+  const [products, setProducts] = useState<Product[]>([])
+  const [form, setForm] = useState<Omit<Product, "id">>({
+    name: "",
+    slug: "",
+    description: "",
+    price: 0,
+    image: "",
+    category: "",
+    year: "",
+    region: "",
+    varietal: "",
+    stock: 0,
+    featured: false,
+  })
+  const [loading, setLoading] = useState(false)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string>("")
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -101,6 +120,10 @@ export default function AccountPage() {
       fetchAddresses()
     }
   }, [user, isLoading, router])
+
+  useEffect(() => {
+    getProducts().then(setProducts)
+  }, [])
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -238,6 +261,47 @@ export default function AccountPage() {
       ...prev,
       [name]: value
     }))
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked, files } = e.target
+    if (name === "image" && files && files[0]) {
+      setImageFile(files[0])
+      setImagePreview(URL.createObjectURL(files[0]))
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      }))
+    }
+  }
+
+  const handleAddProduct = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    await createProduct(form)
+    setProducts(await getProducts())
+    setForm({
+      name: "",
+      slug: "",
+      description: "",
+      price: 0,
+      image: "",
+      category: "",
+      year: "",
+      region: "",
+      varietal: "",
+      stock: 0,
+      featured: false,
+    })
+    setLoading(false)
+  }
+
+  const handleDeleteProduct = async (id: string) => {
+    setLoading(true)
+    await deleteProduct(id)
+    setProducts(await getProducts())
+    setLoading(false)
   }
 
   if (isLoading) {
@@ -537,6 +601,244 @@ export default function AccountPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <AdminDashboard />
     </div>
+  )
+}
+
+function AdminDashboard() {
+  const { user } = useAuth()
+  const [products, setProducts] = useState<Product[]>([])
+  const [form, setForm] = useState<Omit<Product, "id">>({
+    name: "",
+    slug: "",
+    description: "",
+    price: 0,
+    image: "",
+    category: "",
+    year: "",
+    region: "",
+    varietal: "",
+    stock: 0,
+    featured: false,
+  })
+  const [loading, setLoading] = useState(false)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string>("")
+  const [editProduct, setEditProduct] = useState<Product | null>(null)
+  const [editForm, setEditForm] = useState<Omit<Product, "id"> | null>(null)
+  const [editImageFile, setEditImageFile] = useState<File | null>(null)
+  const [editImagePreview, setEditImagePreview] = useState<string>("")
+  const [editLoading, setEditLoading] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+
+  useEffect(() => {
+    getProducts().then(setProducts)
+  }, [])
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked, files } = e.target
+    if (name === "image" && files && files[0]) {
+      setImageFile(files[0])
+      setImagePreview(URL.createObjectURL(files[0]))
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      }))
+    }
+  }
+
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked, files } = e.target
+    if (name === "image" && files && files[0]) {
+      setEditImageFile(files[0])
+      setEditImagePreview(URL.createObjectURL(files[0]))
+    } else {
+      setEditForm((prev) => prev ? ({
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      }) : null)
+    }
+  }
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    let imageUrl = form.image
+    if (imageFile) {
+      const fileExt = imageFile.name.split('.').pop()
+      const fileName = `${form.slug || Date.now()}.${fileExt}`
+      const { data, error } = await supabase.storage.from('product-images').upload(fileName, imageFile, {
+        cacheControl: '3600',
+        upsert: true,
+      })
+      if (error) {
+        alert('Error subiendo imagen: ' + error.message)
+        setLoading(false)
+        return
+      }
+      const { data: publicUrlData } = supabase.storage.from('product-images').getPublicUrl(fileName)
+      imageUrl = publicUrlData.publicUrl
+    }
+    await createProduct({ ...form, image: imageUrl })
+    setProducts(await getProducts())
+    setForm({
+      name: "",
+      slug: "",
+      description: "",
+      price: 0,
+      image: "",
+      category: "",
+      year: "",
+      region: "",
+      varietal: "",
+      stock: 0,
+      featured: false,
+    })
+    setImageFile(null)
+    setImagePreview("")
+    setLoading(false)
+  }
+
+  const handleDelete = async (id: string) => {
+    setLoading(true)
+    await deleteProduct(id)
+    setProducts(await getProducts())
+    setLoading(false)
+  }
+
+  const openEditDialog = (product: Product) => {
+    setEditProduct(product)
+    setEditForm({ ...product })
+    setEditImageFile(null)
+    setEditImagePreview(product.image)
+    setEditDialogOpen(true)
+  }
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editProduct || !editForm) return
+    setEditLoading(true)
+    let imageUrl = editForm.image
+    if (editImageFile) {
+      const fileExt = editImageFile.name.split('.').pop()
+      const fileName = `${editForm.slug || Date.now()}.${fileExt}`
+      const { data, error } = await supabase.storage.from('product-images').upload(fileName, editImageFile, {
+        cacheControl: '3600',
+        upsert: true,
+      })
+      if (error) {
+        alert('Error subiendo imagen: ' + error.message)
+        setEditLoading(false)
+        return
+      }
+      const { data: publicUrlData } = supabase.storage.from('product-images').getPublicUrl(fileName)
+      imageUrl = publicUrlData.publicUrl
+    }
+    await import("@/lib/products").then(({ updateProduct }) =>
+      updateProduct(editProduct.id, { ...editForm, image: imageUrl })
+    )
+    setProducts(await getProducts())
+    setEditDialogOpen(false)
+    setEditProduct(null)
+    setEditForm(null)
+    setEditImageFile(null)
+    setEditImagePreview("")
+    setEditLoading(false)
+  }
+
+  if (!user?.is_admin) return null
+
+  return (
+    <section className="mt-12">
+      <h2 className="text-2xl font-bold mb-4">Admin Dashboard</h2>
+      <form onSubmit={handleAdd} className="grid grid-cols-2 gap-4 mb-8">
+        <Input name="name" value={form.name} onChange={handleChange} placeholder="Nombre" required />
+        <Input name="slug" value={form.slug} onChange={handleChange} placeholder="Slug" required />
+        <Input name="description" value={form.description} onChange={handleChange} placeholder="Descripción" required />
+        <Input name="price" type="number" value={form.price} onChange={handleChange} placeholder="Precio" required />
+        <Input name="category" value={form.category} onChange={handleChange} placeholder="Categoría" required />
+        <Input name="year" value={form.year} onChange={handleChange} placeholder="Año" required />
+        <Input name="region" value={form.region} onChange={handleChange} placeholder="Región" required />
+        <Input name="varietal" value={form.varietal} onChange={handleChange} placeholder="Varietal" required />
+        <Input name="stock" type="number" value={form.stock} onChange={handleChange} placeholder="Stock" required />
+        <label className="flex items-center gap-2 col-span-2">
+          <input type="checkbox" name="featured" checked={form.featured} onChange={handleChange} />
+          Destacado
+        </label>
+        <div className="col-span-2">
+          <label className="block mb-2 font-medium">Imagen del producto</label>
+          <input type="file" name="image" accept="image/*" onChange={handleChange} />
+          {imagePreview && (
+            <img src={imagePreview} alt="Preview" className="mt-2 h-24 object-contain border rounded" />
+          )}
+        </div>
+        <Button type="submit" disabled={loading} className="col-span-2">Agregar producto</Button>
+      </form>
+      <Table className="border border-gray-300">
+        <thead>
+          <tr>
+            <th className="border border-gray-300">Imagen</th>
+            <th className="border border-gray-300">Nombre</th>
+            <th className="border border-gray-300">Precio</th>
+            <th className="border border-gray-300">Categoría</th>
+            <th className="border border-gray-300">Stock</th>
+            <th className="border border-gray-300">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {products.map((p) => (
+            <tr key={p.id}>
+              <td className="border border-gray-300">{p.image && <img src={p.image} alt={p.name} className="h-12 w-12 object-contain rounded" />}</td>
+              <td className="border border-gray-300">{p.name}</td>
+              <td className="border border-gray-300">${p.price}</td>
+              <td className="border border-gray-300">{p.category}</td>
+              <td className="border border-gray-300">{p.stock}</td>
+              <td className="border border-gray-300 space-x-2">
+                <Button variant="outline" size="sm" onClick={() => openEditDialog(p)} disabled={loading}>Editar</Button>
+                <Button variant="destructive" size="sm" onClick={() => handleDelete(p.id)} disabled={loading}>Eliminar</Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar producto</DialogTitle>
+          </DialogHeader>
+          {editForm && (
+            <form onSubmit={handleEditSubmit} className="grid grid-cols-2 gap-4">
+              <Input name="name" value={editForm.name} onChange={handleEditChange} placeholder="Nombre" required />
+              <Input name="slug" value={editForm.slug} onChange={handleEditChange} placeholder="Slug" required />
+              <Input name="description" value={editForm.description} onChange={handleEditChange} placeholder="Descripción" required />
+              <Input name="price" type="number" value={editForm.price} onChange={handleEditChange} placeholder="Precio" required />
+              <Input name="category" value={editForm.category} onChange={handleEditChange} placeholder="Categoría" required />
+              <Input name="year" value={editForm.year} onChange={handleEditChange} placeholder="Año" required />
+              <Input name="region" value={editForm.region} onChange={handleEditChange} placeholder="Región" required />
+              <Input name="varietal" value={editForm.varietal} onChange={handleEditChange} placeholder="Varietal" required />
+              <Input name="stock" type="number" value={editForm.stock} onChange={handleEditChange} placeholder="Stock" required />
+              <label className="flex items-center gap-2 col-span-2">
+                <input type="checkbox" name="featured" checked={editForm.featured} onChange={handleEditChange} />
+                Destacado
+              </label>
+              <div className="col-span-2">
+                <label className="block mb-2 font-medium">Imagen del producto</label>
+                <input type="file" name="image" accept="image/*" onChange={handleEditChange} />
+                {editImagePreview && (
+                  <img src={editImagePreview} alt="Preview" className="mt-2 h-24 object-contain border rounded" />
+                )}
+              </div>
+              <DialogFooter className="col-span-2 flex gap-2">
+                <Button type="submit" disabled={editLoading}>Guardar cambios</Button>
+                <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)} disabled={editLoading}>Cancelar</Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+    </section>
   )
 }
