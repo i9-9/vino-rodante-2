@@ -16,6 +16,31 @@ export default async function ProductsPage() {
   const products = await getProducts()
   const t = await getTranslations()
 
+  // Obtener regiones únicas de los productos
+  const uniqueRegions = Array.from(new Set(products.map(p => p.region))).filter(Boolean)
+
+  // Mapeo de regiones a traducción si existe
+  function getRegionLabel(region: string) {
+    // Normalizar para buscar en traducciones
+    const normalized = region
+      .toLowerCase()
+      .replace(/á/g, 'a')
+      .replace(/é/g, 'e')
+      .replace(/í/g, 'i')
+      .replace(/ó/g, 'o')
+      .replace(/ú/g, 'u')
+      .replace(/ñ/g, 'n')
+      .replace(/\s|\./g, '')
+      .replace(/-/g, '')
+    // Buscar en t.wineRegions
+    for (const key in t.wineRegions) {
+      if (key.toLowerCase().replace(/-/g, '').replace(/\s/g, '') === normalized) {
+        return t.wineRegions[key as keyof typeof t.wineRegions]
+      }
+    }
+    return region
+  }
+
   return (
     <div className="container px-4 py-12">
       <div className="mb-8">
@@ -66,24 +91,15 @@ export default async function ProductsPage() {
           <div className="border rounded-lg p-4">
             <h2 className="font-medium text-lg mb-3">{t.products.region}</h2>
             <div className="space-y-2">
-              <Button variant="ghost" className="w-full justify-start">
-                {t.wineRegions.france}
-              </Button>
-              <Button variant="ghost" className="w-full justify-start">
-                {t.wineRegions.italy}
-              </Button>
-              <Button variant="ghost" className="w-full justify-start">
-                {t.wineRegions.spain}
-              </Button>
-              <Button variant="ghost" className="w-full justify-start">
-                {t.wineRegions.unitedStates}
-              </Button>
-              <Button variant="ghost" className="w-full justify-start">
-                {t.wineRegions.argentina}
-              </Button>
-              <Button variant="ghost" className="w-full justify-start">
-                {t.wineRegions.chile}
-              </Button>
+              {uniqueRegions.length === 0 ? (
+                <span className="text-muted-foreground text-sm">{t.common.noResults}</span>
+              ) : (
+                uniqueRegions.map(region => (
+                  <Button key={region} variant="ghost" className="w-full justify-start">
+                    {getRegionLabel(region)}
+                  </Button>
+                ))
+              )}
             </div>
           </div>
         </div>

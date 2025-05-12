@@ -8,6 +8,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 export default function LanguageSwitcher() {
   const { language, setLanguage } = useLanguage()
 
+  const handleLanguageChange = (lang: "en" | "es") => {
+    document.cookie = `language=${lang}; path=/`;
+    window.location.reload();
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -20,10 +25,10 @@ export default function LanguageSwitcher() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setLanguage("en")} className={language === "en" ? "font-bold" : ""}>
+        <DropdownMenuItem onClick={() => handleLanguageChange("en")} className={language === "en" ? "font-bold" : ""}>
           English
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setLanguage("es")} className={language === "es" ? "font-bold" : ""}>
+        <DropdownMenuItem onClick={() => handleLanguageChange("es")} className={language === "es" ? "font-bold" : ""}>
           Español
         </DropdownMenuItem>
       </DropdownMenuContent>

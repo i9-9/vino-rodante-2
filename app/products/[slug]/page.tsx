@@ -4,6 +4,8 @@ import Image from "next/image"
 import { notFound } from "next/navigation"
 import { addToCart } from "@/lib/actions"
 import { getTranslations } from "@/lib/get-translations"
+import AddToCartButton from "@/components/add-to-cart-button"
+import type { Product } from "@/lib/types"
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const product = await getProductBySlug(params.slug)
@@ -59,12 +61,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
           <div className="mb-6">
             <p className="text-2xl font-bold mb-4">${product.price.toFixed(2)}</p>
-            <form action={addToCart} className="mb-6">
-              <input type="hidden" name="productId" value={product.id} />
-              <Button type="submit" size="lg" className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white">
-                {t.products.addToCart}
-              </Button>
-            </form>
+            <AddToCartButton product={product} label={t.products.addToCart} />
 
             <div className="flex items-center text-sm text-[#1F1F1F]/70 mb-4">
               <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>

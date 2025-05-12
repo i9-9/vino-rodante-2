@@ -13,20 +13,28 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
 import { useEffect, useState } from "react"
-import { getFeaturedProducts } from "@/lib/products"
+import { getFeaturedProducts, getProducts } from "@/lib/products"
 import type { Product } from "@/lib/types"
 
 export default function MegaMenu() {
   const t = useTranslations()
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
+  const [products, setProducts] = useState<Product[]>([])
 
   useEffect(() => {
-    async function fetchFeatured() {
-      const products = await getFeaturedProducts()
-      setFeaturedProducts(products)
+    async function fetchData() {
+      const featured = await getFeaturedProducts()
+      setFeaturedProducts(featured)
+      const allProducts = await getProducts()
+      setProducts(allProducts)
     }
-    fetchFeatured()
+    fetchData()
   }, [])
+
+  // Obtener regiones, varietales y categorías únicas
+  const uniqueRegions = Array.from(new Set(products.map(p => p.region))).filter(Boolean)
+  const uniqueVarietals = Array.from(new Set(products.map(p => p.varietal))).filter(Boolean)
+  const uniqueCategories = Array.from(new Set(products.map(p => p.category))).filter(Boolean)
 
   // Sample data for the megamenu
   const regions = [
@@ -93,10 +101,10 @@ export default function MegaMenu() {
                   <div className="col-span-3">
                     <h3 className="mb-3 text-lg font-medium border-b pb-2">{t.megamenu.byType}</h3>
                     <ul className="space-y-2">
-                      {types.map((type) => (
-                        <li key={type.href}>
-                          <Link href={type.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
-                            {type.name}
+                      {uniqueCategories.map((cat) => (
+                        <li key={cat}>
+                          <Link href={`/collections/${cat.toLowerCase()}`} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
+                            {cat}
                           </Link>
                         </li>
                       ))}
@@ -119,19 +127,19 @@ export default function MegaMenu() {
                     <h3 className="mb-3 text-lg font-medium border-b pb-2">{t.megamenu.byRegion}</h3>
                     <div className="grid grid-cols-2 gap-2">
                       <ul className="space-y-2">
-                        {regions.slice(0, 4).map((region) => (
-                          <li key={region.href}>
-                            <Link href={region.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
-                              {region.name}
+                        {uniqueRegions.slice(0, 4).map((region) => (
+                          <li key={region}>
+                            <Link href={`/collections/region/${region.toLowerCase().replace(/\s+/g, '-')}`} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
+                              {region}
                             </Link>
                           </li>
                         ))}
                       </ul>
                       <ul className="space-y-2">
-                        {regions.slice(4).map((region) => (
-                          <li key={region.href}>
-                            <Link href={region.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
-                              {region.name}
+                        {uniqueRegions.slice(4).map((region) => (
+                          <li key={region}>
+                            <Link href={`/collections/region/${region.toLowerCase().replace(/\s+/g, '-')}`} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
+                              {region}
                             </Link>
                           </li>
                         ))}
@@ -144,19 +152,19 @@ export default function MegaMenu() {
                     <h3 className="mb-3 text-lg font-medium border-b pb-2">{t.megamenu.byVarietal}</h3>
                     <div className="grid grid-cols-2 gap-2">
                       <ul className="space-y-2">
-                        {varietals.slice(0, 4).map((varietal) => (
-                          <li key={varietal.href}>
-                            <Link href={varietal.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
-                              {varietal.name}
+                        {uniqueVarietals.slice(0, 4).map((varietal) => (
+                          <li key={varietal}>
+                            <Link href={`/collections/varietal/${varietal.toLowerCase().replace(/\s+/g, '-')}`} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
+                              {varietal}
                             </Link>
                           </li>
                         ))}
                       </ul>
                       <ul className="space-y-2">
-                        {varietals.slice(4).map((varietal) => (
-                          <li key={varietal.href}>
-                            <Link href={varietal.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
-                              {varietal.name}
+                        {uniqueVarietals.slice(4).map((varietal) => (
+                          <li key={varietal}>
+                            <Link href={`/collections/varietal/${varietal.toLowerCase().replace(/\s+/g, '-')}`} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
+                              {varietal}
                             </Link>
                           </li>
                         ))}
