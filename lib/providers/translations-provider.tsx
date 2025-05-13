@@ -35,7 +35,7 @@ export function TranslationsProvider({ children }: { children: React.ReactNode }
   const setLanguage = (lang: Language) => {
     setLanguageState(lang)
     setTranslations(lang === "en" ? en : es)
-    localStorage.setItem("language", lang)
+      localStorage.setItem("language", lang)
   }
 
   return (

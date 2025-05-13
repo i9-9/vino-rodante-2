@@ -15,71 +15,43 @@ import {
 import { useEffect, useState } from "react"
 import { getFeaturedProducts, getProducts } from "@/lib/products"
 import type { Product } from "@/lib/types"
+import { getAllWineTypes, getAllWineRegions, getAllWineVarietals } from "@/lib/wine-data"
 
 export default function MegaMenu() {
   const t = useTranslations()
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
   const [products, setProducts] = useState<Product[]>([])
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchData() {
-      try {
-        const featured = await getFeaturedProducts()
-        setFeaturedProducts(featured)
-        const { data: allProducts = [] } = await getProducts()
-        setProducts(allProducts)
-      } catch (err) {
-        console.error('Error fetching menu data:', err)
-        setError('Failed to load menu data')
-      }
+      const featured = await getFeaturedProducts()
+      setFeaturedProducts(featured)
+      const allProducts = await getProducts()
+      setProducts(allProducts)
     }
     fetchData()
   }, [])
 
-  // Obtener regiones, varietales y categorías únicas con valores por defecto
-  const uniqueRegions = Array.from(new Set((products || []).map(p => p.region))).filter(Boolean)
-  const uniqueVarietals = Array.from(new Set((products || []).map(p => p.varietal))).filter(Boolean)
-  const uniqueCategories = Array.from(new Set((products || []).map(p => p.category))).filter(Boolean)
+  // Obtener regiones, varietales y categorías únicas
+  const uniqueRegions = Array.from(new Set(products.map(p => p.region))).filter(Boolean)
+  const uniqueVarietals = Array.from(new Set(products.map(p => p.varietal))).filter(Boolean)
+  const uniqueCategories = Array.from(new Set(products.map(p => p.category))).filter(Boolean)
 
-  // Sample data for the megamenu
-  const regions = [
-    { name: t.wineRegions.mendoza || "Mendoza", href: "/collections/region/mendoza" },
-    { name: t.wineRegions.valleDeUco || "Valle de Uco", href: "/collections/region/valle-de-uco" },
-    { name: t.wineRegions.sanJuan || "San Juan", href: "/collections/region/san-juan" },
-    { name: t.wineRegions.salta || "Salta", href: "/collections/region/salta" },
-    { name: t.wineRegions.rioNegro || "Río Negro", href: "/collections/region/rio-negro" },
-    { name: t.wineRegions.neuquen || "Neuquén", href: "/collections/region/neuquen" },
-    { name: t.wineRegions.laPampa || "La Pampa", href: "/collections/region/la-pampa" },
-    { name: t.wineRegions.catamarca || "Catamarca", href: "/collections/region/catamarca" },
-    { name: t.wineRegions.cordoba || "Córdoba", href: "/collections/region/cordoba" },
-    { name: t.wineRegions.jujuy || "Jujuy", href: "/collections/region/jujuy" },
-    { name: t.wineRegions.patagonia || "Patagonia", href: "/collections/region/patagonia" },
-    { name: t.wineRegions.cuyana || "Cuyana", href: "/collections/region/cuyana" },
-    { name: t.wineRegions.noroeste || "Noroeste", href: "/collections/region/noroeste" },
-    { name: t.wineRegions.centro || "Centro", href: "/collections/region/centro" },
-    { name: t.wineRegions.litoral || "Litoral", href: "/collections/region/litoral" }
-  ]
+  // Obtener datos usando las funciones centralizadas
+  const types = getAllWineTypes(t).map(type => ({
+    name: type.name,
+    href: `/collections/${type.slug}`
+  }))
 
-  const varietals = [
-    { name: t.wineVarietals?.malbec || "Malbec", href: "/collections/varietal/malbec" },
-    { name: t.wineVarietals?.cabernetSauvignon || "Cabernet Sauvignon", href: "/collections/varietal/cabernet-sauvignon" },
-    { name: t.wineVarietals?.merlot || "Merlot", href: "/collections/varietal/merlot" },
-    { name: t.wineVarietals?.pinotNoir || "Pinot Noir", href: "/collections/varietal/pinot-noir" },
-    { name: t.wineVarietals?.chardonnay || "Chardonnay", href: "/collections/varietal/chardonnay" },
-    { name: t.wineVarietals?.sauvignonBlanc || "Sauvignon Blanc", href: "/collections/varietal/sauvignon-blanc" },
-    { name: t.wineVarietals?.riesling || "Riesling", href: "/collections/varietal/riesling" },
-    { name: t.wineVarietals?.syrah || "Syrah", href: "/collections/varietal/syrah" },
-  ]
+  const regions = getAllWineRegions(t).map(region => ({
+    name: region.name,
+    href: `/collections/region/${region.slug}`
+  }))
 
-  const types = [
-    { name: t.navigation.redWines, href: "/collections/red" },
-    { name: t.navigation.whiteWines, href: "/collections/white" },
-    { name: t.navigation.sparklingWines, href: "/collections/sparkling" },
-    { name: t.wineTypes?.rose || "Rosé", href: "/collections/rose" },
-    { name: t.wineTypes?.dessert || "Postre", href: "/collections/dessert" },
-    { name: t.wineTypes?.fortified || "Fortificado", href: "/collections/fortified" },
-  ]
+  const varietals = getAllWineVarietals(t).map(varietal => ({
+    name: varietal.name,
+    href: `/collections/varietal/${varietal.slug}`
+  }))
 
   const collections = [
     { name: t.navigation.featured || t.megamenu.featured || "Destacados", href: "/collections/featured" },

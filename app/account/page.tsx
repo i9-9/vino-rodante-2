@@ -20,6 +20,8 @@ import type { Order, Product } from "@/lib/types"
 import { useTranslations } from "@/lib/providers/translations-provider"
 import { getProducts, createProduct, deleteProduct } from "@/lib/products"
 import { Table } from "@/components/ui/table"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { WINE_TYPES, WINE_REGIONS, WINE_VARIETALS, isValidWineType, isValidWineRegion, isValidWineVarietal, prettyLabel } from "@/lib/wine-data"
 
 interface Address {
   id: string
@@ -609,6 +611,7 @@ export default function AccountPage() {
 
 function AdminDashboard() {
   const { user } = useAuth()
+  const t = useTranslations()
   const [products, setProducts] = useState<Product[]>([])
   const [form, setForm] = useState<Omit<Product, "id">>({
     name: "",
@@ -759,15 +762,72 @@ function AdminDashboard() {
         <Input name="slug" value={form.slug} onChange={handleChange} placeholder="Slug" required />
         <Input name="description" value={form.description} onChange={handleChange} placeholder="Descripción" required />
         <Input name="price" type="number" value={form.price} onChange={handleChange} placeholder="Precio" required />
-        <Input name="category" value={form.category} onChange={handleChange} placeholder="Categoría" required />
+        
+        <div className="space-y-2">
+          <Label htmlFor="category">Tipo de Vino</Label>
+          <Select
+            value={form.category}
+            onValueChange={(value) => setForm(prev => ({ ...prev, category: value }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccionar tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(WINE_TYPES).map(([key, value]) => (
+                <SelectItem key={value} value={value}>
+                  {t.wineTypes[value as keyof typeof t.wineTypes] || prettyLabel(value)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="region">Región</Label>
+          <Select
+            value={form.region}
+            onValueChange={(value) => setForm(prev => ({ ...prev, region: value }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccionar región" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(WINE_REGIONS).map(([key, value]) => (
+                <SelectItem key={value} value={value}>
+                  {t.wineRegions[value as keyof typeof t.wineRegions] || prettyLabel(value)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="varietal">Varietal</Label>
+          <Select
+            value={form.varietal}
+            onValueChange={(value) => setForm(prev => ({ ...prev, varietal: value }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccionar varietal" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(WINE_VARIETALS).map(([key, value]) => (
+                <SelectItem key={value} value={value}>
+                  {t.wineVarietals[value as keyof typeof t.wineVarietals] || prettyLabel(value)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <Input name="year" value={form.year} onChange={handleChange} placeholder="Año" required />
-        <Input name="region" value={form.region} onChange={handleChange} placeholder="Región" required />
-        <Input name="varietal" value={form.varietal} onChange={handleChange} placeholder="Varietal" required />
         <Input name="stock" type="number" value={form.stock} onChange={handleChange} placeholder="Stock" required />
+        
         <label className="flex items-center gap-2 col-span-2">
           <input type="checkbox" name="featured" checked={form.featured} onChange={handleChange} />
           Destacado
         </label>
+        
         <div className="col-span-2">
           <label className="block mb-2 font-medium">Imagen del producto</label>
           <input type="file" name="image" accept="image/*" onChange={handleChange} />
@@ -775,15 +835,19 @@ function AdminDashboard() {
             <img src={imagePreview} alt="Preview" className="mt-2 h-24 object-contain border rounded" />
           )}
         </div>
+        
         <Button type="submit" disabled={loading} className="col-span-2">Agregar producto</Button>
       </form>
+
       <Table className="border border-gray-300">
         <thead>
           <tr>
             <th className="border border-gray-300">Imagen</th>
             <th className="border border-gray-300">Nombre</th>
             <th className="border border-gray-300">Precio</th>
-            <th className="border border-gray-300">Categoría</th>
+            <th className="border border-gray-300">Tipo</th>
+            <th className="border border-gray-300">Región</th>
+            <th className="border border-gray-300">Varietal</th>
             <th className="border border-gray-300">Stock</th>
             <th className="border border-gray-300">Acciones</th>
           </tr>
@@ -794,7 +858,9 @@ function AdminDashboard() {
               <td className="border border-gray-300">{p.image && <img src={p.image} alt={p.name} className="h-12 w-12 object-contain rounded" />}</td>
               <td className="border border-gray-300">{p.name}</td>
               <td className="border border-gray-300">${p.price}</td>
-              <td className="border border-gray-300">{p.category}</td>
+              <td className="border border-gray-300">{t.wineTypes[p.category as keyof typeof t.wineTypes] || prettyLabel(p.category)}</td>
+              <td className="border border-gray-300">{t.wineRegions[p.region as keyof typeof t.wineRegions] || prettyLabel(p.region)}</td>
+              <td className="border border-gray-300">{t.wineVarietals[p.varietal as keyof typeof t.wineVarietals] || prettyLabel(p.varietal)}</td>
               <td className="border border-gray-300">{p.stock}</td>
               <td className="border border-gray-300 space-x-2">
                 <Button variant="outline" size="sm" onClick={() => openEditDialog(p)} disabled={loading}>Editar</Button>
@@ -804,6 +870,7 @@ function AdminDashboard() {
           ))}
         </tbody>
       </Table>
+
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -815,15 +882,72 @@ function AdminDashboard() {
               <Input name="slug" value={editForm.slug} onChange={handleEditChange} placeholder="Slug" required />
               <Input name="description" value={editForm.description} onChange={handleEditChange} placeholder="Descripción" required />
               <Input name="price" type="number" value={editForm.price} onChange={handleEditChange} placeholder="Precio" required />
-              <Input name="category" value={editForm.category} onChange={handleEditChange} placeholder="Categoría" required />
+              
+              <div className="space-y-2">
+                <Label htmlFor="category">Tipo de Vino</Label>
+                <Select
+                  value={editForm.category}
+                  onValueChange={(value) => setEditForm(prev => prev ? { ...prev, category: value } : null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(WINE_TYPES).map(([key, value]) => (
+                      <SelectItem key={value} value={value}>
+                        {t.wineTypes[value as keyof typeof t.wineTypes] || prettyLabel(value)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="region">Región</Label>
+                <Select
+                  value={editForm.region}
+                  onValueChange={(value) => setEditForm(prev => prev ? { ...prev, region: value } : null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar región" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(WINE_REGIONS).map(([key, value]) => (
+                      <SelectItem key={value} value={value}>
+                        {t.wineRegions[value as keyof typeof t.wineRegions] || prettyLabel(value)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="varietal">Varietal</Label>
+                <Select
+                  value={editForm.varietal}
+                  onValueChange={(value) => setEditForm(prev => prev ? { ...prev, varietal: value } : null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar varietal" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(WINE_VARIETALS).map(([key, value]) => (
+                      <SelectItem key={value} value={value}>
+                        {t.wineVarietals[value as keyof typeof t.wineVarietals] || prettyLabel(value)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <Input name="year" value={editForm.year} onChange={handleEditChange} placeholder="Año" required />
-              <Input name="region" value={editForm.region} onChange={handleEditChange} placeholder="Región" required />
-              <Input name="varietal" value={editForm.varietal} onChange={handleEditChange} placeholder="Varietal" required />
               <Input name="stock" type="number" value={editForm.stock} onChange={handleEditChange} placeholder="Stock" required />
+              
               <label className="flex items-center gap-2 col-span-2">
                 <input type="checkbox" name="featured" checked={editForm.featured} onChange={handleEditChange} />
                 Destacado
               </label>
+              
               <div className="col-span-2">
                 <label className="block mb-2 font-medium">Imagen del producto</label>
                 <input type="file" name="image" accept="image/*" onChange={handleEditChange} />
@@ -831,6 +955,7 @@ function AdminDashboard() {
                   <img src={editImagePreview} alt="Preview" className="mt-2 h-24 object-contain border rounded" />
                 )}
               </div>
+              
               <DialogFooter className="col-span-2 flex gap-2">
                 <Button type="submit" disabled={editLoading}>Guardar cambios</Button>
                 <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)} disabled={editLoading}>Cancelar</Button>
