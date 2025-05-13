@@ -20,21 +20,27 @@ export default function MegaMenu() {
   const t = useTranslations()
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
   const [products, setProducts] = useState<Product[]>([])
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchData() {
-      const featured = await getFeaturedProducts()
-      setFeaturedProducts(featured)
-      const { data: allProducts } = await getProducts()
-      setProducts(allProducts)
+      try {
+        const featured = await getFeaturedProducts()
+        setFeaturedProducts(featured)
+        const { data: allProducts = [] } = await getProducts()
+        setProducts(allProducts)
+      } catch (err) {
+        console.error('Error fetching menu data:', err)
+        setError('Failed to load menu data')
+      }
     }
     fetchData()
   }, [])
 
-  // Obtener regiones, varietales y categorías únicas
-  const uniqueRegions = Array.from(new Set(products.map(p => p.region))).filter(Boolean)
-  const uniqueVarietals = Array.from(new Set(products.map(p => p.varietal))).filter(Boolean)
-  const uniqueCategories = Array.from(new Set(products.map(p => p.category))).filter(Boolean)
+  // Obtener regiones, varietales y categorías únicas con valores por defecto
+  const uniqueRegions = Array.from(new Set((products || []).map(p => p.region))).filter(Boolean)
+  const uniqueVarietals = Array.from(new Set((products || []).map(p => p.varietal))).filter(Boolean)
+  const uniqueCategories = Array.from(new Set((products || []).map(p => p.category))).filter(Boolean)
 
   // Sample data for the megamenu
   const regions = [
