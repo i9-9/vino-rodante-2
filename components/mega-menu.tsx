@@ -25,7 +25,7 @@ export default function MegaMenu() {
     async function fetchData() {
       const featured = await getFeaturedProducts()
       setFeaturedProducts(featured)
-      const allProducts = await getProducts()
+      const { data: allProducts } = await getProducts()
       setProducts(allProducts)
     }
     fetchData()

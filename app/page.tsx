@@ -4,7 +4,7 @@ import AboutUs from "@/components/about-us"
 import { getProducts } from "@/lib/products"
 
 export default async function Home() {
-  const products = await getProducts()
+  const { data: products } = await getProducts()
 
   return (
     <main className="flex min-h-screen flex-col items-center">
