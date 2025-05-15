@@ -7,6 +7,8 @@ import { getTranslations } from "@/lib/get-translations"
 import AddToCartButton from "@/components/add-to-cart-button"
 import type { Product } from "@/lib/types"
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const product = await getProductBySlug(params.slug)
 
@@ -36,7 +38,27 @@ export default async function ProductPage({ params }: { params: { slug: string }
   const t = await getTranslations()
 
   if (!product) {
-    notFound()
+    return (
+      <div className="container py-12 text-center">
+        <h1 className="text-2xl font-bold mb-4">{t.products.title || "Producto no encontrado"}</h1>
+        <p className="text-gray-500">{t.products.description || "El producto solicitado no existe o fue eliminado."}</p>
+      </div>
+    )
+  }
+
+  // Validar campos esenciales
+  const requiredFields = [
+    "name", "slug", "description", "price", "image", "category", "year", "region", "varietal", "stock"
+  ]
+  const missingFields = requiredFields.filter(field => (product as any)[field] === null || (product as any)[field] === undefined || (product as any)[field] === "")
+
+  if (missingFields.length > 0) {
+    return (
+      <div className="container py-12 text-center">
+        <h1 className="text-2xl font-bold mb-4">{t.products.title || "Producto con información incompleta"}</h1>
+        <p className="text-gray-500">Faltan los siguientes campos: {missingFields.join(", ")}</p>
+      </div>
+    )
   }
 
   return (

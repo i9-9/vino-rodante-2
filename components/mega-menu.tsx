@@ -15,7 +15,7 @@ import {
 import { useEffect, useState } from "react"
 import { getFeaturedProducts, getProducts } from "@/lib/products"
 import type { Product } from "@/lib/types"
-import { getAllWineTypes, getAllWineRegions, getAllWineVarietals } from "@/lib/wine-data"
+import { getAllWineTypes, getAllWineRegions, getAllWineVarietals, prettyLabel } from "@/lib/wine-data"
 
 export default function MegaMenu() {
   const t = useTranslations()
@@ -45,11 +45,13 @@ export default function MegaMenu() {
 
   const regions = getAllWineRegions(t).map(region => ({
     name: region.name,
+    slug: region.slug,
     href: `/collections/region/${region.slug}`
   }))
 
   const varietals = getAllWineVarietals(t).map(varietal => ({
     name: varietal.name,
+    slug: varietal.slug,
     href: `/collections/varietal/${varietal.slug}`
   }))
 
@@ -79,10 +81,10 @@ export default function MegaMenu() {
                   <div className="col-span-3">
                     <h3 className="mb-3 text-lg font-medium border-b pb-2">{t.megamenu.byType}</h3>
                     <ul className="space-y-2">
-                      {uniqueCategories.map((cat) => (
-                        <li key={cat}>
-                          <Link href={`/collections/${cat.toLowerCase()}`} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
-                            {cat}
+                      {types.map((type) => (
+                        <li key={type.href}>
+                          <Link href={type.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
+                            {type.name}
                           </Link>
                         </li>
                       ))}
@@ -105,19 +107,19 @@ export default function MegaMenu() {
                     <h3 className="mb-3 text-lg font-medium border-b pb-2">{t.megamenu.byRegion}</h3>
                     <div className="grid grid-cols-2 gap-2">
                       <ul className="space-y-2">
-                        {uniqueRegions.slice(0, 4).map((region) => (
-                          <li key={region}>
-                            <Link href={`/collections/region/${region.toLowerCase().replace(/\s+/g, '-')}`} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
-                              {region}
+                        {regions.slice(0, Math.ceil(regions.length / 2)).map((region) => (
+                          <li key={region.href}>
+                            <Link href={region.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
+                              {t.wineRegions[region.slug as keyof typeof t.wineRegions] || prettyLabel(region.slug)}
                             </Link>
                           </li>
                         ))}
                       </ul>
                       <ul className="space-y-2">
-                        {uniqueRegions.slice(4).map((region) => (
-                          <li key={region}>
-                            <Link href={`/collections/region/${region.toLowerCase().replace(/\s+/g, '-')}`} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
-                              {region}
+                        {regions.slice(Math.ceil(regions.length / 2)).map((region) => (
+                          <li key={region.href}>
+                            <Link href={region.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
+                              {t.wineRegions[region.slug as keyof typeof t.wineRegions] || prettyLabel(region.slug)}
                             </Link>
                           </li>
                         ))}
@@ -130,19 +132,19 @@ export default function MegaMenu() {
                     <h3 className="mb-3 text-lg font-medium border-b pb-2">{t.megamenu.byVarietal}</h3>
                     <div className="grid grid-cols-2 gap-2">
                       <ul className="space-y-2">
-                        {uniqueVarietals.slice(0, 4).map((varietal) => (
-                          <li key={varietal}>
-                            <Link href={`/collections/varietal/${varietal.toLowerCase().replace(/\s+/g, '-')}`} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
-                              {varietal}
+                        {varietals.slice(0, Math.ceil(varietals.length / 2)).map((varietal) => (
+                          <li key={varietal.href}>
+                            <Link href={varietal.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
+                              {t.wineVarietals[varietal.slug as keyof typeof t.wineVarietals] || prettyLabel(varietal.slug)}
                             </Link>
                           </li>
                         ))}
                       </ul>
                       <ul className="space-y-2">
-                        {uniqueVarietals.slice(4).map((varietal) => (
-                          <li key={varietal}>
-                            <Link href={`/collections/varietal/${varietal.toLowerCase().replace(/\s+/g, '-')}`} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
-                              {varietal}
+                        {varietals.slice(Math.ceil(varietals.length / 2)).map((varietal) => (
+                          <li key={varietal.href}>
+                            <Link href={varietal.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
+                              {t.wineVarietals[varietal.slug as keyof typeof t.wineVarietals] || prettyLabel(varietal.slug)}
                             </Link>
                           </li>
                         ))}

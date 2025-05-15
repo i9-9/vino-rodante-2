@@ -12,17 +12,58 @@ export const metadata: Metadata = {
   title: "Vino Rodante | Selección de Vinos Finos",
   description:
     "Descubre vinos excepcionales de todo el mundo, cuidadosamente seleccionados para los paladares más exigentes.",
+  keywords: [
+    "vino", "wine", "argentina", "malbec", "cabernet", "chardonnay", "vinos online", "ecommerce vino", "vinorodante", "comprar vino", "vinos argentinos"
+  ],
+  openGraph: {
+    title: "Vino Rodante | El Vino Rueda en el Tiempo y Crece con la Historia",
+    description: "Tienda online rodante de vinos de toda la Argentina.",
+    url: "https://vinorodante.com",
+    siteName: "Vino Rodante",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Vino Rodante - El Vino Rueda en el Tiempo y Crece con la Historia"
+      }
+    ],
+    locale: "es_AR",
+    type: "website"
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vino Rodante | El Vino Rueda en el Tiempo y Crece con la Historia",
+    description: "Tienda online rodante de vinos de toda la Argentina.",
+    site: "@vinorodante",
+    creator: "@vinorodante",
+    images: [
+      "/og-image.jpg"
+    ]
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1
+    }
+  },
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
     ],
     apple: "/logo/logo_vr.svg",
   },
-  keywords: ["vino", "wine", "argentina", "malbec", "cabernet", "chardonnay", "wines", "vinos", "ecommerce"],
+  alternates: {
+    canonical: "https://vinorodante.com"
+  },
   authors: [{ name: "Vino Rodante" }],
   creator: "Vino Rodante",
   publisher: "Vino Rodante",
-  generator: 'v0.dev',
 }
 
 export const viewport: Viewport = {
@@ -38,6 +79,8 @@ export default function RootLayout({
     <html lang="es">
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#5B0E2D" />
       </head>
       <body className="antialiased min-h-screen bg-background text-foreground">
         <TranslationsProvider>
