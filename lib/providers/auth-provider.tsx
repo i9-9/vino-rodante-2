@@ -79,34 +79,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[Auth] Auth state changed:', event, session)
-      setSession(session)
+      
+      try {
+        setSession(session)
 
-      if (session?.user) {
-        try {
-          const { data: customer, error: customerError } = await supabase
-            .from("customers")
-            .select("is_admin")
-            .eq("id", session.user.id)
-            .single()
+        if (session?.user) {
+          try {
+            const { data: customer, error: customerError } = await supabase
+              .from("customers")
+              .select("is_admin")
+              .eq("id", session.user.id)
+              .single()
 
-          if (customerError) {
-            console.error('[Auth] Error fetching customer:', customerError)
+            if (customerError) {
+              console.error('[Auth] Error fetching customer:', customerError)
+              setUser(session.user)
+            } else {
+              setUser({ ...session.user, is_admin: customer?.is_admin })
+            }
+          } catch (err) {
+            console.error('[Auth] Exception fetching customer:', err)
             setUser(session.user)
-          } else {
-            setUser({ ...session.user, is_admin: customer?.is_admin })
           }
-        } catch (err) {
-          console.error('[Auth] Exception fetching customer:', err)
-          setUser(session.user)
+        } else {
+          setUser(null)
         }
-      } else {
+      } catch (err) {
+        console.error('[Auth] Exception in auth state change:', err)
         setUser(null)
+        setSession(null)
+      } finally {
+        setIsLoading(false)
       }
-      setIsLoading(false)
     })
 
     return () => {
-      subscription.unsubscribe()
+      try {
+        subscription.unsubscribe()
+      } catch (err) {
+        console.error('[Auth] Error unsubscribing:', err)
+      }
     }
   }, [])
 
