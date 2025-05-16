@@ -85,7 +85,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
             <p className="text-2xl font-bold mb-4">${product.price.toFixed(2)}</p>
             <AddToCartButton product={product} label={t.products.addToCart} />
 
-            <div className="flex items-center text-sm text-[#1F1F1F]/70 mb-4">
+            <div className="flex items-center text-sm text-[#1F1F1F]/70 mb-4 mt-10">
               <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
               <span>
                 {product.stock > 0 

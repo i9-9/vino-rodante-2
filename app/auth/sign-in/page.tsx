@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -14,33 +14,46 @@ import { useTranslations } from "@/lib/providers/translations-provider"
 
 export default function SignIn() {
   const router = useRouter()
-  const { signIn } = useAuth()
+  const auth = useAuth()
+  const { signIn, user, isLoading: authLoading, session } = auth
   const t = useTranslations()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
+    setSubmitted(false)
 
     try {
-      const { error } = await signIn(email, password)
-      if (error) {
-        setError(error.message)
+      const result = await signIn(email, password)
+      console.log('[SignIn] signIn result:', result)
+      if (result.error) {
+        setError(result.error.message)
+        setIsLoading(false)
       } else {
-        router.push("/")
-        router.refresh()
+        setSubmitted(true)
       }
     } catch (err) {
       setError("An unexpected error occurred")
-      console.error(err)
-    } finally {
+      console.error('[SignIn] Exception:', err)
       setIsLoading(false)
     }
   }
+
+  React.useEffect(() => {
+    if (submitted && user && !authLoading) {
+      router.push("/")
+    }
+  }, [submitted, user, authLoading, router])
+
+  React.useEffect(() => {
+    console.log('[SignIn] Render. Auth context:', { user, authLoading, session })
+  }, [user, authLoading, session])
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] flex-col items-center justify-center py-12">
@@ -56,7 +69,7 @@ export default function SignIn() {
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="email">{t.auth.email || "Email"}</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 name="email"
@@ -71,7 +84,7 @@ export default function SignIn() {
 
             <div>
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">{t.auth.password || "Contraseña"}</Label>
+                <Label htmlFor="password">Contraseña</Label>
                 <Link
                   href="/auth/reset-password"
                   className="text-sm font-medium text-[#A83935] hover:text-[#A83935]/80"

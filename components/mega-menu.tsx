@@ -1,4 +1,5 @@
 "use client"
+
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -12,55 +13,29 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
-import { useEffect, useState } from "react"
-import { getFeaturedProducts, getProducts } from "@/lib/products"
-import type { Product } from "@/lib/types"
+import { useProducts, useFeaturedProducts } from "@/lib/hooks/use-products"
 import { getAllWineTypes, getAllWineRegions, getAllWineVarietals, prettyLabel } from "@/lib/wine-data"
+import { useRef } from "react"
 
-export default function MegaMenu() {
+export interface MegaMenuProps {
+  types: { name: string; href: string }[]
+  regions: { name: string; slug: string; href: string }[]
+  varietals: { name: string; slug: string; href: string }[]
+  collections: { name: string; href: string }[]
+}
+
+export default function MegaMenu({ types, regions, varietals, collections }: MegaMenuProps) {
   const t = useTranslations()
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
-  const [products, setProducts] = useState<Product[]>([])
+  const { products, isLoading: isLoadingProducts, isError: isErrorProducts } = useProducts()
+  const { products: featuredProducts, isLoading: isLoadingFeatured, isError: isErrorFeatured } = useFeaturedProducts()
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
 
-  useEffect(() => {
-    async function fetchData() {
-      const featured = await getFeaturedProducts()
-      setFeaturedProducts(featured)
-      const allProducts = await getProducts()
-      setProducts(allProducts)
-    }
-    fetchData()
-  }, [])
-
-  // Obtener regiones, varietales y categorías únicas
-  const uniqueRegions = Array.from(new Set(products.map(p => p.region))).filter(Boolean)
-  const uniqueVarietals = Array.from(new Set(products.map(p => p.varietal))).filter(Boolean)
-  const uniqueCategories = Array.from(new Set(products.map(p => p.category))).filter(Boolean)
-
-  // Obtener datos usando las funciones centralizadas
-  const types = getAllWineTypes(t).map(type => ({
-    name: type.name,
-    href: `/collections/${type.slug}`
-  }))
-
-  const regions = getAllWineRegions(t).map(region => ({
-    name: region.name,
-    slug: region.slug,
-    href: `/collections/region/${region.slug}`
-  }))
-
-  const varietals = getAllWineVarietals(t).map(varietal => ({
-    name: varietal.name,
-    slug: varietal.slug,
-    href: `/collections/varietal/${varietal.slug}`
-  }))
-
-  const collections = [
-    { name: t.navigation.featured || t.megamenu.featured || "Destacados", href: "/collections/featured" },
-    { name: t.navigation.new || t.megamenu.newArrivals || "Novedades", href: "/collections/new-arrivals" },
-    { name: t.navigation.bestsellers || t.megamenu.bestsellers || "Más Vendidos", href: "/collections/bestsellers" },
-    { name: t.navigation.gifts || t.megamenu.giftSets || "Sets de Regalo", href: "/collections/gift-sets" },
-  ]
+  // Función para cerrar el menú programáticamente
+  const closeMenu = () => {
+    setTimeout(() => {
+      triggerRef.current?.click()
+    }, 50)
+  }
 
   return (
     <NavigationMenu className="hidden md:flex w-full justify-center">
@@ -72,7 +47,7 @@ export default function MegaMenu() {
         </NavigationMenuItem>
 
         <NavigationMenuItem>
-          <NavigationMenuTrigger>{t.navigation.products}</NavigationMenuTrigger>
+          <NavigationMenuTrigger ref={triggerRef}>{t.navigation.products}</NavigationMenuTrigger>
           <NavigationMenuContent>
             <div className="w-screen left-0 fixed">
               <div className="container mx-auto px-4 py-6 bg-background border border-border rounded-lg shadow-lg">
@@ -83,7 +58,7 @@ export default function MegaMenu() {
                     <ul className="space-y-2">
                       {types.map((type) => (
                         <li key={type.href}>
-                          <Link href={type.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
+                          <Link href={type.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={closeMenu}>
                             {type.name}
                           </Link>
                         </li>
@@ -94,7 +69,7 @@ export default function MegaMenu() {
                     <ul className="space-y-2">
                       {collections.map((collection) => (
                         <li key={collection.href}>
-                          <Link href={collection.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
+                          <Link href={collection.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={closeMenu}>
                             {collection.name}
                           </Link>
                         </li>
@@ -109,7 +84,7 @@ export default function MegaMenu() {
                       <ul className="space-y-2">
                         {regions.slice(0, Math.ceil(regions.length / 2)).map((region) => (
                           <li key={region.href}>
-                            <Link href={region.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
+                            <Link href={region.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={closeMenu}>
                               {t.wineRegions[region.slug as keyof typeof t.wineRegions] || prettyLabel(region.slug)}
                             </Link>
                           </li>
@@ -118,7 +93,7 @@ export default function MegaMenu() {
                       <ul className="space-y-2">
                         {regions.slice(Math.ceil(regions.length / 2)).map((region) => (
                           <li key={region.href}>
-                            <Link href={region.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
+                            <Link href={region.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={closeMenu}>
                               {t.wineRegions[region.slug as keyof typeof t.wineRegions] || prettyLabel(region.slug)}
                             </Link>
                           </li>
@@ -134,7 +109,7 @@ export default function MegaMenu() {
                       <ul className="space-y-2">
                         {varietals.slice(0, Math.ceil(varietals.length / 2)).map((varietal) => (
                           <li key={varietal.href}>
-                            <Link href={varietal.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
+                            <Link href={varietal.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={closeMenu}>
                               {t.wineVarietals[varietal.slug as keyof typeof t.wineVarietals] || prettyLabel(varietal.slug)}
                             </Link>
                           </li>
@@ -143,7 +118,7 @@ export default function MegaMenu() {
                       <ul className="space-y-2">
                         {varietals.slice(Math.ceil(varietals.length / 2)).map((varietal) => (
                           <li key={varietal.href}>
-                            <Link href={varietal.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">
+                            <Link href={varietal.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={closeMenu}>
                               {t.wineVarietals[varietal.slug as keyof typeof t.wineVarietals] || prettyLabel(varietal.slug)}
                             </Link>
                           </li>
@@ -152,36 +127,8 @@ export default function MegaMenu() {
                     </div>
                   </div>
 
-                  {/* Productos destacados - 3 columnas */}
-                  <div className="col-span-3 border-l pl-6">
-                    <h3 className="mb-3 text-lg font-medium border-b pb-2">{t.megamenu.featuredProduct}</h3>
-                    <div className="grid grid-cols-1 gap-4">
-                      {featuredProducts.length === 0 ? (
-                        <p className="text-muted-foreground text-sm">No hay productos destacados.</p>
-                      ) : (
-                        featuredProducts.map((product) => (
-                          <div key={product.id} className="flex items-center gap-3">
-                            <div className="w-16 h-16 overflow-hidden rounded-md bg-muted flex-shrink-0">
-                              <Image
-                                src={product.image || "/placeholder.svg"}
-                                alt={product.name}
-                                width={64}
-                                height={64}
-                                className="h-full w-full object-cover transition-transform hover:scale-105"
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <h4 className="font-medium text-sm">{product.name}</h4>
-                              <p className="text-xs text-muted-foreground line-clamp-2">{product.description}</p>
-                              <Link href={`/products/${product.slug}`} className="text-xs text-primary hover:underline mt-1 inline-block">
-                                {t.megamenu.viewDetails}
-                              </Link>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
+                  {/* Espacio vacío para mantener el grid */}
+                  <div className="col-span-3" />
                 </div>
               </div>
             </div>

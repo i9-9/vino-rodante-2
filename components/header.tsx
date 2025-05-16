@@ -20,6 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { getAllWineTypes, getAllWineRegions, getAllWineVarietals } from "@/lib/wine-data"
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -29,6 +30,27 @@ export default function Header() {
   const t = useTranslations()
 
   const cartItemsCount = cartItems.reduce((total, item) => total + item.quantity, 0)
+
+  const types = getAllWineTypes(t).map(type => ({
+    name: type.name,
+    href: `/collections/${type.slug}`,
+  }))
+  const regions = getAllWineRegions(t).map(region => ({
+    name: region.name,
+    slug: region.slug,
+    href: `/collections/region/${region.slug}`,
+  }))
+  const varietals = getAllWineVarietals(t).map(varietal => ({
+    name: varietal.name,
+    slug: varietal.slug,
+    href: `/collections/varietal/${varietal.slug}`,
+  }))
+  const collections = [
+    { name: t.navigation.featured || t.megamenu.featured || "Destacados", href: "/collections/featured" },
+    { name: t.navigation.new || t.megamenu.newArrivals || "Novedades", href: "/collections/new-arrivals" },
+    { name: t.navigation.bestsellers || t.megamenu.bestsellers || "Más Vendidos", href: "/collections/bestsellers" },
+    { name: t.navigation.gifts || t.megamenu.giftSets || "Sets de Regalo", href: "/collections/gift-sets" },
+  ]
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background">
@@ -51,7 +73,12 @@ export default function Header() {
         </Link>
 
         <div className="mx-auto flex flex-1 justify-center">
-          <MegaMenu />
+          <MegaMenu
+            types={types}
+            regions={regions}
+            varietals={varietals}
+            collections={collections}
+          />
         </div>
 
         <div className="flex items-center gap-2">

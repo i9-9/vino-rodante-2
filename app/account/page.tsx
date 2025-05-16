@@ -281,22 +281,35 @@ export default function AccountPage() {
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    await createProduct(form)
-    setProducts(await getProducts())
-    setForm({
-      name: "",
-      slug: "",
-      description: "",
-      price: 0,
-      image: "",
-      category: "",
-      year: "",
-      region: "",
-      varietal: "",
-      stock: 0,
-      featured: false,
-    })
-    setLoading(false)
+    console.log('[Admin] handleAddProduct: form data', form)
+    try {
+      const result = await createProduct(form)
+      console.log('[Admin] createProduct result:', result)
+      if (!result) {
+        alert('Error al crear el producto. Revisa la consola para más detalles.')
+      } else {
+        setProducts(await getProducts())
+        setForm({
+          name: "",
+          slug: "",
+          description: "",
+          price: 0,
+          image: "",
+          category: "",
+          year: "",
+          region: "",
+          varietal: "",
+          stock: 0,
+          featured: false,
+        })
+      }
+    } catch (err) {
+      console.error('[Admin] Exception in handleAddProduct:', err)
+      alert('Error inesperado al crear el producto. Revisa la consola para más detalles.')
+    } finally {
+      setLoading(false)
+      console.log('[Admin] setLoading(false) called in handleAddProduct')
+    }
   }
 
   const handleDeleteProduct = async (id: string) => {

@@ -1,5 +1,5 @@
-import { createClient } from "@supabase/supabase-js"
-import type { Database } from "./database.types"
+import { createBrowserClient } from '@supabase/ssr'
+import type { Database } from '@/lib/types'
 
 // Provide fallbacks to prevent runtime errors, but these won't work for actual API calls
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://vyiyvaqbyaywcysctcuv.supabase.co'
@@ -9,11 +9,7 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_A
   console.warn('Supabase credentials missing in environment variables. Using hardcoded values for development only.')
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    storageKey: 'vino-rodante-auth',
-  },
-})
+export const supabase = createBrowserClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)

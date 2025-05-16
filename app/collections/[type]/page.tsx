@@ -1,42 +1,49 @@
 "use client"
 
 import { useTranslations } from "@/lib/providers/translations-provider"
-import { getProductsByCategory } from "@/lib/products"
+import { getProducts } from "@/lib/products"
 import ProductCard from "@/components/product-card"
 import { useEffect, useState, use } from "react"
 import type { Product } from "@/lib/types"
+import { WINE_TYPES, isValidWineType, getWineTypeData } from "@/lib/wine-data"
 
 export default function CollectionPage({ params }: { params: Promise<{ type: string }> }) {
   const t = useTranslations()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const { type } = use(params)
-  
-  // Mapeo de tipos de vino a títulos
-  const typeTitles: Record<string, string> = {
-    red: t.navigation.redWines,
-    white: t.navigation.whiteWines,
-    sparkling: t.navigation.sparklingWines,
-    rose: t.wineTypes.rose,
-    dessert: t.wineTypes.dessert,
-    fortified: t.wineTypes.fortified
-  }
 
-  const title = typeTitles[type] || type
+  // Validar tipo
+  const isValid = isValidWineType(type)
+  const typeData = isValid ? getWineTypeData(type, t) : null
 
   useEffect(() => {
     async function loadProducts() {
       setLoading(true)
-      const filteredProducts = await getProductsByCategory(type)
-      setProducts(filteredProducts)
+      if (isValid) {
+        const allProducts = await getProducts()
+        const filteredProducts = allProducts.filter(p => p.category === type)
+        setProducts(filteredProducts)
+      } else {
+        setProducts([])
+      }
       setLoading(false)
     }
     loadProducts()
-  }, [type])
+  }, [type, isValid])
+
+  if (!isValid) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <h1 className="text-3xl font-bold mb-8">{t.products.title || "Colección no encontrada"}</h1>
+        <p className="text-muted-foreground">{t.products.description || "El tipo de vino solicitado no existe."}</p>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">{title}</h1>
+      <h1 className="text-3xl font-bold mb-8">{typeData?.name}</h1>
       {loading ? (
         <div className="text-center py-8">
           <p className="text-muted-foreground">Cargando productos...</p>

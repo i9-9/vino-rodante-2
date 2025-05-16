@@ -32,18 +32,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         data: { session },
       } = await supabase.auth.getSession()
       setSession(session)
+      console.log('[Auth] Initial session:', session)
       if (session?.user) {
-        // Fetch is_admin from customers
-        const { data: customer } = await supabase
-          .from("customers")
-          .select("is_admin")
-          .eq("id", session.user.id)
-          .single()
-        setUser({ ...session.user, is_admin: customer?.is_admin })
+        try {
+          console.log('[Auth] Fetching customer for user:', session.user.id)
+          const { data: customer, error } = await supabase
+            .from("customers")
+            .select("is_admin")
+            .eq("id", session.user.id)
+            .single()
+          console.log('[Auth] Fetched customer:', { customer, error })
+          if (error) {
+            console.error('[Auth] Error fetching customer in getInitialSession:', error)
+          }
+          if (!customer) {
+            console.warn('[Auth] No customer found for user:', session.user.id)
+          }
+          setUser({ ...session.user, is_admin: customer?.is_admin })
+          console.log('[Auth] Set user:', { ...session.user, is_admin: customer?.is_admin })
+        } catch (err) {
+          console.error('[Auth] Exception fetching customer in getInitialSession:', err)
+        }
       } else {
         setUser(null)
+        console.log('[Auth] No user in session, setUser(null)')
       }
       setIsLoading(false)
+      console.log('[Auth] isLoading set to false (initial)')
     }
 
     getInitialSession()
@@ -53,17 +68,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session)
+      console.log('[Auth] Auth state changed. New session:', session)
       if (session?.user) {
-        const { data: customer } = await supabase
-          .from("customers")
-          .select("is_admin")
-          .eq("id", session.user.id)
-          .single()
-        setUser({ ...session.user, is_admin: customer?.is_admin })
+        try {
+          console.log('[Auth] Fetching customer for user:', session.user.id)
+          const { data: customer, error } = await supabase
+            .from("customers")
+            .select("is_admin")
+            .eq("id", session.user.id)
+            .single()
+          console.log('[Auth] Fetched customer:', { customer, error })
+          if (error) {
+            console.error('[Auth] Error fetching customer in onAuthStateChange:', error)
+          }
+          if (!customer) {
+            console.warn('[Auth] No customer found for user:', session.user.id)
+          }
+          setUser({ ...session.user, is_admin: customer?.is_admin })
+          console.log('[Auth] Set user:', { ...session.user, is_admin: customer?.is_admin })
+        } catch (err) {
+          console.error('[Auth] Exception fetching customer in onAuthStateChange:', err)
+        }
       } else {
         setUser(null)
+        console.log('[Auth] No user in session (onAuthStateChange), setUser(null)')
       }
       setIsLoading(false)
+      console.log('[Auth] isLoading set to false (onAuthStateChange)')
     })
 
     return () => {
@@ -87,11 +118,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // If signup is successful and we have user data, create a customer record
     if (data.user && !error) {
-      await supabase.from("customers").insert({
+      const { error: insertError } = await supabase.from("customers").insert({
         id: data.user.id,
         name: name,
         email: email,
       })
+      if (insertError) {
+        console.error('[Auth] Error inserting customer in signUp:', insertError)
+      } else {
+        console.log('[Auth] Customer inserted successfully in signUp')
+      }
+    }
+    if (error) {
+      console.error('[Auth] Error in supabase.auth.signUp:', error)
     }
 
     return { data, error }

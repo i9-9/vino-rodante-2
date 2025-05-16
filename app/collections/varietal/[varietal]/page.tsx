@@ -5,44 +5,45 @@ import { getProducts } from "@/lib/products"
 import ProductCard from "@/components/product-card"
 import { useEffect, useState, use } from "react"
 import type { Product } from "@/lib/types"
+import { WINE_VARIETALS, isValidWineVarietal, getWineVarietalData } from "@/lib/wine-data"
 
 export default function VarietalPage({ params }: { params: Promise<{ varietal: string }> }) {
   const t = useTranslations()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const { varietal } = use(params)
-  
-  // Mapeo de varietales a títulos
-  const varietalTitles: Record<string, string> = {
-    malbec: t.wineVarietals.malbec,
-    "cabernet-sauvignon": t.wineVarietals.cabernetSauvignon,
-    merlot: t.wineVarietals.merlot,
-    "pinot-noir": t.wineVarietals.pinotNoir,
-    chardonnay: t.wineVarietals.chardonnay,
-    "sauvignon-blanc": t.wineVarietals.sauvignonBlanc,
-    riesling: t.wineVarietals.riesling,
-    syrah: t.wineVarietals.syrah
-  }
 
-  const title = varietalTitles[varietal] || varietal
+  // Validar varietal
+  const isValid = isValidWineVarietal(varietal)
+  const varietalData = isValid ? getWineVarietalData(varietal, t) : null
 
   useEffect(() => {
     async function loadProducts() {
       setLoading(true)
-      const allProducts = await getProducts()
-      // Filtrar productos por varietal
-      const filteredProducts = allProducts.filter(
-        product => product.varietal.toLowerCase() === varietal.replace("-", " ")
-      )
-      setProducts(filteredProducts)
+      if (isValid) {
+        const allProducts = await getProducts()
+        const filteredProducts = allProducts.filter(p => p.varietal === varietal)
+        setProducts(filteredProducts)
+      } else {
+        setProducts([])
+      }
       setLoading(false)
     }
     loadProducts()
-  }, [varietal])
+  }, [varietal, isValid])
+
+  if (!isValid) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <h1 className="text-3xl font-bold mb-8">{t.products.title || "Varietal no encontrado"}</h1>
+        <p className="text-muted-foreground">{t.products.description || "El varietal solicitado no existe."}</p>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">{title}</h1>
+      <h1 className="text-3xl font-bold mb-8">{varietalData?.name}</h1>
       {loading ? (
         <div className="text-center py-8">
           <p className="text-muted-foreground">Cargando productos...</p>
