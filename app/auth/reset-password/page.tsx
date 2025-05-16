@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useTranslations } from "@/lib/providers/translations-provider"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Wine } from "lucide-react"
 
 export default function ResetPasswordPage() {
   const t = useTranslations()
@@ -20,37 +22,64 @@ export default function ResetPasswordPage() {
     setLoading(true)
     setMessage(null)
     setError(null)
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/update-password`,
-    })
-    if (error) {
-      setError(error.message)
-    } else {
-      setMessage(t.auth.resetPasswordEmailSent || "Te enviamos un email para restaurar tu contraseña.")
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/update-password`,
+      })
+
+      if (error) {
+        setError(error.message)
+      } else {
+        setMessage(t.auth.resetPasswordEmailSent || "Te enviamos un email para restaurar tu contraseña.")
+      }
+    } catch (err) {
+      console.error('[ResetPassword] Exception:', err)
+      setError(err instanceof Error ? err.message : "An unexpected error occurred")
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-50">
+    <div className="flex min-h-[calc(100vh-64px)] flex-col items-center justify-center py-12">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>{t.auth.resetPasswordTitle || "Restaurar contraseña"}</CardTitle>
+        <CardHeader className="space-y-1">
+          <div className="flex flex-col items-center text-center">
+            <Wine className="h-12 w-12 text-[#5B0E2D]" />
+            <CardTitle className="mt-4 text-2xl">Recuperar contraseña</CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              type="email"
-              placeholder={t.auth.email || "Email"}
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-            />
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? t.common.sending || "Enviando..." : t.auth.sendResetLink || "Enviar enlace de restauración"}
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            {message && (
+              <Alert>
+                <AlertDescription>{message}</AlertDescription>
+              </Alert>
+            )}
+            <div className="space-y-2">
+              <Input
+                id="email"
+                type="email"
+                placeholder="tu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+            <Button 
+              type="submit" 
+              className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white"
+              disabled={loading}
+            >
+              {loading ? "Enviando..." : "Enviar instrucciones"}
             </Button>
-            {message && <div className="text-green-600 text-sm mt-2">{message}</div>}
-            {error && <div className="text-red-600 text-sm mt-2">{error}</div>}
           </form>
         </CardContent>
       </Card>

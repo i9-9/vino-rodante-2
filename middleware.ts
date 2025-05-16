@@ -26,21 +26,28 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh session if expired - required for Server Components
-  const { data: { session }, error } = await supabase.auth.getSession()
+  try {
+    // Refresh session if expired - required for Server Components
+    const { data: { session }, error } = await supabase.auth.getSession()
 
-  if (error) {
-    console.error('[Auth] Error getting session in middleware:', error)
+    if (error) {
+      console.error('[Auth] Error getting session in middleware:', error)
+      // Don't throw here, just log the error and continue
+    }
+
+    // If no session and trying to access protected routes, redirect to login
+    if (!session && !request.nextUrl.pathname.startsWith('/auth')) {
+      const redirectUrl = new URL('/auth/sign-in', request.url)
+      redirectUrl.searchParams.set('redirectedFrom', request.nextUrl.pathname)
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    return response
+  } catch (error) {
+    console.error('[Auth] Unexpected error in middleware:', error)
+    // In case of unexpected errors, redirect to error page or show error message
+    return NextResponse.redirect(new URL('/error', request.url))
   }
-
-  // If no session and trying to access protected routes, redirect to login
-  if (!session && !request.nextUrl.pathname.startsWith('/auth')) {
-    const redirectUrl = new URL('/auth/sign-in', request.url)
-    redirectUrl.searchParams.set('redirectedFrom', request.nextUrl.pathname)
-    return NextResponse.redirect(redirectUrl)
-  }
-
-  return response
 }
 
 export const config = {

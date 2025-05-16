@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "@/lib/providers/translations-provider"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Wine } from "lucide-react"
 
 export default function UpdatePasswordPage() {
   const t = useTranslations()
@@ -22,6 +24,7 @@ export default function UpdatePasswordPage() {
     e.preventDefault()
     setMessage(null)
     setError(null)
+
     if (password.length < 6) {
       setError("La contraseña debe tener al menos 6 caracteres.")
       return
@@ -30,6 +33,7 @@ export default function UpdatePasswordPage() {
       setError("Las contraseñas no coinciden.")
       return
     }
+
     setLoading(true)
     try {
       const { error } = await supabase.auth.updateUser({ password })
@@ -44,39 +48,61 @@ export default function UpdatePasswordPage() {
         setTimeout(() => router.push("/auth/sign-in"), 2000)
       }
     } catch (err) {
-      setError("Ocurrió un error inesperado. Intenta nuevamente.")
+      console.error('[UpdatePassword] Exception:', err)
+      setError(err instanceof Error ? err.message : "Ocurrió un error inesperado. Intenta nuevamente.")
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-50">
+    <div className="flex min-h-[calc(100vh-64px)] flex-col items-center justify-center py-12">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>{t.auth.updatePasswordTitle || "Establecer nueva contraseña"}</CardTitle>
+        <CardHeader className="space-y-1">
+          <div className="flex flex-col items-center text-center">
+            <Wine className="h-12 w-12 text-[#5B0E2D]" />
+            <CardTitle className="mt-4 text-2xl">Actualizar contraseña</CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              type="password"
-              placeholder={t.auth.newPassword || "Nueva contraseña"}
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-            />
-            <Input
-              type="password"
-              placeholder={t.auth.confirmPassword || "Confirmar contraseña"}
-              value={confirm}
-              onChange={e => setConfirm(e.target.value)}
-              required
-            />
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? t.common.loading || "Guardando..." : t.auth.savePassword || "Guardar contraseña"}
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            {message && (
+              <Alert>
+                <AlertDescription>{message}</AlertDescription>
+              </Alert>
+            )}
+            <div className="space-y-2">
+              <Input
+                id="password"
+                type="password"
+                placeholder="Nueva contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+              />
+              <Input
+                id="confirm"
+                type="password"
+                placeholder="Confirmar contraseña"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+            <Button 
+              type="submit" 
+              className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white"
+              disabled={loading}
+            >
+              {loading ? "Actualizando..." : "Actualizar contraseña"}
             </Button>
-            {message && <div className="text-green-600 text-sm mt-2">{message}</div>}
-            {error && <div className="text-red-600 text-sm mt-2">{error}</div>}
           </form>
         </CardContent>
       </Card>
