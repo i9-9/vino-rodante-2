@@ -1,7 +1,7 @@
 import Hero from "@/components/hero"
 import ProductShowcase from "@/components/product-showcase"
 import AboutUs from "@/components/about-us"
-import { getProducts } from "@/lib/products"
+import { getProducts } from '@/lib/products-client'
 
 export default async function Home() {
   const products = await getProducts()

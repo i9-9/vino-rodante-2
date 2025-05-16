@@ -4,7 +4,7 @@ import type React from "react"
 
 import { createContext, useContext, useEffect, useState } from "react"
 import type { Session, User as SupabaseUser } from "@supabase/supabase-js"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 
 // Extiendo el tipo de usuario para incluir is_admin
 export type User = SupabaseUser & { is_admin?: boolean }
@@ -24,41 +24,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const supabase = createClient()
 
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-      setSession(session)
-      console.log('[Auth] Initial session:', session)
-      if (session?.user) {
-        try {
-          console.log('[Auth] Fetching customer for user:', session.user.id)
-          const { data: customer, error } = await supabase
-            .from("customers")
-            .select("is_admin")
-            .eq("id", session.user.id)
-            .single()
-          console.log('[Auth] Fetched customer:', { customer, error })
-          if (error) {
-            console.error('[Auth] Error fetching customer in getInitialSession:', error)
-          }
-          if (!customer) {
-            console.warn('[Auth] No customer found for user:', session.user.id)
-          }
-          setUser({ ...session.user, is_admin: customer?.is_admin })
-          console.log('[Auth] Set user:', { ...session.user, is_admin: customer?.is_admin })
-        } catch (err) {
-          console.error('[Auth] Exception fetching customer in getInitialSession:', err)
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error('[Auth] Error getting initial session:', error)
+          setUser(null)
+          setSession(null)
+          return
         }
-      } else {
+
+        setSession(session)
+        console.log('[Auth] Initial session:', session)
+
+        if (session?.user) {
+          try {
+            const { data: customer, error: customerError } = await supabase
+              .from("customers")
+              .select("is_admin")
+              .eq("id", session.user.id)
+              .single()
+
+            if (customerError) {
+              console.error('[Auth] Error fetching customer:', customerError)
+              setUser(session.user)
+            } else {
+              setUser({ ...session.user, is_admin: customer?.is_admin })
+            }
+          } catch (err) {
+            console.error('[Auth] Exception fetching customer:', err)
+            setUser(session.user)
+          }
+        } else {
+          setUser(null)
+        }
+      } catch (err) {
+        console.error('[Auth] Exception in getInitialSession:', err)
         setUser(null)
-        console.log('[Auth] No user in session, setUser(null)')
+        setSession(null)
+      } finally {
+        setIsLoading(false)
       }
-      setIsLoading(false)
-      console.log('[Auth] isLoading set to false (initial)')
     }
 
     getInitialSession()
@@ -66,35 +77,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[Auth] Auth state changed:', event, session)
       setSession(session)
-      console.log('[Auth] Auth state changed. New session:', session)
+
       if (session?.user) {
         try {
-          console.log('[Auth] Fetching customer for user:', session.user.id)
-          const { data: customer, error } = await supabase
+          const { data: customer, error: customerError } = await supabase
             .from("customers")
             .select("is_admin")
             .eq("id", session.user.id)
             .single()
-          console.log('[Auth] Fetched customer:', { customer, error })
-          if (error) {
-            console.error('[Auth] Error fetching customer in onAuthStateChange:', error)
+
+          if (customerError) {
+            console.error('[Auth] Error fetching customer:', customerError)
+            setUser(session.user)
+          } else {
+            setUser({ ...session.user, is_admin: customer?.is_admin })
           }
-          if (!customer) {
-            console.warn('[Auth] No customer found for user:', session.user.id)
-          }
-          setUser({ ...session.user, is_admin: customer?.is_admin })
-          console.log('[Auth] Set user:', { ...session.user, is_admin: customer?.is_admin })
         } catch (err) {
-          console.error('[Auth] Exception fetching customer in onAuthStateChange:', err)
+          console.error('[Auth] Exception fetching customer:', err)
+          setUser(session.user)
         }
       } else {
         setUser(null)
-        console.log('[Auth] No user in session (onAuthStateChange), setUser(null)')
       }
       setIsLoading(false)
-      console.log('[Auth] isLoading set to false (onAuthStateChange)')
     })
 
     return () => {
@@ -103,57 +111,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    return { error }
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      return { error }
+    } catch (err) {
+      console.error('[Auth] Exception in signIn:', err)
+      return { error: err }
+    }
   }
 
   const signUp = async (email: string, password: string, name: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { name },
-      },
-    })
-
-    // If signup is successful and we have user data, create a customer record
-    if (data.user && !error) {
-      const { error: insertError } = await supabase.from("customers").insert({
-        id: data.user.id,
-        name: name,
-        email: email,
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { name },
+        },
       })
-      if (insertError) {
-        console.error('[Auth] Error inserting customer in signUp:', insertError)
-      } else {
-        console.log('[Auth] Customer inserted successfully in signUp')
-      }
-    }
-    if (error) {
-      console.error('[Auth] Error in supabase.auth.signUp:', error)
-    }
 
-    return { data, error }
+      if (data.user && !error) {
+        const { error: insertError } = await supabase.from("customers").insert({
+          id: data.user.id,
+          name: name,
+          email: email,
+        })
+
+        if (insertError) {
+          console.error('[Auth] Error creating customer:', insertError)
+          return { data, error: insertError }
+        }
+      }
+
+      return { data, error }
+    } catch (err) {
+      console.error('[Auth] Exception in signUp:', err)
+      return { data: null, error: err }
+    }
   }
 
   const signOut = async () => {
     try {
-      // Primero limpiamos el estado local
       setUser(null)
       setSession(null)
       
-      // Luego cerramos sesión en Supabase
       const { error } = await supabase.auth.signOut()
       if (error) {
         console.error('[Auth] Error during signOut:', error)
-      } else {
-        console.log('[Auth] SignOut successful')
+        throw error
       }
       
       // Forzamos un refresh de la página para limpiar cualquier estado residual
       window.location.href = '/'
     } catch (err) {
       console.error('[Auth] Exception during signOut:', err)
+      throw err
     }
   }
 

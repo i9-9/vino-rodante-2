@@ -26,16 +26,16 @@ export default function RegionPage({ params }: { params: Promise<{ region: strin
         {isError ? (
           <div className="text-center py-12">
             <p className="text-lg text-red-500">Error al cargar productos. Revisa la consola para más detalles.</p>
-          </div>
+        </div>
         ) : products && products.length > 0 ? (
           <ProductGrid products={products} />
-        ) : (
+      ) : (
           <div className="text-center py-12">
             <p className="text-lg text-gray-500">
               {t.products.noProductsFound}
             </p>
-          </div>
-        )}
+        </div>
+      )}
       </LoadingError>
     </div>
   )

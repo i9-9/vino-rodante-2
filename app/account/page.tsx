@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/lib/providers/auth-provider"
-import { supabase } from "@/lib/supabase"
+import { createClient } from '@/lib/supabase/client'
 import { formatCurrency } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -18,7 +18,8 @@ import { Trash, Plus, Check, MapPin, Package } from "lucide-react"
 import { format } from "date-fns"
 import type { Order, Product } from "@/lib/types"
 import { useTranslations } from "@/lib/providers/translations-provider"
-import { getProducts, createProduct, deleteProduct } from "@/lib/products"
+import { getProducts } from '@/lib/products-client'
+import { createProduct, deleteProduct, updateProduct, uploadProductImage } from '@/lib/products-admin-client'
 import { Table } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { WINE_TYPES, WINE_REGIONS, WINE_VARIETALS, isValidWineType, isValidWineRegion, isValidWineVarietal, prettyLabel } from "@/lib/wine-data"
@@ -72,6 +73,7 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>("")
+  const supabase = createClient()
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -278,38 +280,31 @@ export default function AccountPage() {
     }
   }
 
-  const handleAddProduct = async (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    console.log('[Admin] handleAddProduct: form data', form)
-    try {
-      const result = await createProduct(form)
-      console.log('[Admin] createProduct result:', result)
-      if (!result) {
-        alert('Error al crear el producto. Revisa la consola para más detalles.')
-      } else {
-        setProducts(await getProducts())
-        setForm({
-          name: "",
-          slug: "",
-          description: "",
-          price: 0,
-          image: "",
-          category: "",
-          year: "",
-          region: "",
-          varietal: "",
-          stock: 0,
-          featured: false,
-        })
-      }
-    } catch (err) {
-      console.error('[Admin] Exception in handleAddProduct:', err)
-      alert('Error inesperado al crear el producto. Revisa la consola para más detalles.')
-    } finally {
-      setLoading(false)
-      console.log('[Admin] setLoading(false) called in handleAddProduct')
+    let imageUrl = form.image
+    if (imageFile) {
+      imageUrl = await uploadProductImage(imageFile, form.slug) || form.image
     }
+    await createProduct({ ...form, image: imageUrl })
+    setProducts(await getProducts())
+    setForm({
+      name: "",
+      slug: "",
+      description: "",
+      price: 0,
+      image: "",
+      category: "",
+      year: "",
+      region: "",
+      varietal: "",
+      stock: 0,
+      featured: false,
+    })
+    setImageFile(null)
+    setImagePreview("")
+    setLoading(false)
   }
 
   const handleDeleteProduct = async (id: string) => {
@@ -684,19 +679,7 @@ function AdminDashboard() {
     setLoading(true)
     let imageUrl = form.image
     if (imageFile) {
-      const fileExt = imageFile.name.split('.').pop()
-      const fileName = `${form.slug || Date.now()}.${fileExt}`
-      const { data, error } = await supabase.storage.from('product-images').upload(fileName, imageFile, {
-        cacheControl: '3600',
-        upsert: true,
-      })
-      if (error) {
-        alert('Error subiendo imagen: ' + error.message)
-        setLoading(false)
-        return
-      }
-      const { data: publicUrlData } = supabase.storage.from('product-images').getPublicUrl(fileName)
-      imageUrl = publicUrlData.publicUrl
+      imageUrl = await uploadProductImage(imageFile, form.slug) || form.image
     }
     await createProduct({ ...form, image: imageUrl })
     setProducts(await getProducts())
@@ -739,23 +722,9 @@ function AdminDashboard() {
     setEditLoading(true)
     let imageUrl = editForm.image
     if (editImageFile) {
-      const fileExt = editImageFile.name.split('.').pop()
-      const fileName = `${editForm.slug || Date.now()}.${fileExt}`
-      const { data, error } = await supabase.storage.from('product-images').upload(fileName, editImageFile, {
-        cacheControl: '3600',
-        upsert: true,
-      })
-      if (error) {
-        alert('Error subiendo imagen: ' + error.message)
-        setEditLoading(false)
-        return
-      }
-      const { data: publicUrlData } = supabase.storage.from('product-images').getPublicUrl(fileName)
-      imageUrl = publicUrlData.publicUrl
+      imageUrl = await uploadProductImage(editImageFile, editForm.slug) || editForm.image
     }
-    await import("@/lib/products").then(({ updateProduct }) =>
-      updateProduct(editProduct.id, { ...editForm, image: imageUrl })
-    )
+    await updateProduct(editProduct.id, { ...editForm, image: imageUrl })
     setProducts(await getProducts())
     setEditDialogOpen(false)
     setEditProduct(null)

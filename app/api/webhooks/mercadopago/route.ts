@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from '@/lib/supabase/server'
 import { getPaymentStatus } from "@/lib/mercadopago"
 
 export async function POST(request: NextRequest) {
@@ -13,6 +13,7 @@ export async function POST(request: NextRequest) {
 
     // Get payment details
     const paymentId = body.data.id
+    const supabase = await createClient()
     const paymentData = await getPaymentStatus(paymentId)
 
     if (!paymentData || !paymentData.external_reference) {

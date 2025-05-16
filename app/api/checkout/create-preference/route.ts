@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createPreference } from "@/lib/mercadopago"
 import { v4 as uuidv4 } from "uuid"
-import { supabase } from "@/lib/supabase"
+import { createClient } from '@/lib/supabase/server'
 import { cookies } from "next/headers"
 import { createServerClient } from "@supabase/ssr"
 
@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
       customerId = user.id
     } else {
       // Create or get customer by email for guest checkout
+      const supabase = await createClient()
       const { data: existingCustomer, error: customerFetchError } = await supabase
         .from("customers")
         .select("*")

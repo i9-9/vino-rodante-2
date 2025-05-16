@@ -1,33 +1,20 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { cookies } from "next/headers"
+import { cookies as nextCookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { getProductById, updateProductStock } from "./products"
-import { supabase } from "./supabase"
+import { createClient } from './supabase/server'
 import type { CartItem } from "./types"
 import { v4 as uuidv4 } from "uuid"
-import { createServerClient } from "@supabase/ssr"
 
 // Get the authenticated user from the server
 async function getUser() {
-  const cookieStore = cookies()
-
-  const supabaseServer = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        },
-      },
-    },
-  )
-
+  const cookieStore = await nextCookies()
+  const supabase = await createClient()
   const {
     data: { session },
-  } = await supabaseServer.auth.getSession()
+  } = await supabase.auth.getSession()
   return session?.user
 }
 
@@ -38,24 +25,24 @@ export async function subscribeToNewsletter(email: string) {
   }
 
   try {
-    // Check if email already exists
-    const { data: existingSubscriber } = await supabase
+    const { data: existingSubscriber } = await createClient()
       .from("newsletter_subscribers")
       .select("*")
       .eq("email", email)
       .single()
 
     if (existingSubscriber) {
-      return { success: true } // Already subscribed, but we don't tell the user
+      return { success: true }
     }
 
-    // Add new subscriber
-    const { error } = await supabase.from("newsletter_subscribers").insert([
-      {
-        email,
-        status: "active",
-      },
-    ])
+    const { error } = await createClient()
+      .from("newsletter_subscribers")
+      .insert([
+        {
+          email,
+          status: "active",
+        },
+      ])
 
     if (error) {
       console.error("Error subscribing to newsletter:", error)
@@ -83,7 +70,8 @@ export async function addToCart(formData: FormData) {
     return { error: "Producto no encontrado" }
   }
 
-  const cartCookie = cookies().get("cart")?.value
+  const cookieStore = await nextCookies()
+  const cartCookie = cookieStore.get("cart")?.value
   let cart: CartItem[] = []
 
   if (cartCookie) {
@@ -93,19 +81,16 @@ export async function addToCart(formData: FormData) {
   const existingItemIndex = cart.findIndex((item) => item.id === productId)
 
   if (existingItemIndex >= 0) {
-    // Increment quantity if item already in cart
     cart[existingItemIndex].quantity += 1
   } else {
-    // Add new item to cart
     cart.push({
       ...product,
       quantity: 1,
     })
   }
 
-  // Save cart to cookies
-  cookies().set("cart", JSON.stringify(cart), {
-    maxAge: 60 * 60 * 24 * 7, // 1 week
+  cookieStore.set("cart", JSON.stringify(cart), {
+    maxAge: 60 * 60 * 24 * 7,
     path: "/",
   })
 
@@ -121,7 +106,8 @@ export async function removeFromCart(formData: FormData) {
     return { error: "Se requiere el ID del producto" }
   }
 
-  const cartCookie = cookies().get("cart")?.value
+  const cookieStore = await nextCookies()
+  const cartCookie = cookieStore.get("cart")?.value
 
   if (!cartCookie) {
     return { error: "El carrito está vacío" }
@@ -129,12 +115,10 @@ export async function removeFromCart(formData: FormData) {
 
   let cart: CartItem[] = JSON.parse(cartCookie)
 
-  // Remove item from cart
   cart = cart.filter((item) => item.id !== productId)
 
-  // Save cart to cookies
-  cookies().set("cart", JSON.stringify(cart), {
-    maxAge: 60 * 60 * 24 * 7, // 1 week
+  cookieStore.set("cart", JSON.stringify(cart), {
+    maxAge: 60 * 60 * 24 * 7,
     path: "/",
   })
 
@@ -151,7 +135,8 @@ export async function updateCartItemQuantity(formData: FormData) {
     return { error: "Se requieren el ID del producto y la cantidad" }
   }
 
-  const cartCookie = cookies().get("cart")?.value
+  const cookieStore = await nextCookies()
+  const cartCookie = cookieStore.get("cart")?.value
 
   if (!cartCookie) {
     return { error: "El carrito está vacío" }
@@ -166,16 +151,13 @@ export async function updateCartItemQuantity(formData: FormData) {
   }
 
   if (quantity <= 0) {
-    // Remove item if quantity is 0 or less
     cart = cart.filter((item) => item.id !== productId)
   } else {
-    // Update quantity
     cart[itemIndex].quantity = quantity
   }
 
-  // Save cart to cookies
-  cookies().set("cart", JSON.stringify(cart), {
-    maxAge: 60 * 60 * 24 * 7, // 1 week
+  cookieStore.set("cart", JSON.stringify(cart), {
+    maxAge: 60 * 60 * 24 * 7,
     path: "/",
   })
 
@@ -185,14 +167,15 @@ export async function updateCartItemQuantity(formData: FormData) {
 }
 
 export async function clearCart() {
-  cookies().delete("cart")
+  const cookieStore = await nextCookies()
+  cookieStore.delete("cart")
   revalidatePath("/")
   return { success: true }
 }
 
 export async function createOrder(formData: FormData) {
-  // Get cart items
-  const cartCookie = cookies().get("cart")?.value
+  const cookieStore = await nextCookies()
+  const cartCookie = cookieStore.get("cart")?.value
 
   if (!cartCookie) {
     return { error: "El carrito está vacío" }
@@ -204,7 +187,6 @@ export async function createOrder(formData: FormData) {
     return { error: "El carrito está vacío" }
   }
 
-  // Get customer information from form
   const name = formData.get("name") as string
   const email = formData.get("email") as string
   const address1 = formData.get("address1") as string
@@ -214,41 +196,33 @@ export async function createOrder(formData: FormData) {
   const postalCode = formData.get("postalCode") as string
   const country = formData.get("country") as string
 
-  // Validate required fields
   if (!name || !email || !address1 || !city || !state || !postalCode || !country) {
     return { error: "Todos los campos requeridos deben ser completados" }
   }
 
-  // Calculate order totals
   const subtotal = cart.reduce((total, item) => total + item.price * item.quantity, 0)
-  const tax = subtotal * 0.21 // 21% IVA in Argentina
-  const shipping = subtotal > 10000 ? 0 : 1500 // Free shipping over 10,000 ARS
+  const tax = subtotal * 0.21
+  const shipping = subtotal > 10000 ? 0 : 1500
   const total = subtotal + tax + shipping
 
   try {
-    // Get authenticated user if available
     const user = await getUser()
-
-    // Create or get customer
     let customerId: string
 
     if (user) {
-      // Use the authenticated user's ID
       customerId = user.id
-
-      // Update customer name if needed
-      await supabase.from("customers").upsert({ id: user.id, name, email: user.email })
+      await createClient()
+        .from("customers")
+        .upsert({ id: user.id, name, email: user.email })
     } else {
-      // Create or get customer by email for guest checkout
-      const { data: existingCustomer, error: customerFetchError } = await supabase
+      const { data: existingCustomer, error: customerFetchError } = await createClient()
         .from("customers")
         .select("*")
         .eq("email", email)
         .single()
 
       if (customerFetchError || !existingCustomer) {
-        // Create new customer
-        const { data: newCustomer, error: customerCreateError } = await supabase
+        const { data: newCustomer, error: customerCreateError } = await createClient()
           .from("customers")
           .insert([{ name, email }])
           .select()
@@ -265,8 +239,7 @@ export async function createOrder(formData: FormData) {
       }
     }
 
-    // Create address
-    const { data: address, error: addressError } = await supabase
+    const { data: address, error: addressError } = await createClient()
       .from("addresses")
       .insert([
         {
@@ -288,23 +261,23 @@ export async function createOrder(formData: FormData) {
       return { error: "Error al crear la dirección" }
     }
 
-    // Create order
     const orderId = uuidv4()
-    const { error: orderError } = await supabase.from("orders").insert([
-      {
-        id: orderId,
-        user_id: customerId,
-        status: "pending",
-        total,
-      },
-    ])
+    const { error: orderError } = await createClient()
+      .from("orders")
+      .insert([
+        {
+          id: orderId,
+          user_id: customerId,
+          status: "pending",
+          total,
+        },
+      ])
 
     if (orderError) {
       console.error("Error creating order:", orderError)
       return { error: "Error al crear el pedido" }
     }
 
-    // Create order items
     const orderItems = cart.map((item) => ({
       order_id: orderId,
       product_id: item.id,
@@ -312,28 +285,25 @@ export async function createOrder(formData: FormData) {
       price: item.price,
     }))
 
-    const { error: orderItemsError } = await supabase.from("order_items").insert(orderItems)
+    const { error: orderItemsError } = await createClient()
+      .from("order_items")
+      .insert(orderItems)
 
     if (orderItemsError) {
       console.error("Error creating order items:", orderItemsError)
       return { error: "Error al crear los artículos del pedido" }
     }
 
-    // Update product stock
     for (const item of cart) {
       await updateProductStock(item.id, item.quantity)
     }
 
-    // Clear cart after successful order
-    cookies().delete("cart")
-
-    // Store order ID in cookies for confirmation page
-    cookies().set("lastOrder", orderId, {
-      maxAge: 60 * 60, // 1 hour
+    cookieStore.delete("cart")
+    cookieStore.set("lastOrder", orderId, {
+      maxAge: 60 * 60,
       path: "/",
     })
 
-    // Redirect to confirmation page
     redirect(`/checkout/confirmation?orderId=${orderId}`)
   } catch (error) {
     console.error("Error creating order:", error)

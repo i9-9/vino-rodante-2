@@ -1,4 +1,4 @@
-import { getProductBySlug, getProducts } from "@/lib/products"
+import { getProductBySlug, getProducts } from '@/lib/products-client'
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { notFound } from "next/navigation"

@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import type { CartItem } from "@/lib/types"
 import { formatCurrency } from "@/lib/utils"
 import { useAuth } from "@/lib/providers/auth-provider"
-import { supabase } from "@/lib/supabase"
+import { createClient } from '@/lib/supabase/client'
 import { useTranslations } from "@/lib/providers/translations-provider"
 import { MercadoPagoCheckout } from "@/components/ui/mercado-pago-checkout"
 import { useToast } from "@/components/ui/use-toast"
@@ -37,6 +37,7 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null)
   const [preferenceId, setPreferenceId] = useState<string | null>(null)
   const [step, setStep] = useState<"info" | "payment">("info")
+  const supabase = createClient()
 
   // Calculate totals
   const tax = subtotal * 0.21 // 21% IVA in Argentina

@@ -1,5 +1,5 @@
 import useSWR from 'swr'
-import { getProducts } from '@/lib/products'
+import { getProducts } from '@/lib/products-client'
 import type { Product } from '@/lib/types'
 
 export function useProducts() {

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Search } from "lucide-react"
 import { useTranslations } from "@/lib/providers/translations-provider"
-import { getProducts } from "@/lib/products"
+import { getProducts } from "@/lib/products-client"
 import type { Product } from "@/lib/types"
 import {
   CommandDialog,

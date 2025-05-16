@@ -1,4 +1,4 @@
-import { getProducts } from "@/lib/products"
+import { getProducts } from '@/lib/products-client'
 import ProductCard from "@/components/product-card"
 import { Button } from "@/components/ui/button"
 import { getTranslations } from "@/lib/get-translations"

@@ -1,7 +1,7 @@
 "use client"
 
 import { useTranslations } from "@/lib/providers/translations-provider"
-import { getProducts } from "@/lib/products"
+import { getProducts } from "@/lib/products-client"
 import ProductCard from "@/components/product-card"
 import { useEffect, useState, use } from "react"
 import type { Product } from "@/lib/types"
@@ -12,7 +12,7 @@ export default function CollectionPage({ params }: { params: Promise<{ type: str
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const { type } = use(params)
-
+  
   // Validar tipo
   const isValid = isValidWineType(type)
   const typeData = isValid ? getWineTypeData(type, t) : null
@@ -23,7 +23,7 @@ export default function CollectionPage({ params }: { params: Promise<{ type: str
       if (isValid) {
         const allProducts = await getProducts()
         const filteredProducts = allProducts.filter(p => p.category === type)
-        setProducts(filteredProducts)
+      setProducts(filteredProducts)
       } else {
         setProducts([])
       }

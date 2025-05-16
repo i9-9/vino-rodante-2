@@ -1,7 +1,7 @@
 "use client"
 
 import { useTranslations } from "@/lib/providers/translations-provider"
-import { getProducts } from "@/lib/products"
+import { getProducts } from "@/lib/products-client"
 import ProductCard from "@/components/product-card"
 import { useEffect, useState, use } from "react"
 import type { Product } from "@/lib/types"
@@ -12,7 +12,7 @@ export default function VarietalPage({ params }: { params: Promise<{ varietal: s
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const { varietal } = use(params)
-
+  
   // Validar varietal
   const isValid = isValidWineVarietal(varietal)
   const varietalData = isValid ? getWineVarietalData(varietal, t) : null
@@ -21,9 +21,9 @@ export default function VarietalPage({ params }: { params: Promise<{ varietal: s
     async function loadProducts() {
       setLoading(true)
       if (isValid) {
-        const allProducts = await getProducts()
+      const allProducts = await getProducts()
         const filteredProducts = allProducts.filter(p => p.varietal === varietal)
-        setProducts(filteredProducts)
+      setProducts(filteredProducts)
       } else {
         setProducts([])
       }
