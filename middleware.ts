@@ -1,12 +1,28 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// List of public routes that don't require authentication
+const publicRoutes = [
+  '/',
+  '/products',
+  '/collections',
+  '/about',
+  '/contact',
+  '/auth/sign-in',
+  '/auth/sign-up',
+  '/auth/reset-password',
+  '/auth/update-password',
+  '/auth/sign-up-success',
+]
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   })
+
+  let supabaseResponse = response
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,8 +35,13 @@ export async function middleware(request: NextRequest) {
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
             request.cookies.set(name, value)
-            response.cookies.set(name, value, options)
           })
+          supabaseResponse = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
         },
       },
     }
@@ -32,21 +53,27 @@ export async function middleware(request: NextRequest) {
 
     if (error) {
       console.error('[Auth] Error getting session in middleware:', error)
-      // Don't throw here, just log the error and continue
+      return supabaseResponse
     }
 
+    // Check if the current path is a public route
+    const isPublicRoute = publicRoutes.some(route => 
+      request.nextUrl.pathname === route || 
+      request.nextUrl.pathname.startsWith('/collections/') ||
+      request.nextUrl.pathname.startsWith('/products/')
+    )
+
     // If no session and trying to access protected routes, redirect to login
-    if (!session && !request.nextUrl.pathname.startsWith('/auth')) {
+    if (!session && !isPublicRoute && !request.nextUrl.pathname.startsWith('/auth')) {
       const redirectUrl = new URL('/auth/sign-in', request.url)
       redirectUrl.searchParams.set('redirectedFrom', request.nextUrl.pathname)
       return NextResponse.redirect(redirectUrl)
     }
 
-    return response
+    return supabaseResponse
   } catch (error) {
     console.error('[Auth] Unexpected error in middleware:', error)
-    // In case of unexpected errors, redirect to error page or show error message
-    return NextResponse.redirect(new URL('/error', request.url))
+    return supabaseResponse
   }
 }
 

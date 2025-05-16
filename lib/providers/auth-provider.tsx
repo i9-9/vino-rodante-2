@@ -112,11 +112,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      return { error }
+      setIsLoading(true)
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      
+      if (error) {
+        console.error('[Auth] Error signing in:', error)
+        return { error }
+      }
+
+      // Wait for the session to be set
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error('[Auth] Error getting session after sign in:', sessionError)
+        return { error: sessionError }
+      }
+
+      if (session?.user) {
+        try {
+          const { data: customer, error: customerError } = await supabase
+            .from("customers")
+            .select("is_admin")
+            .eq("id", session.user.id)
+            .single()
+
+          if (customerError) {
+            console.error('[Auth] Error fetching customer:', customerError)
+            setUser(session.user)
+          } else {
+            setUser({ ...session.user, is_admin: customer?.is_admin })
+          }
+        } catch (err) {
+          console.error('[Auth] Exception fetching customer:', err)
+          setUser(session.user)
+        }
+      }
+
+      return { error: null }
     } catch (err) {
       console.error('[Auth] Exception in signIn:', err)
       return { error: err }
+    } finally {
+      setIsLoading(false)
     }
   }
 
