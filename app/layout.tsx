@@ -79,7 +79,6 @@ export default function RootLayout({
     <html lang="es">
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#5B0E2D" />
       </head>
       <body className="antialiased min-h-screen bg-background text-foreground">
