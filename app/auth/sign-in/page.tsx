@@ -1,8 +1,7 @@
 "use client"
 
 import React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -21,39 +20,34 @@ export default function SignIn() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isLoading) return
+
     setIsLoading(true)
     setError(null)
-    setSubmitted(false)
 
     try {
-      const result = await signIn(email, password)
-      console.log('[SignIn] signIn result:', result)
-      if (result.error) {
-        setError(result.error.message)
+      const { error: signInError } = await signIn(email, password)
+      
+      if (signInError) {
+        setError(signInError.message)
         setIsLoading(false)
-      } else {
-        setSubmitted(true)
+        return
       }
     } catch (err) {
-      setError("An unexpected error occurred")
       console.error('[SignIn] Exception:', err)
+      setError(err instanceof Error ? err.message : "An unexpected error occurred")
       setIsLoading(false)
     }
   }
 
-  React.useEffect(() => {
-    if (submitted && user && !authLoading) {
+  useEffect(() => {
+    if (user && !authLoading) {
       router.push("/")
     }
-  }, [submitted, user, authLoading, router])
-
-  React.useEffect(() => {
-    console.log('[SignIn] Render. Auth context:', { user, authLoading, session })
-  }, [user, authLoading, session])
+  }, [user, authLoading, router])
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] flex-col items-center justify-center py-12">
@@ -65,7 +59,11 @@ export default function SignIn() {
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+          {error && (
+            <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">
+              {error}
+            </div>
+          )}
 
           <div className="space-y-4">
             <div>
@@ -79,6 +77,7 @@ export default function SignIn() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="mt-1"
+                disabled={isLoading}
               />
             </div>
 
@@ -101,11 +100,16 @@ export default function SignIn() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1"
+                disabled={isLoading}
               />
             </div>
           </div>
 
-          <Button type="submit" className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white" disabled={isLoading}>
+          <Button 
+            type="submit" 
+            className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white" 
+            disabled={isLoading}
+          >
             {isLoading ? t.common.loading || "Ingresando..." : t.auth.signIn.title || "Iniciar sesión"}
           </Button>
 

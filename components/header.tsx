@@ -69,6 +69,10 @@ export default function Header() {
             style={{ height: 40, width: 'auto' }}
             priority
             quality={100}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = "/logo/logo2.svg";
+            }}
           />
         </Link>
 

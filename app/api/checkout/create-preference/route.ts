@@ -3,29 +3,6 @@ import { createPreference } from "@/lib/mercadopago"
 import { v4 as uuidv4 } from "uuid"
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from "next/headers"
-import { createServerClient } from "@supabase/ssr"
-
-// Get the authenticated user from the server
-async function getUser() {
-  const cookieStore = cookies()
-
-  const supabaseServer = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        },
-      },
-    },
-  )
-
-  const {
-    data: { session },
-  } = await supabaseServer.auth.getSession()
-  return session?.user
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,7 +13,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Get authenticated user if available
-    const user = await getUser()
+    const supabase = await createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user
 
     // Create or get customer
     let customerId: string
@@ -46,7 +25,6 @@ export async function POST(request: NextRequest) {
       customerId = user.id
     } else {
       // Create or get customer by email for guest checkout
-      const supabase = await createClient()
       const { data: existingCustomer, error: customerFetchError } = await supabase
         .from("customers")
         .select("*")
