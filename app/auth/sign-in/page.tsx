@@ -36,6 +36,10 @@ export default function SignIn() {
         setIsLoading(false)
         return
       }
+
+      // Redirigir inmediatamente después de un login exitoso
+      const redirectTo = new URLSearchParams(window.location.search).get('redirectedFrom') || '/'
+      router.push(redirectTo)
     } catch (err) {
       console.error('[SignIn] Exception:', err)
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
@@ -43,11 +47,13 @@ export default function SignIn() {
     }
   }
 
+  // Este useEffect ahora solo maneja la redirección si el usuario ya está autenticado al cargar la página
   useEffect(() => {
-    if (user && !authLoading) {
-      router.push("/")
+    if (user && !authLoading && !isLoading) {
+      const redirectTo = new URLSearchParams(window.location.search).get('redirectedFrom') || '/'
+      router.push(redirectTo)
     }
-  }, [user, authLoading, router])
+  }, [user, authLoading, router, isLoading])
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] flex-col items-center justify-center py-12">
