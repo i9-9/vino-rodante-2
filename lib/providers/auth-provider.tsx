@@ -1,10 +1,9 @@
 "use client"
 
 import type React from "react"
-
 import { createContext, useContext, useEffect, useState } from "react"
 import type { Session, User as SupabaseUser } from "@supabase/supabase-js"
-import { createClient } from "@/lib/supabase/client"
+import { createBrowserClient } from '@supabase/ssr'
 
 // Extiendo el tipo de usuario para incluir is_admin
 export type User = SupabaseUser & { is_admin?: boolean }
@@ -24,12 +23,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClient()
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
+    const initializeAuth = async () => {
       try {
+        // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
@@ -40,7 +43,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         setSession(session)
-        console.log('[Auth] Initial session:', session)
 
         if (session?.user) {
           try {
@@ -64,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null)
         }
       } catch (err) {
-        console.error('[Auth] Exception in getInitialSession:', err)
+        console.error('[Auth] Exception in initializeAuth:', err)
         setUser(null)
         setSession(null)
       } finally {
@@ -72,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    getInitialSession()
+    initializeAuth()
 
     // Listen for auth changes
     const {
@@ -114,11 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
 
     return () => {
-      try {
-        subscription.unsubscribe()
-      } catch (err) {
-        console.error('[Auth] Error unsubscribing:', err)
-      }
+      subscription.unsubscribe()
     }
   }, [])
 
@@ -127,47 +125,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true)
       console.log('[Auth] Attempting sign in for:', email)
       
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
       
       if (error) {
         console.error('[Auth] Error signing in:', error)
         return { error }
-      }
-
-      console.log('[Auth] Sign in successful, getting session')
-      
-      // Wait for the session to be set
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
-      if (sessionError) {
-        console.error('[Auth] Error getting session after sign in:', sessionError)
-        return { error: sessionError }
-      }
-
-      if (!session?.user) {
-        console.error('[Auth] No user in session after sign in')
-        return { error: new Error('No user in session') }
-      }
-
-      console.log('[Auth] Session obtained, fetching customer data')
-      
-      try {
-        const { data: customer, error: customerError } = await supabase
-          .from("customers")
-          .select("is_admin")
-          .eq("id", session.user.id)
-          .single()
-
-        if (customerError) {
-          console.error('[Auth] Error fetching customer:', customerError)
-          setUser(session.user)
-        } else {
-          console.log('[Auth] Customer data fetched successfully')
-          setUser({ ...session.user, is_admin: customer?.is_admin })
-        }
-      } catch (err) {
-        console.error('[Auth] Exception fetching customer:', err)
-        setUser(session.user)
       }
 
       return { error: null }
@@ -212,14 +174,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      setUser(null)
-      setSession(null)
-      
       const { error } = await supabase.auth.signOut()
       if (error) {
         console.error('[Auth] Error during signOut:', error)
         throw error
       }
+      
+      setUser(null)
+      setSession(null)
       
       // Forzamos un refresh de la página para limpiar cualquier estado residual
       window.location.href = '/'

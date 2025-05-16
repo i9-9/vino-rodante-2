@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 // List of public routes that don't require authentication
@@ -32,14 +32,14 @@ export async function middleware(request: NextRequest) {
         get(name: string) {
           return request.cookies.get(name)?.value
         },
-        set(name: string, value: string, options: any) {
+        set(name: string, value: string, options: CookieOptions) {
           response.cookies.set({
             name,
             value,
             ...options,
           })
         },
-        remove(name: string, options: any) {
+        remove(name: string, options: CookieOptions) {
           response.cookies.set({
             name,
             value: '',
@@ -52,14 +52,14 @@ export async function middleware(request: NextRequest) {
 
   try {
     // Refresh session if expired - required for Server Components
-    const { data: { session }, error } = await supabase.auth.getSession()
+    const { data: { user }, error } = await supabase.auth.getUser()
 
     if (error) {
-      console.error('[Middleware] Error getting session:', error)
+      console.error('[Middleware] Error getting user:', error)
       return response
     }
 
-    console.log('[Middleware] Session status:', session ? 'active' : 'none')
+    console.log('[Middleware] Session status:', user ? 'active' : 'none')
 
     // Check if the current path is a public route
     const isPublicRoute = publicRoutes.some(route => 
@@ -68,8 +68,8 @@ export async function middleware(request: NextRequest) {
       request.nextUrl.pathname.startsWith('/products/')
     )
 
-    // If no session and trying to access protected routes, redirect to login
-    if (!session && !isPublicRoute && !request.nextUrl.pathname.startsWith('/auth')) {
+    // If no user and trying to access protected routes, redirect to login
+    if (!user && !isPublicRoute && !request.nextUrl.pathname.startsWith('/auth')) {
       console.log('[Middleware] Redirecting to login from:', request.nextUrl.pathname)
       const redirectUrl = new URL('/auth/sign-in', request.url)
       redirectUrl.searchParams.set('redirectedFrom', request.nextUrl.pathname)
