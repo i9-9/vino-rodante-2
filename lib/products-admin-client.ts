@@ -1,38 +1,20 @@
-import { createClient } from './supabase/client'
-import type { Product } from './types'
+import { createClient } from '@/lib/supabase/client'
+import { PostgrestError } from '@supabase/supabase-js'
+import { StorageError } from '@supabase/storage-js'
+import type { Product, ApiResponse } from './products-client'
 
-export async function createProduct(product: Omit<Product, "id">): Promise<Product | null> {
+export async function createProduct(product: Omit<Product, 'id' | 'created_at' | 'updated_at'>): Promise<ApiResponse<Product>> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from('products')
-    .insert(product)
+    .insert([product])
     .select()
     .single()
 
-  if (error) {
-    console.error('Error creating product:', error)
-    return null
-  }
-
-  return data
+  return { data, error }
 }
 
-export async function deleteProduct(id: string): Promise<boolean> {
-  const supabase = createClient()
-  const { error } = await supabase
-    .from('products')
-    .delete()
-    .eq('id', id)
-
-  if (error) {
-    console.error('Error deleting product:', error)
-    return false
-  }
-
-  return true
-}
-
-export async function updateProduct(id: string, product: Partial<Product>): Promise<Product | null> {
+export async function updateProduct(id: string, product: Partial<Omit<Product, 'id' | 'created_at' | 'updated_at'>>): Promise<ApiResponse<Product>> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from('products')
@@ -41,34 +23,36 @@ export async function updateProduct(id: string, product: Partial<Product>): Prom
     .select()
     .single()
 
-  if (error) {
-    console.error('Error updating product:', error)
-    return null
-  }
-
-  return data
+  return { data, error }
 }
 
-export async function uploadProductImage(file: File, slug: string): Promise<string | null> {
+export async function deleteProduct(id: string): Promise<ApiResponse<null>> {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('products')
+    .delete()
+    .eq('id', id)
+
+  return { data: null, error }
+}
+
+export async function uploadProductImage(file: File, slug: string): Promise<ApiResponse<string>> {
   const supabase = createClient()
   const fileExt = file.name.split('.').pop()
-  const fileName = `${slug || Date.now()}.${fileExt}`
-  
-  const { data, error } = await supabase.storage
-    .from('product-images')
-    .upload(fileName, file, {
-      cacheControl: '3600',
-      upsert: true,
-    })
+  const fileName = `${slug}-${Date.now()}.${fileExt}`
+  const filePath = `products/${fileName}`
 
-  if (error) {
-    console.error('Error uploading image:', error)
-    return null
+  const { error: uploadError } = await supabase.storage
+    .from('products')
+    .upload(filePath, file)
+
+  if (uploadError) {
+    return { data: null, error: uploadError }
   }
 
-  const { data: publicUrlData } = supabase.storage
-    .from('product-images')
-    .getPublicUrl(fileName)
+  const { data: { publicUrl } } = supabase.storage
+    .from('products')
+    .getPublicUrl(filePath)
 
-  return publicUrlData.publicUrl
+  return { data: publicUrl, error: null }
 } 

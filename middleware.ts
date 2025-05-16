@@ -16,32 +16,35 @@ const publicRoutes = [
 ]
 
 export async function middleware(request: NextRequest) {
+  console.log('[Middleware] Processing request:', request.nextUrl.pathname)
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   })
 
-  let supabaseResponse = response
-
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll()
+        get(name: string) {
+          return request.cookies.get(name)?.value
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value)
+        set(name: string, value: string, options: any) {
+          response.cookies.set({
+            name,
+            value,
+            ...options,
           })
-          supabaseResponse = NextResponse.next({
-            request,
+        },
+        remove(name: string, options: any) {
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
           })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
         },
       },
     }
@@ -52,9 +55,11 @@ export async function middleware(request: NextRequest) {
     const { data: { session }, error } = await supabase.auth.getSession()
 
     if (error) {
-      console.error('[Auth] Error getting session in middleware:', error)
-      return supabaseResponse
+      console.error('[Middleware] Error getting session:', error)
+      return response
     }
+
+    console.log('[Middleware] Session status:', session ? 'active' : 'none')
 
     // Check if the current path is a public route
     const isPublicRoute = publicRoutes.some(route => 
@@ -65,15 +70,16 @@ export async function middleware(request: NextRequest) {
 
     // If no session and trying to access protected routes, redirect to login
     if (!session && !isPublicRoute && !request.nextUrl.pathname.startsWith('/auth')) {
+      console.log('[Middleware] Redirecting to login from:', request.nextUrl.pathname)
       const redirectUrl = new URL('/auth/sign-in', request.url)
       redirectUrl.searchParams.set('redirectedFrom', request.nextUrl.pathname)
       return NextResponse.redirect(redirectUrl)
     }
 
-    return supabaseResponse
+    return response
   } catch (error) {
-    console.error('[Auth] Unexpected error in middleware:', error)
-    return supabaseResponse
+    console.error('[Middleware] Unexpected error:', error)
+    return response
   }
 }
 

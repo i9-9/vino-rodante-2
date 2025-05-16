@@ -4,12 +4,12 @@ import AboutUs from "@/components/about-us"
 import { getProducts } from '@/lib/products-client'
 
 export default async function Home() {
-  const products = await getProducts()
+  const { data: products, error } = await getProducts()
 
   return (
     <main className="flex min-h-screen flex-col items-center">
       <Hero />
-      <ProductShowcase products={products.slice(0, 4)} />
+      <ProductShowcase products={(products || []).slice(0, 4)} />
       <AboutUs />
     </main>
   )

@@ -20,9 +20,12 @@ import type { Order, Product } from "@/lib/types"
 import { useTranslations } from "@/lib/providers/translations-provider"
 import { getProducts } from '@/lib/products-client'
 import { createProduct, deleteProduct, updateProduct, uploadProductImage } from '@/lib/products-admin-client'
-import { Table } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { WINE_TYPES, WINE_REGIONS, WINE_VARIETALS, isValidWineType, isValidWineRegion, isValidWineVarietal, prettyLabel } from "@/lib/wine-data"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Checkbox } from "@/components/ui/checkbox"
+import { PostgrestError } from "@supabase/supabase-js"
 
 interface Address {
   id: string
@@ -71,8 +74,16 @@ export default function AccountPage() {
     featured: false,
   })
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>("")
+  const [editProduct, setEditProduct] = useState<Product | null>(null)
+  const [editForm, setEditForm] = useState<Omit<Product, "id"> | null>(null)
+  const [editImageFile, setEditImageFile] = useState<File | null>(null)
+  const [editImagePreview, setEditImagePreview] = useState<string>("")
+  const [editLoading, setEditLoading] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -283,35 +294,121 @@ export default function AccountPage() {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    let imageUrl = form.image
-    if (imageFile) {
-      imageUrl = await uploadProductImage(imageFile, form.slug) || form.image
+    setError(null)
+    setSuccess(null)
+
+    try {
+      let imageUrl = form.image
+      if (imageFile) {
+        const { data: uploadData, error: uploadError } = await uploadProductImage(imageFile, form.slug)
+        if (uploadError) {
+          setError(uploadError.message)
+          return
+        }
+        imageUrl = uploadData || form.image
+      }
+
+      const { data, error } = await createProduct({ ...form, image: imageUrl })
+      if (error) {
+        setError(error.message)
+        return
+      }
+
+      setSuccess('Product created successfully')
+      await getProducts()
+      setForm({
+        name: "",
+        slug: "",
+        description: "",
+        price: 0,
+        image: "",
+        category: "",
+        year: "",
+        region: "",
+        varietal: "",
+        stock: 0,
+        featured: false,
+      })
+      setImageFile(null)
+      setImagePreview("")
+    } catch (err) {
+      console.error('[AdminDashboard] Error creating product:', err)
+      setError('Error creating product')
+    } finally {
+      setLoading(false)
     }
-    await createProduct({ ...form, image: imageUrl })
-    setProducts(await getProducts())
-    setForm({
-      name: "",
-      slug: "",
-      description: "",
-      price: 0,
-      image: "",
-      category: "",
-      year: "",
-      region: "",
-      varietal: "",
-      stock: 0,
-      featured: false,
-    })
-    setImageFile(null)
-    setImagePreview("")
-    setLoading(false)
   }
 
-  const handleDeleteProduct = async (id: string) => {
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this product?')) return
+
     setLoading(true)
-    await deleteProduct(id)
-    setProducts(await getProducts())
-    setLoading(false)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const { error } = await deleteProduct(id)
+      if (error) {
+        setError(error.message)
+        return
+      }
+
+      setSuccess('Product deleted successfully')
+      await getProducts()
+    } catch (err) {
+      console.error('[AdminDashboard] Error deleting product:', err)
+      setError('Error deleting product')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const openEditDialog = (product: Product) => {
+    setEditProduct(product)
+    setEditForm({ ...product })
+    setEditImageFile(null)
+    setEditImagePreview(product.image)
+    setEditDialogOpen(true)
+  }
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editProduct || !editForm) return
+
+    setEditLoading(true)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      let imageUrl = editForm.image
+      if (editImageFile) {
+        const { data: uploadData, error: uploadError } = await uploadProductImage(editImageFile, editForm.slug)
+        if (uploadError) {
+          setError(uploadError.message)
+          return
+        }
+        imageUrl = uploadData || editForm.image
+      }
+
+      const { error } = await updateProduct(editProduct.id, { ...editForm, image: imageUrl })
+      if (error) {
+        setError(error.message)
+        return
+      }
+
+      setSuccess('Product updated successfully')
+      await getProducts()
+      setEditDialogOpen(false)
+      setEditProduct(null)
+      setEditForm(null)
+      setEditImageFile(null)
+      setEditImagePreview("")
+    } catch (err) {
+      console.error('[AdminDashboard] Error updating product:', err)
+      setError('Error updating product')
+    } finally {
+      setEditLoading(false)
+    }
   }
 
   if (isLoading) {
@@ -635,6 +732,8 @@ function AdminDashboard() {
     featured: false,
   })
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>("")
   const [editProduct, setEditProduct] = useState<Product | null>(null)
@@ -645,8 +744,22 @@ function AdminDashboard() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
 
   useEffect(() => {
-    getProducts().then(setProducts)
+    loadProducts()
   }, [])
+
+  const loadProducts = async () => {
+    try {
+      const { data, error } = await getProducts()
+      if (error) {
+        setError(error.message)
+        return
+      }
+      setProducts(data || [])
+    } catch (err) {
+      console.error('[AdminDashboard] Error loading products:', err)
+      setError('Error loading products')
+    }
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked, files } = e.target
@@ -677,35 +790,73 @@ function AdminDashboard() {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    let imageUrl = form.image
-    if (imageFile) {
-      imageUrl = await uploadProductImage(imageFile, form.slug) || form.image
+    setError(null)
+    setSuccess(null)
+
+    try {
+      let imageUrl = form.image
+      if (imageFile) {
+        const { data: uploadData, error: uploadError } = await uploadProductImage(imageFile, form.slug)
+        if (uploadError) {
+          setError(uploadError.message)
+          return
+        }
+        imageUrl = uploadData || form.image
+      }
+
+      const { data, error } = await createProduct({ ...form, image: imageUrl })
+      if (error) {
+        setError(error.message)
+        return
+      }
+
+      setSuccess('Product created successfully')
+      await loadProducts()
+      setForm({
+        name: "",
+        slug: "",
+        description: "",
+        price: 0,
+        image: "",
+        category: "",
+        year: "",
+        region: "",
+        varietal: "",
+        stock: 0,
+        featured: false,
+      })
+      setImageFile(null)
+      setImagePreview("")
+    } catch (err) {
+      console.error('[AdminDashboard] Error creating product:', err)
+      setError('Error creating product')
+    } finally {
+      setLoading(false)
     }
-    await createProduct({ ...form, image: imageUrl })
-    setProducts(await getProducts())
-    setForm({
-      name: "",
-      slug: "",
-      description: "",
-      price: 0,
-      image: "",
-      category: "",
-      year: "",
-      region: "",
-      varietal: "",
-      stock: 0,
-      featured: false,
-    })
-    setImageFile(null)
-    setImagePreview("")
-    setLoading(false)
   }
 
   const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this product?')) return
+
     setLoading(true)
-    await deleteProduct(id)
-    setProducts(await getProducts())
-    setLoading(false)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const { error } = await deleteProduct(id)
+      if (error) {
+        setError(error.message)
+        return
+      }
+
+      setSuccess('Product deleted successfully')
+      await loadProducts()
+    } catch (err) {
+      console.error('[AdminDashboard] Error deleting product:', err)
+      setError('Error deleting product')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const openEditDialog = (product: Product) => {
@@ -719,45 +870,126 @@ function AdminDashboard() {
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editProduct || !editForm) return
+
     setEditLoading(true)
-    let imageUrl = editForm.image
-    if (editImageFile) {
-      imageUrl = await uploadProductImage(editImageFile, editForm.slug) || editForm.image
+    setError(null)
+    setSuccess(null)
+
+    try {
+      let imageUrl = editForm.image
+      if (editImageFile) {
+        const { data: uploadData, error: uploadError } = await uploadProductImage(editImageFile, editForm.slug)
+        if (uploadError) {
+          setError(uploadError.message)
+          return
+        }
+        imageUrl = uploadData || editForm.image
+      }
+
+      const { error } = await updateProduct(editProduct.id, { ...editForm, image: imageUrl })
+      if (error) {
+        setError(error.message)
+        return
+      }
+
+      setSuccess('Product updated successfully')
+      await loadProducts()
+      setEditDialogOpen(false)
+      setEditProduct(null)
+      setEditForm(null)
+      setEditImageFile(null)
+      setEditImagePreview("")
+    } catch (err) {
+      console.error('[AdminDashboard] Error updating product:', err)
+      setError('Error updating product')
+    } finally {
+      setEditLoading(false)
     }
-    await updateProduct(editProduct.id, { ...editForm, image: imageUrl })
-    setProducts(await getProducts())
-    setEditDialogOpen(false)
-    setEditProduct(null)
-    setEditForm(null)
-    setEditImageFile(null)
-    setEditImagePreview("")
-    setEditLoading(false)
   }
 
   if (!user?.is_admin) return null
 
   return (
-    <section className="mt-12">
-      <h2 className="text-2xl font-bold mb-4">Admin Dashboard</h2>
+    <div className="mt-12">
+      <h2 className="text-2xl font-bold text-[#5B0E2D] mb-6">Admin Dashboard</h2>
+
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {success && (
+        <Alert className="mb-4">
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
+      )}
+
       <form onSubmit={handleAdd} className="grid grid-cols-2 gap-4 mb-8">
-        <Input name="name" value={form.name} onChange={handleChange} placeholder="Nombre" required />
-        <Input name="slug" value={form.slug} onChange={handleChange} placeholder="Slug" required />
-        <Input name="description" value={form.description} onChange={handleChange} placeholder="Descripción" required />
-        <Input name="price" type="number" value={form.price} onChange={handleChange} placeholder="Precio" required />
-        
         <div className="space-y-2">
-          <Label htmlFor="category">Tipo de Vino</Label>
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            name="name"
+            value={form.name}
+            onChange={handleChange}
+            required
+            disabled={loading}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="slug">Slug</Label>
+          <Input
+            id="slug"
+            name="slug"
+            value={form.slug}
+            onChange={handleChange}
+            required
+            disabled={loading}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description">Description</Label>
+          <Input
+            id="description"
+            name="description"
+            value={form.description}
+            onChange={handleChange}
+            required
+            disabled={loading}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="price">Price</Label>
+          <Input
+            id="price"
+            name="price"
+            type="number"
+            value={form.price}
+            onChange={handleChange}
+            required
+            disabled={loading}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="category">Category</Label>
           <Select
+            name="category"
             value={form.category}
             onValueChange={(value) => setForm(prev => ({ ...prev, category: value }))}
+            disabled={loading}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Seleccionar tipo" />
+              <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(WINE_TYPES).map(([key, value]) => (
-                <SelectItem key={value} value={value}>
-                  {t.wineTypes[value as keyof typeof t.wineTypes] || prettyLabel(value)}
+              {Object.values(WINE_TYPES).map((type: string) => (
+                <SelectItem key={type} value={type}>
+                  {t.wineTypes[type as keyof typeof t.wineTypes] || prettyLabel(type)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -765,18 +997,20 @@ function AdminDashboard() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="region">Región</Label>
+          <Label htmlFor="region">Region</Label>
           <Select
+            name="region"
             value={form.region}
             onValueChange={(value) => setForm(prev => ({ ...prev, region: value }))}
+            disabled={loading}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Seleccionar región" />
+              <SelectValue placeholder="Select region" />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(WINE_REGIONS).map(([key, value]) => (
-                <SelectItem key={value} value={value}>
-                  {t.wineRegions[value as keyof typeof t.wineRegions] || prettyLabel(value)}
+              {Object.values(WINE_REGIONS).map((region: string) => (
+                <SelectItem key={region} value={region}>
+                  {t.wineRegions[region as keyof typeof t.wineRegions] || prettyLabel(region)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -786,98 +1020,193 @@ function AdminDashboard() {
         <div className="space-y-2">
           <Label htmlFor="varietal">Varietal</Label>
           <Select
+            name="varietal"
             value={form.varietal}
             onValueChange={(value) => setForm(prev => ({ ...prev, varietal: value }))}
+            disabled={loading}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Seleccionar varietal" />
+              <SelectValue placeholder="Select varietal" />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(WINE_VARIETALS).map(([key, value]) => (
-                <SelectItem key={value} value={value}>
-                  {t.wineVarietals[value as keyof typeof t.wineVarietals] || prettyLabel(value)}
+              {Object.values(WINE_VARIETALS).map((varietal: string) => (
+                <SelectItem key={varietal} value={varietal}>
+                  {t.wineVarietals[varietal as keyof typeof t.wineVarietals] || prettyLabel(varietal)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        <Input name="year" value={form.year} onChange={handleChange} placeholder="Año" required />
-        <Input name="stock" type="number" value={form.stock} onChange={handleChange} placeholder="Stock" required />
-        
-        <label className="flex items-center gap-2 col-span-2">
-          <input type="checkbox" name="featured" checked={form.featured} onChange={handleChange} />
-          Destacado
-        </label>
-        
+        <div className="space-y-2">
+          <Label htmlFor="stock">Stock</Label>
+          <Input
+            id="stock"
+            name="stock"
+            type="number"
+            value={form.stock}
+            onChange={handleChange}
+            required
+            disabled={loading}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="year">Year</Label>
+          <Input
+            id="year"
+            name="year"
+            value={form.year}
+            onChange={handleChange}
+            required
+            disabled={loading}
+          />
+        </div>
+
         <div className="col-span-2">
-          <label className="block mb-2 font-medium">Imagen del producto</label>
-          <input type="file" name="image" accept="image/*" onChange={handleChange} />
+          <Label htmlFor="image">Product Image</Label>
+          <Input
+            id="image"
+            name="image"
+            type="file"
+            accept="image/*"
+            onChange={handleChange}
+            disabled={loading}
+          />
           {imagePreview && (
             <img src={imagePreview} alt="Preview" className="mt-2 h-24 object-contain border rounded" />
           )}
         </div>
-        
-        <Button type="submit" disabled={loading} className="col-span-2">Agregar producto</Button>
+
+        <div className="col-span-2 flex items-center space-x-2">
+          <Checkbox
+            id="featured"
+            name="featured"
+            checked={form.featured}
+            onCheckedChange={(checked) => setForm(prev => ({ ...prev, featured: checked as boolean }))}
+            disabled={loading}
+          />
+          <Label htmlFor="featured">Featured Product</Label>
+        </div>
+
+        <Button type="submit" disabled={loading} className="col-span-2">
+          {loading ? "Adding..." : "Add Product"}
+        </Button>
       </form>
 
-      <Table className="border border-gray-300">
-        <thead>
-          <tr>
-            <th className="border border-gray-300">Imagen</th>
-            <th className="border border-gray-300">Nombre</th>
-            <th className="border border-gray-300">Precio</th>
-            <th className="border border-gray-300">Tipo</th>
-            <th className="border border-gray-300">Región</th>
-            <th className="border border-gray-300">Varietal</th>
-            <th className="border border-gray-300">Stock</th>
-            <th className="border border-gray-300">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map((p) => (
-            <tr key={p.id}>
-              <td className="border border-gray-300">{p.image && <img src={p.image} alt={p.name} className="h-12 w-12 object-contain rounded" />}</td>
-              <td className="border border-gray-300">{p.name}</td>
-              <td className="border border-gray-300">${p.price}</td>
-              <td className="border border-gray-300">{t.wineTypes[p.category as keyof typeof t.wineTypes] || prettyLabel(p.category)}</td>
-              <td className="border border-gray-300">{t.wineRegions[p.region as keyof typeof t.wineRegions] || prettyLabel(p.region)}</td>
-              <td className="border border-gray-300">{t.wineVarietals[p.varietal as keyof typeof t.wineVarietals] || prettyLabel(p.varietal)}</td>
-              <td className="border border-gray-300">{p.stock}</td>
-              <td className="border border-gray-300 space-x-2">
-                <Button variant="outline" size="sm" onClick={() => openEditDialog(p)} disabled={loading}>Editar</Button>
-                <Button variant="destructive" size="sm" onClick={() => handleDelete(p.id)} disabled={loading}>Eliminar</Button>
-              </td>
-            </tr>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Image</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Price</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Region</TableHead>
+            <TableHead>Varietal</TableHead>
+            <TableHead>Stock</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {products.map((product) => (
+            <TableRow key={product.id}>
+              <TableCell>
+                {product.image && (
+                  <img src={product.image} alt={product.name} className="h-12 w-12 object-contain rounded" />
+                )}
+              </TableCell>
+              <TableCell>{product.name}</TableCell>
+              <TableCell>${product.price}</TableCell>
+              <TableCell>{t.wineTypes[product.category as keyof typeof t.wineTypes] || prettyLabel(product.category)}</TableCell>
+              <TableCell>{t.wineRegions[product.region as keyof typeof t.wineRegions] || prettyLabel(product.region)}</TableCell>
+              <TableCell>{t.wineVarietals[product.varietal as keyof typeof t.wineVarietals] || prettyLabel(product.varietal)}</TableCell>
+              <TableCell>{product.stock}</TableCell>
+              <TableCell>
+                <div className="flex space-x-2">
+                  <Button variant="outline" size="sm" onClick={() => openEditDialog(product)} disabled={loading}>
+                    Edit
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={() => handleDelete(product.id)} disabled={loading}>
+                    Delete
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
+        </TableBody>
       </Table>
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar producto</DialogTitle>
+            <DialogTitle>Edit Product</DialogTitle>
           </DialogHeader>
           {editForm && (
-            <form onSubmit={handleEditSubmit} className="grid grid-cols-2 gap-4">
-              <Input name="name" value={editForm.name} onChange={handleEditChange} placeholder="Nombre" required />
-              <Input name="slug" value={editForm.slug} onChange={handleEditChange} placeholder="Slug" required />
-              <Input name="description" value={editForm.description} onChange={handleEditChange} placeholder="Descripción" required />
-              <Input name="price" type="number" value={editForm.price} onChange={handleEditChange} placeholder="Precio" required />
-              
+            <form onSubmit={handleEditSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="category">Tipo de Vino</Label>
+                <Label htmlFor="edit-name">Name</Label>
+                <Input
+                  id="edit-name"
+                  name="name"
+                  value={editForm.name}
+                  onChange={handleEditChange}
+                  required
+                  disabled={editLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-slug">Slug</Label>
+                <Input
+                  id="edit-slug"
+                  name="slug"
+                  value={editForm.slug}
+                  onChange={handleEditChange}
+                  required
+                  disabled={editLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-description">Description</Label>
+                <Input
+                  id="edit-description"
+                  name="description"
+                  value={editForm.description}
+                  onChange={handleEditChange}
+                  required
+                  disabled={editLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-price">Price</Label>
+                <Input
+                  id="edit-price"
+                  name="price"
+                  type="number"
+                  value={editForm.price}
+                  onChange={handleEditChange}
+                  required
+                  disabled={editLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-category">Category</Label>
                 <Select
+                  name="category"
                   value={editForm.category}
                   onValueChange={(value) => setEditForm(prev => prev ? { ...prev, category: value } : null)}
+                  disabled={editLoading}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar tipo" />
+                    <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(WINE_TYPES).map(([key, value]) => (
-                      <SelectItem key={value} value={value}>
-                        {t.wineTypes[value as keyof typeof t.wineTypes] || prettyLabel(value)}
+                    {Object.values(WINE_TYPES).map((type: string) => (
+                      <SelectItem key={type} value={type}>
+                        {t.wineTypes[type as keyof typeof t.wineTypes] || prettyLabel(type)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -885,18 +1214,20 @@ function AdminDashboard() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="region">Región</Label>
+                <Label htmlFor="edit-region">Region</Label>
                 <Select
+                  name="region"
                   value={editForm.region}
                   onValueChange={(value) => setEditForm(prev => prev ? { ...prev, region: value } : null)}
+                  disabled={editLoading}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar región" />
+                    <SelectValue placeholder="Select region" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(WINE_REGIONS).map(([key, value]) => (
-                      <SelectItem key={value} value={value}>
-                        {t.wineRegions[value as keyof typeof t.wineRegions] || prettyLabel(value)}
+                    {Object.values(WINE_REGIONS).map((region: string) => (
+                      <SelectItem key={region} value={region}>
+                        {t.wineRegions[region as keyof typeof t.wineRegions] || prettyLabel(region)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -904,48 +1235,86 @@ function AdminDashboard() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="varietal">Varietal</Label>
+                <Label htmlFor="edit-varietal">Varietal</Label>
                 <Select
+                  name="varietal"
                   value={editForm.varietal}
                   onValueChange={(value) => setEditForm(prev => prev ? { ...prev, varietal: value } : null)}
+                  disabled={editLoading}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar varietal" />
+                    <SelectValue placeholder="Select varietal" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(WINE_VARIETALS).map(([key, value]) => (
-                      <SelectItem key={value} value={value}>
-                        {t.wineVarietals[value as keyof typeof t.wineVarietals] || prettyLabel(value)}
+                    {Object.values(WINE_VARIETALS).map((varietal: string) => (
+                      <SelectItem key={varietal} value={varietal}>
+                        {t.wineVarietals[varietal as keyof typeof t.wineVarietals] || prettyLabel(varietal)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <Input name="year" value={editForm.year} onChange={handleEditChange} placeholder="Año" required />
-              <Input name="stock" type="number" value={editForm.stock} onChange={handleEditChange} placeholder="Stock" required />
-              
-              <label className="flex items-center gap-2 col-span-2">
-                <input type="checkbox" name="featured" checked={editForm.featured} onChange={handleEditChange} />
-                Destacado
-              </label>
-              
-              <div className="col-span-2">
-                <label className="block mb-2 font-medium">Imagen del producto</label>
-                <input type="file" name="image" accept="image/*" onChange={handleEditChange} />
+              <div className="space-y-2">
+                <Label htmlFor="edit-stock">Stock</Label>
+                <Input
+                  id="edit-stock"
+                  name="stock"
+                  type="number"
+                  value={editForm.stock}
+                  onChange={handleEditChange}
+                  required
+                  disabled={editLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-year">Year</Label>
+                <Input
+                  id="edit-year"
+                  name="year"
+                  value={editForm.year}
+                  onChange={handleEditChange}
+                  required
+                  disabled={editLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-image">Product Image</Label>
+                <Input
+                  id="edit-image"
+                  name="image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleEditChange}
+                  disabled={editLoading}
+                />
                 {editImagePreview && (
                   <img src={editImagePreview} alt="Preview" className="mt-2 h-24 object-contain border rounded" />
                 )}
               </div>
-              
-              <DialogFooter className="col-span-2 flex gap-2">
-                <Button type="submit" disabled={editLoading}>Guardar cambios</Button>
-                <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)} disabled={editLoading}>Cancelar</Button>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="edit-featured"
+                  name="featured"
+                  checked={editForm.featured}
+                  onCheckedChange={(checked) => setEditForm(prev => prev ? { ...prev, featured: checked as boolean } : null)}
+                  disabled={editLoading}
+                />
+                <Label htmlFor="edit-featured">Featured Product</Label>
+              </div>
+
+              <DialogFooter>
+                <Button type="submit" disabled={editLoading}>
+                  {editLoading ? "Updating..." : "Update Product"}
+                </Button>
               </DialogFooter>
             </form>
           )}
         </DialogContent>
       </Dialog>
-    </section>
+    </div>
   )
 }

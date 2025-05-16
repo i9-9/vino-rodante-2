@@ -113,6 +113,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       setIsLoading(true)
+      console.log('[Auth] Attempting sign in for:', email)
+      
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
       
       if (error) {
@@ -120,6 +122,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error }
       }
 
+      console.log('[Auth] Sign in successful, getting session')
+      
       // Wait for the session to be set
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       
@@ -128,24 +132,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: sessionError }
       }
 
-      if (session?.user) {
-        try {
-          const { data: customer, error: customerError } = await supabase
-            .from("customers")
-            .select("is_admin")
-            .eq("id", session.user.id)
-            .single()
+      if (!session?.user) {
+        console.error('[Auth] No user in session after sign in')
+        return { error: new Error('No user in session') }
+      }
 
-          if (customerError) {
-            console.error('[Auth] Error fetching customer:', customerError)
-            setUser(session.user)
-          } else {
-            setUser({ ...session.user, is_admin: customer?.is_admin })
-          }
-        } catch (err) {
-          console.error('[Auth] Exception fetching customer:', err)
+      console.log('[Auth] Session obtained, fetching customer data')
+      
+      try {
+        const { data: customer, error: customerError } = await supabase
+          .from("customers")
+          .select("is_admin")
+          .eq("id", session.user.id)
+          .single()
+
+        if (customerError) {
+          console.error('[Auth] Error fetching customer:', customerError)
           setUser(session.user)
+        } else {
+          console.log('[Auth] Customer data fetched successfully')
+          setUser({ ...session.user, is_admin: customer?.is_admin })
         }
+      } catch (err) {
+        console.error('[Auth] Exception fetching customer:', err)
+        setUser(session.user)
       }
 
       return { error: null }

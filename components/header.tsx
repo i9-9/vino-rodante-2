@@ -66,9 +66,8 @@ export default function Header() {
             alt="Vino Rodante Logo" 
             width={120} 
             height={40} 
-            style={{ height: 40, width: 'auto' }}
             priority
-            quality={100}
+            className="h-10 w-auto"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.src = "/logo/logo2.svg";

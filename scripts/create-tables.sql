@@ -15,13 +15,52 @@ CREATE TABLE IF NOT EXISTS products (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Enable RLS
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+
+-- Create policies
+CREATE POLICY "Enable read access for all users" ON products
+  FOR SELECT USING (true);
+
+CREATE POLICY "Enable insert for authenticated users only" ON products
+  FOR INSERT WITH CHECK (
+    auth.uid() IN (
+      SELECT id FROM customers WHERE is_admin = true
+    )
+  );
+
+CREATE POLICY "Enable update for authenticated users only" ON products
+  FOR UPDATE USING (
+    auth.uid() IN (
+      SELECT id FROM customers WHERE is_admin = true
+    )
+  );
+
+CREATE POLICY "Enable delete for authenticated users only" ON products
+  FOR DELETE USING (
+    auth.uid() IN (
+      SELECT id FROM customers WHERE is_admin = true
+    )
+  );
+
 -- Create customers table
 CREATE TABLE IF NOT EXISTS customers (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
+  is_admin BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Enable RLS
+ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
+
+-- Create policies
+CREATE POLICY "Users can view their own data" ON customers
+  FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Users can update their own data" ON customers
+  FOR UPDATE USING (auth.uid() = id);
 
 -- Create addresses table
 CREATE TABLE IF NOT EXISTS addresses (
@@ -37,6 +76,22 @@ CREATE TABLE IF NOT EXISTS addresses (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Enable RLS
+ALTER TABLE addresses ENABLE ROW LEVEL SECURITY;
+
+-- Create policies
+CREATE POLICY "Users can view their own addresses" ON addresses
+  FOR SELECT USING (auth.uid() = customer_id);
+
+CREATE POLICY "Users can insert their own addresses" ON addresses
+  FOR INSERT WITH CHECK (auth.uid() = customer_id);
+
+CREATE POLICY "Users can update their own addresses" ON addresses
+  FOR UPDATE USING (auth.uid() = customer_id);
+
+CREATE POLICY "Users can delete their own addresses" ON addresses
+  FOR DELETE USING (auth.uid() = customer_id);
+
 -- Create orders table
 CREATE TABLE IF NOT EXISTS orders (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -46,6 +101,16 @@ CREATE TABLE IF NOT EXISTS orders (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Enable RLS
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+
+-- Create policies
+CREATE POLICY "Users can view their own orders" ON orders
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own orders" ON orders
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
 -- Create order_items table
 CREATE TABLE IF NOT EXISTS order_items (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -54,6 +119,28 @@ CREATE TABLE IF NOT EXISTS order_items (
   quantity INTEGER NOT NULL,
   price DECIMAL(10, 2) NOT NULL
 );
+
+-- Enable RLS
+ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
+
+-- Create policies
+CREATE POLICY "Users can view their own order items" ON order_items
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM orders
+      WHERE orders.id = order_items.order_id
+      AND orders.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can insert their own order items" ON order_items
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM orders
+      WHERE orders.id = order_items.order_id
+      AND orders.user_id = auth.uid()
+    )
+  );
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
