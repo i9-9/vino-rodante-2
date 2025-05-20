@@ -8,7 +8,7 @@
           "value": "vinorodante.com"
         }
       ],
-      "destination": "https://www.vinorodante.com/:1",
+      "destination": "https://www.vinorodante.com/$1",
       "permanent": true
     }
   ]
