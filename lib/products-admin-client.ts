@@ -37,22 +37,40 @@ export async function deleteProduct(id: string): Promise<ApiResponse<null>> {
 }
 
 export async function uploadProductImage(file: File, slug: string): Promise<ApiResponse<string>> {
-  const supabase = createClient()
-  const fileExt = file.name.split('.').pop()
-  const fileName = `${slug}-${Date.now()}.${fileExt}`
-  const filePath = `products/${fileName}`
+  try {
+    const supabase = createClient()
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${slug}-${Date.now()}.${fileExt}`
+    const filePath = `products/${fileName}`
 
-  const { error: uploadError } = await supabase.storage
-    .from('products')
-    .upload(filePath, file)
+    console.log('[Upload] Attempting to upload file:', { 
+      fileName, 
+      filePath,
+      fileSize: file.size,
+      fileType: file.type
+    })
 
-  if (uploadError) {
-    return { data: null, error: uploadError }
+    const { error: uploadError } = await supabase.storage
+      .from('products')
+      .upload(filePath, file)
+
+    if (uploadError) {
+      console.error('[Upload] Error uploading file:', uploadError)
+      return { data: null, error: uploadError }
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('products')
+      .getPublicUrl(filePath)
+
+    console.log('[Upload] Generated public URL:', publicUrl)
+
+    return { data: publicUrl, error: null }
+  } catch (error) {
+    console.error('[Upload] Unexpected error:', error)
+    return { 
+      data: null, 
+      error: new Error(error instanceof Error ? error.message : 'Unknown error occurred during upload') as StorageError 
+    }
   }
-
-  const { data: { publicUrl } } = supabase.storage
-    .from('products')
-    .getPublicUrl(filePath)
-
-  return { data: publicUrl, error: null }
 } 

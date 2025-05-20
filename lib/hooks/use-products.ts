@@ -3,7 +3,13 @@ import { getProducts } from '@/lib/products-client'
 import type { Product } from '@/lib/types'
 
 export function useProducts() {
-  const { data, error, isLoading, mutate } = useSWR<Product[]>('products', getProducts)
+  const { data, error, isLoading, mutate } = useSWR<Product[]>('products', async () => {
+    const { data, error } = await getProducts()
+    if (error) {
+      throw error
+    }
+    return data || []
+  })
 
   return {
     products: data,
@@ -14,11 +20,15 @@ export function useProducts() {
 }
 
 export function useProductsByRegion(region: string) {
-  const fetcher = async () => {
+  const fetcher = async (): Promise<Product[]> => {
     console.log('[useProductsByRegion] Fetching products for region:', region)
     try {
-      const products = await getProducts()
-      const filtered = products.filter(p => p.region === region)
+      const { data: products, error } = await getProducts()
+      if (error) {
+        console.error('[useProductsByRegion] Error fetching products:', error)
+        return []
+      }
+      const filtered = products?.filter((p: Product) => p.region === region) || []
       console.log('[useProductsByRegion] Products fetched:', filtered)
       return filtered
     } catch (err) {
@@ -42,7 +52,13 @@ export function useProductsByRegion(region: string) {
 export function useFeaturedProducts() {
   const { data, error, isLoading, mutate } = useSWR<Product[]>(
     'products/featured',
-    () => getProducts().then(products => products.filter(p => p.featured))
+    async () => {
+      const { data: products, error } = await getProducts()
+      if (error) {
+        throw error
+      }
+      return (products || []).filter(p => p.featured)
+    }
   )
 
   return {

@@ -63,6 +63,8 @@ export const WINE_VARIETALS = {
   FIANO: 'fiano',
   GARNACHA: 'garnacha',
   BARBERA: 'barbera',
+  NEBBIOLO: 'nebbiolo',
+  BLEND: 'blend',
 } as const;
 
 // Tipos TypeScript

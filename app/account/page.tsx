@@ -26,6 +26,8 @@ import { WINE_TYPES, WINE_REGIONS, WINE_VARIETALS, isValidWineType, isValidWineR
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Checkbox } from "@/components/ui/checkbox"
 import { PostgrestError } from "@supabase/supabase-js"
+import { read, utils } from 'xlsx'
+import { Textarea } from "@/components/ui/textarea"
 
 interface Address {
   id: string
@@ -84,6 +86,10 @@ export default function AccountPage() {
   const [editImagePreview, setEditImagePreview] = useState<string>("")
   const [editLoading, setEditLoading] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [importLoading, setImportLoading] = useState(false)
+  const [importError, setImportError] = useState<string | null>(null)
+  const [importSuccess, setImportSuccess] = useState<string | null>(null)
+  const [importText, setImportText] = useState("")
   const supabase = createClient()
 
   useEffect(() => {
@@ -408,6 +414,136 @@ export default function AccountPage() {
       setError('Error updating product')
     } finally {
       setEditLoading(false)
+    }
+  }
+
+  const handleBulkImport = async () => {
+    if (!importText.trim()) return
+
+    setImportLoading(true)
+    setImportError(null)
+    setImportSuccess(null)
+
+    try {
+      const rows = importText.split('\n').filter(row => row.trim())
+      let successCount = 0
+      let errorCount = 0
+
+      for (const row of rows) {
+        try {
+          // Parse CSV row handling quoted fields
+          const fields: string[] = []
+          let currentField = ''
+          let insideQuotes = false
+          
+          for (let i = 0; i < row.length; i++) {
+            const char = row[i]
+            if (char === '"') {
+              insideQuotes = !insideQuotes
+            } else if (char === ',' && !insideQuotes) {
+              fields.push(currentField.trim())
+              currentField = ''
+            } else {
+              currentField += char
+            }
+          }
+          fields.push(currentField.trim()) // Push the last field
+
+          const [name, slug, description, price, category, year, region, varietal, stock, featured] = fields
+          
+          // Validar nombre
+          if (!name) {
+            console.error('Product name is required')
+            errorCount++
+            continue
+          }
+
+          // Limpiar el slug
+          const cleanSlug = slug
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '') || name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+
+          // Validar y limpiar el precio
+          let cleanPrice = 0
+          if (price && price !== 'Sin información') {
+            const numericPrice = price.replace(/[^0-9.]/g, '')
+            if (!isNaN(Number(numericPrice))) {
+              cleanPrice = Number(numericPrice)
+            }
+          }
+
+          // Validar y limpiar la categoría
+          let cleanCategory = 'tinto'
+          if (category && category !== 'Sin información') {
+            const lowerCategory = category.toLowerCase()
+            if (['tinto', 'blanco', 'rosado', 'espumante', 'naranjo', 'gin', 'sidra'].includes(lowerCategory)) {
+              cleanCategory = lowerCategory
+            }
+          }
+
+          // Validar y limpiar la región
+          let cleanRegion = 'mendoza'
+          if (region && region !== 'Sin información') {
+            const lowerRegion = region.toLowerCase()
+            if (['mendoza', 'jujuy', 'río negro', 'buenos aires', 'patagonia'].includes(lowerRegion)) {
+              cleanRegion = lowerRegion
+            }
+          }
+
+          // Validar y limpiar el varietal
+          let cleanVarietal = 'malbec'
+          if (varietal && varietal !== 'Sin información') {
+            const lowerVarietal = varietal.toLowerCase()
+            if (['malbec', 'cabernet sauvignon', 'cabernet franc', 'chardonnay', 'syrah', 'pinot noir', 'torrontés', 'chenin blanc', 'nebbiolo', 'bonarda', 'petit verdot', 'blend'].includes(lowerVarietal)) {
+              cleanVarietal = lowerVarietal
+            }
+          }
+
+          // Validar y limpiar el año
+          const cleanYear = year && year !== 'Sin información' ? year : '2024'
+
+          // Validar y limpiar el stock
+          const cleanStock = stock ? Number(stock) : 1000
+
+          const product = {
+            name,
+            slug: cleanSlug,
+            description: description || 'Sin descripción',
+            price: cleanPrice,
+            image: '',
+            category: cleanCategory,
+            year: cleanYear,
+            region: cleanRegion,
+            varietal: cleanVarietal,
+            stock: cleanStock,
+            featured: featured?.toLowerCase() === 'true' || false,
+          }
+
+          console.log('Importing product:', product)
+
+          const { error } = await createProduct(product)
+          if (error) {
+            console.error(`Error importing product ${product.name}:`, error)
+            errorCount++
+          } else {
+            successCount++
+          }
+        } catch (err) {
+          console.error('Error processing row:', err)
+          errorCount++
+        }
+      }
+
+      setImportSuccess(`Import completed. ${successCount} products imported successfully. ${errorCount} failed.`)
+      setImportText("")
+      await getProducts()
+    } catch (err) {
+      console.error('[AdminDashboard] Error importing products:', err)
+      setImportError('Error importing products')
+    } finally {
+      setImportLoading(false)
     }
   }
 
@@ -742,6 +878,10 @@ function AdminDashboard() {
   const [editImagePreview, setEditImagePreview] = useState<string>("")
   const [editLoading, setEditLoading] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [importLoading, setImportLoading] = useState(false)
+  const [importError, setImportError] = useState<string | null>(null)
+  const [importSuccess, setImportSuccess] = useState<string | null>(null)
+  const [importText, setImportText] = useState("")
 
   useEffect(() => {
     loadProducts()
@@ -907,6 +1047,136 @@ function AdminDashboard() {
     }
   }
 
+  const handleBulkImport = async () => {
+    if (!importText.trim()) return
+
+    setImportLoading(true)
+    setImportError(null)
+    setImportSuccess(null)
+
+    try {
+      const rows = importText.split('\n').filter(row => row.trim())
+      let successCount = 0
+      let errorCount = 0
+
+      for (const row of rows) {
+        try {
+          // Parse CSV row handling quoted fields
+          const fields: string[] = []
+          let currentField = ''
+          let insideQuotes = false
+          
+          for (let i = 0; i < row.length; i++) {
+            const char = row[i]
+            if (char === '"') {
+              insideQuotes = !insideQuotes
+            } else if (char === ',' && !insideQuotes) {
+              fields.push(currentField.trim())
+              currentField = ''
+            } else {
+              currentField += char
+            }
+          }
+          fields.push(currentField.trim()) // Push the last field
+
+          const [name, slug, description, price, category, year, region, varietal, stock, featured] = fields
+          
+          // Validar nombre
+          if (!name) {
+            console.error('Product name is required')
+            errorCount++
+            continue
+          }
+
+          // Limpiar el slug
+          const cleanSlug = slug
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '') || name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+
+          // Validar y limpiar el precio
+          let cleanPrice = 0
+          if (price && price !== 'Sin información') {
+            const numericPrice = price.replace(/[^0-9.]/g, '')
+            if (!isNaN(Number(numericPrice))) {
+              cleanPrice = Number(numericPrice)
+            }
+          }
+
+          // Validar y limpiar la categoría
+          let cleanCategory = 'tinto'
+          if (category && category !== 'Sin información') {
+            const lowerCategory = category.toLowerCase()
+            if (['tinto', 'blanco', 'rosado', 'espumante', 'naranjo', 'gin', 'sidra'].includes(lowerCategory)) {
+              cleanCategory = lowerCategory
+            }
+          }
+
+          // Validar y limpiar la región
+          let cleanRegion = 'mendoza'
+          if (region && region !== 'Sin información') {
+            const lowerRegion = region.toLowerCase()
+            if (['mendoza', 'jujuy', 'río negro', 'buenos aires', 'patagonia'].includes(lowerRegion)) {
+              cleanRegion = lowerRegion
+            }
+          }
+
+          // Validar y limpiar el varietal
+          let cleanVarietal = 'malbec'
+          if (varietal && varietal !== 'Sin información') {
+            const lowerVarietal = varietal.toLowerCase()
+            if (['malbec', 'cabernet sauvignon', 'cabernet franc', 'chardonnay', 'syrah', 'pinot noir', 'torrontés', 'chenin blanc', 'nebbiolo', 'bonarda', 'petit verdot', 'blend'].includes(lowerVarietal)) {
+              cleanVarietal = lowerVarietal
+            }
+          }
+
+          // Validar y limpiar el año
+          const cleanYear = year && year !== 'Sin información' ? year : '2024'
+
+          // Validar y limpiar el stock
+          const cleanStock = stock ? Number(stock) : 1000
+
+          const product = {
+            name,
+            slug: cleanSlug,
+            description: description || 'Sin descripción',
+            price: cleanPrice,
+            image: '',
+            category: cleanCategory,
+            year: cleanYear,
+            region: cleanRegion,
+            varietal: cleanVarietal,
+            stock: cleanStock,
+            featured: featured?.toLowerCase() === 'true' || false,
+          }
+
+          console.log('Importing product:', product)
+
+          const { error } = await createProduct(product)
+          if (error) {
+            console.error(`Error importing product ${product.name}:`, error)
+            errorCount++
+          } else {
+            successCount++
+          }
+        } catch (err) {
+          console.error('Error processing row:', err)
+          errorCount++
+        }
+      }
+
+      setImportSuccess(`Import completed. ${successCount} products imported successfully. ${errorCount} failed.`)
+      setImportText("")
+      await loadProducts()
+    } catch (err) {
+      console.error('[AdminDashboard] Error importing products:', err)
+      setImportError('Error importing products')
+    } finally {
+      setImportLoading(false)
+    }
+  }
+
   if (!user?.is_admin) return null
 
   return (
@@ -924,6 +1194,75 @@ function AdminDashboard() {
           <AlertDescription>{success}</AlertDescription>
         </Alert>
       )}
+
+      {importError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{importError}</AlertDescription>
+        </Alert>
+      )}
+
+      {importSuccess && (
+        <Alert className="mb-4">
+          <AlertDescription>{importSuccess}</AlertDescription>
+        </Alert>
+      )}
+
+      <div className="mb-8">
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="destructive"
+              onClick={async () => {
+                if (!confirm('¿Estás seguro de que quieres eliminar todos los productos? Esta acción no se puede deshacer.')) return
+                
+                setLoading(true)
+                try {
+                  const { data: products } = await getProducts()
+                  if (products) {
+                    for (const product of products) {
+                      await deleteProduct(product.id)
+                    }
+                  }
+                  await loadProducts()
+                  setSuccess('Todos los productos han sido eliminados')
+                } catch (err) {
+                  console.error('Error deleting products:', err)
+                  setError('Error al eliminar los productos')
+                } finally {
+                  setLoading(false)
+                }
+              }}
+              disabled={loading}
+            >
+              {loading ? "Eliminando..." : "Eliminar todos los productos"}
+            </Button>
+          </div>
+
+          <div>
+            <Label htmlFor="bulk-import">Bulk Import Products</Label>
+            <Textarea
+              id="bulk-import"
+              placeholder="Paste your products here, one per line. Format: name,slug,description,price,category,year,region,varietal,stock,featured"
+              value={importText}
+              onChange={(e) => setImportText(e.target.value)}
+              className="h-32"
+              disabled={importLoading}
+            />
+          </div>
+          <div className="flex items-center gap-4">
+            <Button 
+              onClick={handleBulkImport} 
+              disabled={importLoading || !importText.trim()}
+              variant="outline"
+            >
+              {importLoading ? "Importing..." : "Import Products"}
+            </Button>
+            <p className="text-sm text-gray-500">
+              One product per line. Fields: name, slug, description, price, category, year, region, varietal, stock, featured
+            </p>
+          </div>
+        </div>
+      </div>
 
       <form onSubmit={handleAdd} className="grid grid-cols-2 gap-4 mb-8">
         <div className="space-y-2">
@@ -1137,7 +1476,7 @@ function AdminDashboard() {
       </Table>
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Product</DialogTitle>
           </DialogHeader>

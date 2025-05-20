@@ -271,7 +271,9 @@ export const en = {
     malvasia: "Malvasia",
     fiano: "Fiano",
     garnacha: "Grenache",
-    barbera: "Barbera"
+    barbera: "Barbera",
+    nebbiolo: "Nebbiolo",
+    blend: "Blend"
   },
   wineTypes: {
     red: "Red",

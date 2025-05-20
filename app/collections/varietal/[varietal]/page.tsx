@@ -21,9 +21,14 @@ export default function VarietalPage({ params }: { params: Promise<{ varietal: s
     async function loadProducts() {
       setLoading(true)
       if (isValid) {
-      const allProducts = await getProducts()
-        const filteredProducts = allProducts.filter(p => p.varietal === varietal)
-      setProducts(filteredProducts)
+        const { data: allProducts, error } = await getProducts()
+        if (error) {
+          console.error("Error loading products:", error)
+          setProducts([])
+        } else {
+          const filteredProducts = allProducts?.filter(p => p.varietal === varietal) || []
+          setProducts(filteredProducts)
+        }
       } else {
         setProducts([])
       }
