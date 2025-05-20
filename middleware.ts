@@ -18,7 +18,8 @@ const publicRoutes = [
 export async function middleware(request: NextRequest) {
   try {
     console.log('[Middleware] Request URL:', request.url)
-    console.log('[Middleware] Request cookies:', request.cookies.getAll())
+    const allCookies = request.cookies.getAll()
+    console.log('[Middleware] Request cookies:', allCookies)
 
     // Create an unmodified response
     let response = NextResponse.next({
@@ -34,11 +35,11 @@ export async function middleware(request: NextRequest) {
         cookies: {
           getAll() {
             const cookies = request.cookies.getAll()
-            console.log('[Middleware] Getting all cookies:', cookies)
+            console.log('[Middleware] getAll cookies:', cookies)
             return cookies
           },
           setAll(cookiesToSet) {
-            console.log('[Middleware] Setting cookies:', cookiesToSet)
+            console.log('[Middleware] setAll cookies:', cookiesToSet)
             cookiesToSet.forEach(({ name, value, options }) => {
               const cookieOptions = {
                 ...options,
@@ -71,7 +72,7 @@ export async function middleware(request: NextRequest) {
 
     // This will refresh session if expired - required for Server Components
     const { data: { user }, error: userError } = await supabase.auth.getUser()
-    console.log('[Middleware] User auth check:', { user: !!user, error: userError })
+    console.log('[Middleware] User auth check:', { user, userError })
 
     // protected routes
     if (request.nextUrl.pathname.startsWith("/account") && userError) {

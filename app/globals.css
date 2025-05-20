@@ -94,7 +94,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Neue Haas Unica Pro', system-ui, sans-serif;
+    font-family: 'neue-haas-unica', system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   h1,
@@ -103,18 +103,18 @@
   h4,
   h5,
   h6 {
-    font-family: 'Pinot Grigio', serif;
+    font-family: 'pinot-grigio-modern', serif;
     text-transform: uppercase;
     font-weight: 400 !important;
     font-style: normal;
   }
   
   /* Ensure all elements with Pinot Grigio font are uppercase and never bold */
-  [style*="font-family: 'Pinot Grigio'"],
-  [style*='font-family: Pinot Grigio'],
+  [style*="font-family: 'pinot-grigio-modern'"],
+  [style*='font-family: pinot-grigio-modern'],
   [class*="font-pinot"],
   [class*="font-heading"],
-  [font-family*="Pinot Grigio"] {
+  [font-family*="pinot-grigio-modern"] {
     text-transform: uppercase !important;
     font-weight: 400 !important;
     font-style: normal !important;
@@ -127,7 +127,7 @@
   }
   
   .font-pinot-grigio {
-    font-family: 'Pinot Grigio', serif;
+    font-family: 'pinot-grigio-modern', serif;
     text-transform: uppercase;
     font-weight: 400 !important;
     font-style: normal;
