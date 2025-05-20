@@ -43,11 +43,12 @@ export async function middleware(request: NextRequest) {
               const cookieOptions = {
                 ...options,
                 secure: true,
-                sameSite: 'lax',
+                sameSite: 'lax' as const,
                 path: '/',
+                domain: '.vinorodante.com',
               }
               console.log('[Middleware] Setting cookie:', { name, value, options: cookieOptions })
-              request.cookies.set(name, value, cookieOptions)
+              request.cookies.set(name, value)
             })
             response = NextResponse.next({
               request,
@@ -56,8 +57,9 @@ export async function middleware(request: NextRequest) {
               const cookieOptions = {
                 ...options,
                 secure: true,
-                sameSite: 'lax',
+                sameSite: 'lax' as const,
                 path: '/',
+                domain: '.vinorodante.com',
               }
               console.log('[Middleware] Setting response cookie:', { name, value, options: cookieOptions })
               response.cookies.set(name, value, cookieOptions)
