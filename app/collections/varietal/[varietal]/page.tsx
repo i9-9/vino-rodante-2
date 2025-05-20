@@ -1,7 +1,7 @@
 "use client"
 
 import { useTranslations } from "@/lib/providers/translations-provider"
-import { getProducts } from "@/lib/products-client"
+import { getProductsByVarietal } from "@/lib/products-client"
 import ProductCard from "@/components/product-card"
 import { useEffect, useState, use } from "react"
 import type { Product } from "@/lib/types"
@@ -21,13 +21,12 @@ export default function VarietalPage({ params }: { params: Promise<{ varietal: s
     async function loadProducts() {
       setLoading(true)
       if (isValid) {
-        const { data: allProducts, error } = await getProducts()
+        const { data: filteredProducts, error } = await getProductsByVarietal(varietal)
         if (error) {
           console.error("Error loading products:", error)
           setProducts([])
         } else {
-          const filteredProducts = allProducts?.filter(p => p.varietal === varietal) || []
-          setProducts(filteredProducts)
+          setProducts(filteredProducts || [])
         }
       } else {
         setProducts([])

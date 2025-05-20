@@ -1,5 +1,5 @@
 import useSWR from 'swr'
-import { getProducts } from '@/lib/products-client'
+import { getProducts, getProductsByRegion } from '@/lib/products-client'
 import type { Product } from '@/lib/types'
 
 export function useProducts() {
@@ -23,17 +23,15 @@ export function useProductsByRegion(region: string) {
   const fetcher = async (): Promise<Product[]> => {
     console.log('[useProductsByRegion] Fetching products for region:', region)
     try {
-      const { data: products, error } = await getProducts()
+      const { data: products, error } = await getProductsByRegion(region)
       if (error) {
         console.error('[useProductsByRegion] Error fetching products:', error)
         return []
       }
-      const filtered = products?.filter((p: Product) => p.region === region) || []
-      console.log('[useProductsByRegion] Products fetched:', filtered)
-      return filtered
+      return products || []
     } catch (err) {
       console.error('[useProductsByRegion] Error fetching products:', err)
-      throw err
+      return []
     }
   }
   const { data, error, isLoading, mutate } = useSWR<Product[]>(
@@ -42,7 +40,7 @@ export function useProductsByRegion(region: string) {
   )
 
   return {
-    products: data,
+    products: data || [],
     isLoading,
     isError: error,
     mutate,

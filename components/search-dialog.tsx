@@ -43,7 +43,7 @@ export default function SearchDialog() {
     const loadProducts = async () => {
       setLoading(true)
       try {
-        const allProducts = await getProducts()
+        const { data: allProducts = [] } = await getProducts()
         setProducts(allProducts)
       } catch (error) {
         console.error("Error loading products:", error)
@@ -55,7 +55,7 @@ export default function SearchDialog() {
     loadProducts()
   }, [open])
 
-  const filteredProducts = products.filter((product) =>
+  const filteredProducts = (products || []).filter((product) =>
     product.name.toLowerCase().includes(search.toLowerCase()) ||
     product.description?.toLowerCase().includes(search.toLowerCase()) ||
     product.region.toLowerCase().includes(search.toLowerCase()) ||
