@@ -19,15 +19,15 @@ import { format } from "date-fns"
 import type { Order, Product } from "@/lib/types"
 import { useTranslations } from "@/lib/providers/translations-provider"
 import { getProducts } from '@/lib/products-client'
-import { createProduct, deleteProduct, updateProduct, uploadProductImage } from '@/lib/products-admin-client'
+import { createProduct, deleteProduct, updateProduct, uploadProductImage } from '@/lib/products-admin'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { WINE_TYPES, WINE_REGIONS, WINE_VARIETALS, isValidWineType, isValidWineRegion, isValidWineVarietal, prettyLabel } from "@/lib/wine-data"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Checkbox } from "@/components/ui/checkbox"
 import { PostgrestError } from "@supabase/supabase-js"
-import { read, utils } from 'xlsx'
 import { Textarea } from "@/components/ui/textarea"
+import { updateProfile, getProfile, getOrders, getAddresses, addAddress, deleteAddress, setDefaultAddress } from './actions/auth'
 
 interface Address {
   id: string
@@ -98,8 +98,7 @@ export default function AccountPage() {
     } else if (user) {
       // Fetch user profile data
       const fetchProfile = async () => {
-        const { data, error } = await supabase.from("customers").select("*").eq("id", user.id).single()
-
+        const { data, error } = await getProfile(user.id)
         if (data) {
           setName(data.name)
           setEmail(user.email || "")
@@ -109,12 +108,7 @@ export default function AccountPage() {
       // Fetch user orders
       const fetchOrders = async () => {
         setIsLoadingOrders(true)
-        const { data: orderData, error: orderError } = await supabase
-          .from("orders")
-          .select(`*, order_items(*)`)
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-
+        const { data: orderData, error: orderError } = await getOrders(user.id)
         if (orderData) {
           setOrders(orderData as any)
         }
@@ -124,12 +118,7 @@ export default function AccountPage() {
       // Fetch user addresses
       const fetchAddresses = async () => {
         setIsLoadingAddresses(true)
-        const { data: addressData, error: addressError } = await supabase
-          .from("addresses")
-          .select("*")
-          .eq("customer_id", user.id)
-          .order("is_default", { ascending: false })
-
+        const { data: addressData, error: addressError } = await getAddresses(user.id)
         if (addressData) {
           setAddresses(addressData)
         }
@@ -143,17 +132,24 @@ export default function AccountPage() {
   }, [user, isLoading, router])
 
   useEffect(() => {
-    getProducts().then(setProducts)
+    const loadProducts = async () => {
+      const { data } = await getProducts()
+      if (data) {
+        setProducts(data)
+      }
+    }
+    loadProducts()
   }, [])
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!user?.id) return
+
     setIsUpdating(true)
     setUpdateMessage(null)
 
     try {
-      const { error } = await supabase.from("customers").update({ name }).eq("id", user?.id)
-
+      const { error } = await updateProfile(user.id, name)
       if (error) {
         setUpdateMessage({ type: "error", text: error.message })
       } else {
@@ -168,24 +164,18 @@ export default function AccountPage() {
 
   const handleAddAddress = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!user?.id) return
+
     setIsUpdating(true)
     
     // Check if this is the first address (make it default)
     const isDefault = addresses.length === 0
     
     try {
-      const { data, error } = await supabase
-        .from("addresses")
-        .insert({
-          ...newAddress,
-          customer_id: user?.id,
-          is_default: isDefault,
-        })
-        .select()
-        
+      const { data, error } = await addAddress(user.id, { ...newAddress, is_default: isDefault })
       if (error) {
         setUpdateMessage({ type: "error", text: error.message })
-      } else {
+      } else if (data) {
         setAddresses(prev => [...prev, data[0]])
         setNewAddress({
           line1: "",
@@ -207,11 +197,7 @@ export default function AccountPage() {
   const handleDeleteAddress = async (id: string) => {
     setIsUpdating(true)
     try {
-      const { error } = await supabase
-        .from("addresses")
-        .delete()
-        .eq("id", id)
-        
+      const { error } = await deleteAddress(id)
       if (error) {
         setUpdateMessage({ type: "error", text: error.message })
       } else {
@@ -225,20 +211,11 @@ export default function AccountPage() {
   }
   
   const handleSetDefaultAddress = async (id: string) => {
+    if (!user?.id) return
+
     setIsUpdating(true)
     try {
-      // First, set all addresses to non-default
-      await supabase
-        .from("addresses")
-        .update({ is_default: false })
-        .eq("customer_id", user?.id)
-        
-      // Then set the selected address as default
-      const { error } = await supabase
-        .from("addresses")
-        .update({ is_default: true })
-        .eq("id", id)
-        
+      const { error } = await setDefaultAddress(user.id, id)
       if (error) {
         setUpdateMessage({ type: "error", text: error.message })
       } else {

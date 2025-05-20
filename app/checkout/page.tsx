@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import type { CartItem } from "@/lib/types"
 import { formatCurrency } from "@/lib/utils"
 import { useAuth } from "@/lib/providers/auth-provider"
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 import { useTranslations } from "@/lib/providers/translations-provider"
 import { MercadoPagoCheckout } from "@/components/ui/mercado-pago-checkout"
 import { useToast } from "@/components/ui/use-toast"
