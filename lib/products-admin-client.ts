@@ -50,19 +50,24 @@ export async function uploadProductImage(file: File, slug: string): Promise<ApiR
       fileType: file.type
     })
 
+    console.log('[Upload] File object:', file)
     const { data: uploadData, error: uploadError, ...rest } = await supabase.storage
-      .from('products')
-      .upload(filePath, file)
+      .from('product-images')
+      .upload(`products/${fileName}`, file)
 
     console.log('[Upload] upload() response:', { uploadData, uploadError, ...rest })
 
     if (uploadError) {
-      console.error('[Upload] Error uploading file:', uploadError, rest)
+      try {
+        console.error('[Upload] Error uploading file (stringified):', JSON.stringify(uploadError))
+      } catch (e) {
+        console.error('[Upload] Error uploading file (raw):', uploadError)
+      }
       return { data: null, error: uploadError }
     }
 
     const { data: publicUrlData } = supabase.storage
-      .from('products')
+      .from('product-images')
       .getPublicUrl(filePath)
 
     console.log('[Upload] getPublicUrl() response:', { publicUrlData })
