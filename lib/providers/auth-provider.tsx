@@ -43,9 +43,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('[Auth] Initial session:', session)
         setSession(session)
         if (session?.user) {
-          console.log('[Auth] User detected:', session.user)
+          // Consultar la tabla customers para obtener is_admin
+          const { data: customer, error: customerError } = await supabase
+            .from('customers')
+            .select('is_admin')
+            .eq('id', session.user.id)
+            .single()
+          if (customerError) {
+            console.error('[Auth] Error fetching customer data:', customerError)
+            setUser({ ...(session.user as User), is_admin: false })
+          } else {
+            setUser({ ...(session.user as User), is_admin: customer.is_admin })
+          }
         } else {
           console.log('[Auth] No user in session')
+          setUser(null)
         }
       } catch (err) {
         console.error('[Auth] Exception in initializeAuth:', err)
@@ -64,9 +76,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         setSession(session)
         if (session?.user) {
-          console.log('[Auth] User detected after auth change:', session.user)
+          // Consultar la tabla customers para obtener is_admin
+          const { data: customer, error: customerError } = await supabase
+            .from('customers')
+            .select('is_admin')
+            .eq('id', session.user.id)
+            .single()
+          if (customerError) {
+            console.error('[Auth] Error fetching customer data after auth change:', customerError)
+            setUser({ ...(session.user as User), is_admin: false })
+          } else {
+            setUser({ ...(session.user as User), is_admin: customer.is_admin })
+          }
         } else {
           console.log('[Auth] No user in session after auth change')
+          setUser(null)
         }
       } catch (err) {
         console.error('[Auth] Exception in auth state change:', err)

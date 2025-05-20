@@ -29,6 +29,8 @@ export default function Header() {
   const { user, signOut } = useAuth()
   const t = useTranslations()
 
+  console.log('HEADER user:', user)
+
   const cartItemsCount = cartItems.reduce((total, item) => total + item.quantity, 0)
 
   const types = getAllWineTypes(t).map(type => ({
