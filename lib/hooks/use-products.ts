@@ -24,6 +24,7 @@ export function useProductsByRegion(region: string) {
     console.log('[useProductsByRegion] Fetching products for region:', region)
     try {
       const { data: products, error } = await getProductsByRegion(region)
+      console.log('[useProductsByRegion] Response:', { products, error })
       if (error) {
         console.error('[useProductsByRegion] Error fetching products:', error)
         return []
@@ -38,6 +39,8 @@ export function useProductsByRegion(region: string) {
     region ? `products/region/${region}` : null,
     fetcher
   )
+
+  console.log('[useProductsByRegion] SWR state:', { data, error, isLoading })
 
   return {
     products: data || [],

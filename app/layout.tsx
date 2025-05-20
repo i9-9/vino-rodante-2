@@ -8,6 +8,7 @@ import { AuthProvider } from "@/lib/providers/auth-provider"
 import { TranslationsProvider } from "@/lib/providers/translations-provider"
 import { Toaster } from "@/components/ui/toaster"
 
+
 export const metadata: Metadata = {
   title: "Vino Rodante | Selección de Vinos Finos",
   description:
@@ -78,6 +79,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
+        <link rel="stylesheet" href="https://use.typekit.net/brq4dey.css" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <meta name="theme-color" content="#5B0E2D" />
       </head>
