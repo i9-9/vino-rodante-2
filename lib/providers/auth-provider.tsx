@@ -33,42 +33,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initializeAuth = async () => {
       try {
         console.log('[Auth] Initializing auth...')
-        // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession()
-        
         if (error) {
           console.error('[Auth] Error getting initial session:', error)
           setUser(null)
           setSession(null)
           return
         }
-
-        console.log('[Auth] Initial session:', session ? 'exists' : 'none')
+        console.log('[Auth] Initial session:', session)
         setSession(session)
-
         if (session?.user) {
-          try {
-            console.log('[Auth] Fetching customer data for user:', session.user.id)
-            const { data: customer, error: customerError } = await supabase
-              .from("customers")
-              .select("is_admin")
-              .eq("id", session.user.id)
-              .single()
-
-            if (customerError) {
-              console.error('[Auth] Error fetching customer:', customerError)
-              setUser(session.user)
-            } else {
-              console.log('[Auth] Customer data fetched:', customer)
-              setUser({ ...session.user, is_admin: customer?.is_admin })
-            }
-          } catch (err) {
-            console.error('[Auth] Exception fetching customer:', err)
-            setUser(session.user)
-          }
+          console.log('[Auth] User detected:', session.user)
         } else {
           console.log('[Auth] No user in session')
-          setUser(null)
         }
       } catch (err) {
         console.error('[Auth] Exception in initializeAuth:', err)
@@ -78,41 +55,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false)
       }
     }
-
     initializeAuth()
-
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[Auth] Auth state changed:', { event, session: session ? 'exists' : 'none' })
-      
+      console.log('[Auth] Auth state changed:', { event, session })
       try {
         setSession(session)
-
         if (session?.user) {
-          try {
-            console.log('[Auth] Fetching customer data after auth change:', session.user.id)
-            const { data: customer, error: customerError } = await supabase
-              .from("customers")
-              .select("is_admin")
-              .eq("id", session.user.id)
-              .single()
-
-            if (customerError) {
-              console.error('[Auth] Error fetching customer after auth change:', customerError)
-              setUser(session.user)
-            } else {
-              console.log('[Auth] Customer data fetched after auth change:', customer)
-              setUser({ ...session.user, is_admin: customer?.is_admin })
-            }
-          } catch (err) {
-            console.error('[Auth] Exception fetching customer after auth change:', err)
-            setUser(session.user)
-          }
+          console.log('[Auth] User detected after auth change:', session.user)
         } else {
           console.log('[Auth] No user in session after auth change')
-          setUser(null)
         }
       } catch (err) {
         console.error('[Auth] Exception in auth state change:', err)
@@ -122,7 +76,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false)
       }
     })
-
     return () => {
       console.log('[Auth] Cleaning up auth subscription')
       subscription.unsubscribe()
