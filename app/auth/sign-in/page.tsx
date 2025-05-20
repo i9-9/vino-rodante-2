@@ -37,9 +37,9 @@ export default function SignIn() {
         return
       }
 
-      // Redirigir inmediatamente después de un login exitoso
+      // Refresca la app para que el server reciba la cookie
       const redirectTo = new URLSearchParams(window.location.search).get('redirectedFrom') || '/'
-      router.push(redirectTo)
+      window.location.href = redirectTo // <-- Esto fuerza un refresh completo
     } catch (err) {
       console.error('[SignIn] Exception:', err)
       setError(err instanceof Error ? err.message : "An unexpected error occurred")

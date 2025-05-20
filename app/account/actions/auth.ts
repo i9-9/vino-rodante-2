@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 
 export async function updateProfile(userId: string, name: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { error } = await supabase
     .from("customers")
     .update({ name })
@@ -12,17 +12,21 @@ export async function updateProfile(userId: string, name: string) {
 }
 
 export async function getProfile(userId: string) {
-  const supabase = createClient()
-  const { data, error } = await supabase
-    .from("customers")
-    .select("*")
-    .eq("id", userId)
-    .single()
-  return { data, error }
+  const supabase = await createClient()
+  try {
+    const { data, error } = await supabase
+      .from("customers")
+      .select("*")
+      .eq("id", userId)
+      .single()
+    return { data, error }
+  } catch (err) {
+    return { data: null, error: err instanceof Error ? err : { message: 'Unknown error' } }
+  }
 }
 
 export async function getOrders(userId: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from("orders")
     .select(`*, order_items(*)`)
@@ -32,7 +36,7 @@ export async function getOrders(userId: string) {
 }
 
 export async function getAddresses(userId: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from("addresses")
     .select("*")
@@ -42,7 +46,7 @@ export async function getAddresses(userId: string) {
 }
 
 export async function addAddress(userId: string, address: any) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from("addresses")
     .insert({
@@ -54,7 +58,7 @@ export async function addAddress(userId: string, address: any) {
 }
 
 export async function deleteAddress(id: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { error } = await supabase
     .from("addresses")
     .delete()
@@ -63,7 +67,7 @@ export async function deleteAddress(id: string) {
 }
 
 export async function setDefaultAddress(userId: string, addressId: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
   // First, set all addresses to non-default
   await supabase
     .from("addresses")
