@@ -1,4 +1,5 @@
 import { getProducts } from '@/lib/products-client'
+import type { Product } from '@/lib/types'
 import ProductCard from "@/components/product-card"
 import { Button } from "@/components/ui/button"
 import { getTranslations } from "@/lib/get-translations"
@@ -13,11 +14,11 @@ export async function generateMetadata() {
 }
 
 export default async function ProductsPage() {
-  const products = await getProducts()
+  const { data: products = [] } = await getProducts();
   const t = await getTranslations()
 
   // Obtener regiones únicas de los productos
-  const uniqueRegions = Array.from(new Set(products.map(p => p.region))).filter(Boolean)
+  const uniqueRegions = Array.from(new Set(products.map((p: Product) => p.region))).filter(Boolean)
 
   // Mapeo de regiones a traducción si existe
   function getRegionLabel(region: string) {
@@ -94,7 +95,7 @@ export default async function ProductsPage() {
               {uniqueRegions.length === 0 ? (
                 <span className="text-muted-foreground text-sm">{t.common.noResults}</span>
               ) : (
-                uniqueRegions.map(region => (
+                uniqueRegions.map((region: string) => (
                   <Button key={region} variant="ghost" className="w-full justify-start">
                     {getRegionLabel(region)}
                   </Button>
@@ -106,7 +107,7 @@ export default async function ProductsPage() {
 
         <div className="flex-1">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.map((product) => (
+            {products.map((product: Product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
