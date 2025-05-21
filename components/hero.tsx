@@ -24,7 +24,7 @@ const slides = [
   {
     image: "/images/hero_bg2.jpg",
     title: "Weekly Wine",
-    subtitle: "Suscribite y recibíLa una selección cuidadosamente elegida de vinos cada semana",
+    subtitle: "Suscribite y recibí una selección cuidadosamente elegida de vinos cada semana",
     cta: "Suscribirse",
     secondaryCta: "Más información",
     ctaLink: "/weekly-wine",
@@ -54,6 +54,7 @@ export default function Hero() {
   const t = useTranslations()
   const [api, setApi] = useState<any>()
   const [current, setCurrent] = useState(0)
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set([0]))
 
   useEffect(() => {
     if (!api) return
@@ -69,9 +70,19 @@ export default function Hero() {
     if (!api) return
 
     api.on("select", () => {
-      setCurrent(api.selectedScrollSnap())
+      const newIndex = api.selectedScrollSnap()
+      setCurrent(newIndex)
+      // Precargar la siguiente imagen
+      const nextIndex = (newIndex + 1) % slides.length
+      if (!loadedImages.has(nextIndex)) {
+        const img = new window.Image()
+        img.src = slides[nextIndex].image
+        img.onload = () => {
+          setLoadedImages(prev => new Set([...prev, nextIndex]))
+        }
+      }
     })
-  }, [api])
+  }, [api, loadedImages])
 
   return (
     <section className="w-full relative">
@@ -85,12 +96,13 @@ export default function Hero() {
                     src={slide.image}
                     alt={slide.title}
                     fill
-                    priority
-                    sizes="100vw"
-                    quality={90}
-                    className="object-cover object-center"
+                    priority={index === 0}
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+                    quality={75}
+                    className="object-cover object-center transition-opacity duration-300"
                     style={{
                       filter: "brightness(0.7)",
+                      opacity: loadedImages.has(index) ? 1 : 0,
                     }}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
