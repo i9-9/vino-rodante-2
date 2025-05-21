@@ -1,45 +1,21 @@
 "use client"
 
+import { resetPasswordAction } from "../actions"
 import { useState } from "react"
-import { createClient } from '@/lib/supabase/client'
+import { useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useTranslations } from "@/lib/providers/translations-provider"
+import Spinner from "@/components/ui/Spinner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Wine } from "lucide-react"
 
 export default function ResetPasswordPage() {
-  const t = useTranslations()
-  const supabase = createClient()
+  const searchParams = useSearchParams()
+  const error = searchParams.get("error")
+  const success = searchParams.get("success")
   const [email, setEmail] = useState("")
-  const [message, setMessage] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setMessage(null)
-    setError(null)
-
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/update-password`,
-      })
-
-      if (error) {
-        setError(error.message)
-      } else {
-        setMessage(t.auth.resetPasswordEmailSent || "Te enviamos un email para restaurar tu contraseña.")
-      }
-    } catch (err) {
-      console.error('[ResetPassword] Exception:', err)
-      setError(err instanceof Error ? err.message : "An unexpected error occurred")
-    } finally {
-      setLoading(false)
-    }
-  }
+  const [submitting, setSubmitting] = useState(false)
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] flex-col items-center justify-center py-12">
@@ -51,34 +27,39 @@ export default function ResetPasswordPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            {message && (
-              <Alert>
-                <AlertDescription>{message}</AlertDescription>
-              </Alert>
-            )}
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          {success && (
+            <Alert>
+              <AlertDescription>{success}</AlertDescription>
+            </Alert>
+          )}
+          <form
+            action={resetPasswordAction}
+            onSubmit={() => setSubmitting(true)}
+            className="space-y-4"
+          >
             <div className="space-y-2">
               <Input
                 id="email"
+                name="email"
                 type="email"
                 placeholder="tu@email.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 required
-                disabled={loading}
+                disabled={submitting}
               />
             </div>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white"
-              disabled={loading}
+              disabled={submitting}
             >
-              {loading ? "Enviando..." : "Enviar instrucciones"}
+              {submitting ? <Spinner size={24} /> : "Enviar instrucciones"}
             </Button>
           </form>
         </CardContent>

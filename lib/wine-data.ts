@@ -154,4 +154,14 @@ export function prettyLabel(slug: string) {
     .split('-')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
+}
+
+// Mapping de slug (URL) a valor real en la base de datos
+export const CATEGORY_SLUG_MAP: Record<string, string> = {
+  red: "tinto",
+  white: "blanco",
+  rose: "rosado",
+  sparkling: "espumante",
+  naranjo: "naranjo",
+  // Puedes agregar más si agregas más categorías
 } 

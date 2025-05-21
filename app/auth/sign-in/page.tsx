@@ -1,13 +1,26 @@
+"use client"
+
 import { signInAction } from "./actions"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Wine } from "lucide-react"
-import { redirect } from 'next/navigation'
+import Spinner from "@/components/ui/Spinner"
+import { useState } from "react"
+import { useSearchParams } from "next/navigation"
 
-export default async function SignIn({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
-  const error = searchParams?.error
+export default function SignIn() {
+  const searchParams = useSearchParams()
+  const error = searchParams.get("error")
+  const success = searchParams.get("success")
+  const [form, setForm] = useState({ email: '', password: '' })
+  const [submitting, setSubmitting] = useState(false)
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
   return (
     <div className="flex min-h-[calc(100vh-64px)] flex-col items-center justify-center py-12">
       <div className="w-full max-w-md space-y-8 px-4">
@@ -16,12 +29,21 @@ export default async function SignIn({ searchParams }: { searchParams: { [key: s
           <h1 className="mt-4 text-3xl font-bold text-[#5B0E2D]">Iniciar sesión</h1>
           <p className="mt-2 text-gray-600">Bienvenido de nuevo a Vino Rodante</p>
         </div>
-        <form className="mt-8 space-y-6" action={signInAction}>
-          {error && (
-            <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">
-              {error}
-            </div>
-          )}
+        {error && (
+          <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="rounded-md bg-green-50 p-4 text-sm text-green-700">
+            {success}
+          </div>
+        )}
+        <form
+          className="mt-8 space-y-6"
+          action={signInAction}
+          onSubmit={() => setSubmitting(true)}
+        >
           <div className="space-y-4">
             <div>
               <Label htmlFor="email">Email</Label>
@@ -32,6 +54,9 @@ export default async function SignIn({ searchParams }: { searchParams: { [key: s
                 autoComplete="email"
                 required
                 className="mt-1"
+                value={form.email}
+                onChange={handleChange}
+                disabled={submitting}
               />
             </div>
             <div>
@@ -51,11 +76,14 @@ export default async function SignIn({ searchParams }: { searchParams: { [key: s
                 autoComplete="current-password"
                 required
                 className="mt-1"
+                value={form.password}
+                onChange={handleChange}
+                disabled={submitting}
               />
             </div>
           </div>
-          <Button type="submit" className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white">
-            Iniciar sesión
+          <Button type="submit" className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white" disabled={submitting}>
+            {submitting ? <Spinner size={24} /> : "Iniciar sesión"}
           </Button>
           <div className="text-center text-sm">
             ¿No tienes cuenta? {" "}

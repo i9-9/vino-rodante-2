@@ -1,25 +1,22 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { signUpAction } from "../actions"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useAuth } from "@/lib/providers/auth-provider"
+import Spinner from "@/components/ui/Spinner"
 import { Wine, Check, X } from "lucide-react"
+import { useState } from "react"
+import { useSearchParams } from "next/navigation"
 
 export default function SignUp() {
-  const router = useRouter()
-  const { signUp } = useAuth()
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const searchParams = useSearchParams()
+  const error = searchParams.get("error")
+  const success = searchParams.get("success")
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' })
+  const [submitting, setSubmitting] = useState(false)
+  const [formTouched, setFormTouched] = useState(false)
   const [passwordStrength, setPasswordStrength] = useState({
     hasMinLength: false,
     hasUppercase: false,
@@ -27,10 +24,11 @@ export default function SignUp() {
     hasNumber: false,
     hasSpecialChar: false,
   })
-  const [formTouched, setFormTouched] = useState(false)
-  
-  useEffect(() => {
-    if (password) {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value })
+    if (!formTouched) setFormTouched(true)
+    if (e.target.name === 'password') {
+      const password = e.target.value
       setPasswordStrength({
         hasMinLength: password.length >= 8,
         hasUppercase: /[A-Z]/.test(password),
@@ -39,50 +37,10 @@ export default function SignUp() {
         hasSpecialChar: /[^A-Za-z0-9]/.test(password),
       })
     }
-  }, [password])
-  
+  }
   const isPasswordValid = Object.values(passwordStrength).filter(Boolean).length >= 4
-  const passwordsMatch = password === confirmPassword
-  const isFormValid = name && email && password && isPasswordValid && passwordsMatch
-
-  const handleInputChange = () => {
-    if (!formTouched) setFormTouched(true);
-    setError(null);
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setFormTouched(true)
-    
-    if (!isFormValid) {
-      if (!passwordsMatch) {
-        setError("Passwords don't match");
-      } else if (!isPasswordValid) {
-        setError("Password doesn't meet the requirements");
-      } else {
-        setError("Please fill out all required fields");
-      }
-      return;
-    }
-    
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const { error } = await signUp(email, password, name)
-      if (error) {
-        setError(error.message)
-      } else {
-        router.push("/auth/sign-up-success")
-      }
-    } catch (err) {
-      setError("An unexpected error occurred")
-      console.error(err)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
+  const passwordsMatch = form.password === form.confirmPassword
+  const isFormValid = form.name && form.email && form.password && isPasswordValid && passwordsMatch
   const renderPasswordRequirement = (label: string, met: boolean) => (
     <div className="flex items-center gap-2 text-sm">
       {met ? (
@@ -93,7 +51,6 @@ export default function SignUp() {
       <span className={met ? "text-green-600" : "text-gray-500"}>{label}</span>
     </div>
   );
-
   return (
     <div className="flex min-h-[calc(100vh-64px)] flex-col items-center justify-center py-12">
       <div className="w-full max-w-md space-y-8 px-4">
@@ -102,10 +59,9 @@ export default function SignUp() {
           <h1 className="mt-4 text-3xl font-bold text-[#5B0E2D]">Create an account</h1>
           <p className="mt-2 text-gray-600">Join Vino Rodante to explore our exceptional wine collection</p>
         </div>
-
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">{error}</div>}
-
+        {error && <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+        {success && <div className="rounded-md bg-green-50 p-4 text-sm text-green-700">{success}</div>}
+        <form className="mt-8 space-y-6" action={signUpAction} onSubmit={() => setSubmitting(true)}>
           <div className="space-y-4">
             <div>
               <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
@@ -115,15 +71,12 @@ export default function SignUp() {
                 type="text"
                 autoComplete="name"
                 required
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  handleInputChange();
-                }}
+                value={form.name}
+                onChange={handleInputChange}
                 className="mt-1"
+                disabled={submitting}
               />
             </div>
-
             <div>
               <Label htmlFor="email">Email address <span className="text-red-500">*</span></Label>
               <Input
@@ -132,15 +85,12 @@ export default function SignUp() {
                 type="email"
                 autoComplete="email"
                 required
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  handleInputChange();
-                }}
+                value={form.email}
+                onChange={handleInputChange}
                 className="mt-1"
+                disabled={submitting}
               />
             </div>
-
             <div>
               <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
               <Input
@@ -149,12 +99,10 @@ export default function SignUp() {
                 type="password"
                 autoComplete="new-password"
                 required
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  handleInputChange();
-                }}
+                value={form.password}
+                onChange={handleInputChange}
                 className="mt-1"
+                disabled={submitting}
               />
               <div className="mt-2 space-y-1.5">
                 {renderPasswordRequirement("At least 8 characters", passwordStrength.hasMinLength)}
@@ -164,7 +112,6 @@ export default function SignUp() {
                 {renderPasswordRequirement("At least 1 special character", passwordStrength.hasSpecialChar)}
               </div>
             </div>
-            
             <div>
               <Label htmlFor="confirmPassword">Confirm Password <span className="text-red-500">*</span></Label>
               <Input
@@ -173,27 +120,23 @@ export default function SignUp() {
                 type="password"
                 autoComplete="new-password"
                 required
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value);
-                  handleInputChange();
-                }}
+                value={form.confirmPassword}
+                onChange={handleInputChange}
                 className="mt-1"
+                disabled={submitting}
               />
-              {formTouched && confirmPassword && !passwordsMatch && (
+              {formTouched && form.confirmPassword && !passwordsMatch && (
                 <p className="mt-1 text-xs text-red-500">Passwords don't match</p>
               )}
             </div>
           </div>
-
-          <Button 
-            type="submit" 
-            className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white" 
-            disabled={isLoading || (formTouched && !isFormValid)}
+          <Button
+            type="submit"
+            className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white"
+            disabled={submitting || (formTouched && !isFormValid)}
           >
-            {isLoading ? "Creating account..." : "Create account"}
+            {submitting ? <Spinner size={24} /> : "Create account"}
           </Button>
-
           <div className="text-center text-sm">
             Already have an account?{" "}
             <Link href="/auth/sign-in" className="font-medium text-[#A83935] hover:text-[#A83935]/80">

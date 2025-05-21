@@ -11,6 +11,7 @@ export interface Product {
   varietal: string
   stock: number
   featured: boolean
+  is_visible: boolean
 }
 
 export interface CartItem extends Product {

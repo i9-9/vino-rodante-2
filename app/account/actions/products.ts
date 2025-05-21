@@ -9,7 +9,7 @@ export async function createProduct(product: Omit<Product, 'id' | 'created_at' |
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('products')
-    .insert([product])
+    .insert([{ ...product, is_visible: product.is_visible ?? true }])
     .select()
     .single()
   return { data, error }
@@ -19,7 +19,7 @@ export async function updateProduct(id: string, product: Partial<Omit<Product, '
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('products')
-    .update(product)
+    .update({ ...product, is_visible: product.is_visible ?? true })
     .eq('id', id)
     .select()
     .single()

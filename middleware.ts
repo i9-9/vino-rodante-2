@@ -16,10 +16,8 @@ const publicRoutes = [
 ]
 
 export async function middleware(request: NextRequest) {
-  // Log temporal para depuración
-  console.log('Cookies en request:', request.cookies.getAll())
-
   let response = NextResponse.next({ request: { headers: request.headers } })
+  let cookiesWereSet = false
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,10 +28,14 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          // Si se actualizan cookies, setéalas en la response
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options)
-          })
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options)
+              cookiesWereSet = true
+            })
+          } catch (error) {
+            // Si ocurre error en set (por ejemplo, en Server Component), ignorar
+          }
         },
       },
     }
@@ -62,7 +64,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  return response
+  // Solo devolver la response con cookies si realmente hubo cambios
+  return cookiesWereSet ? response : NextResponse.next()
 }
 
 export const config = {
