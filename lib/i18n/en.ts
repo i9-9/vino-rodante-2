@@ -40,6 +40,7 @@ export const en = {
   },
   navigation: {
     home: "Home",
+    weeklyWine: "Weekly Wine",
     products: "Products",
     allWines: "All Wines",
     redWines: "Red Wines",

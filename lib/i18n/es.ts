@@ -40,6 +40,7 @@ export const es = {
   },
   navigation: {
     home: "Inicio",
+    weeklyWine: "Weekly Wine",
     products: "Productos",
     allWines: "Todos los Vinos",
     redWines: "Vinos Tintos",

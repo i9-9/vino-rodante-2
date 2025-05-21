@@ -74,6 +74,13 @@ export default function MobileMenu({
             {t.navigation.allWines}
           </Link>
           <Link
+            href="/weekly-wine"
+            className="text-foreground hover:text-secondary text-lg font-medium transition-colors"
+            onClick={onClose}
+          >
+            {t.navigation.weeklyWine}
+          </Link>
+          <Link
             href="/collections/red"
             className="text-foreground hover:text-secondary text-lg font-medium transition-colors"
             onClick={onClose}

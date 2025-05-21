@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
 // Helper para redirección con mensaje
-export function redirectWithMessage(path: string, type: "error" | "success", message: string) {
+export async function redirectWithMessage(path: string, type: "error" | "success", message: string) {
   const url = new URL(path, process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000")
   url.searchParams.set(type, message)
   return redirect(url.toString())
