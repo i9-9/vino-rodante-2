@@ -20,6 +20,7 @@ export default function SignIn() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [redirecting, setRedirecting] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,17 +30,21 @@ export default function SignIn() {
     setError(null)
 
     try {
+      console.log('[SignIn] Starting sign in process...')
       const { error: signInError } = await signIn(email, password)
       
       if (signInError) {
-        setError(signInError.message)
+        console.error('[SignIn] Sign in error:', signInError)
+        setError(signInError.message || 'Error al iniciar sesión')
         setIsLoading(false)
         return
       }
 
-      // Refresca la app para que el server reciba la cookie
+      // Redirige inmediatamente tras login exitoso
+      setRedirecting(true)
       const redirectTo = new URLSearchParams(window.location.search).get('redirectedFrom') || '/'
-      window.location.href = redirectTo // <-- Esto fuerza un refresh completo
+      console.log('[SignIn] Redirecting to:', redirectTo)
+      window.location.href = redirectTo
     } catch (err) {
       console.error('[SignIn] Exception:', err)
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
@@ -64,68 +69,75 @@ export default function SignIn() {
           <p className="mt-2 text-gray-600">{t.auth.signIn.subtitle || "Bienvenido de nuevo a Vino Rodante"}</p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">
-              {error}
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1"
-                disabled={isLoading}
-              />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Contraseña</Label>
-                <Link
-                  href="/auth/reset-password"
-                  className="text-sm font-medium text-[#A83935] hover:text-[#A83935]/80"
-                >
-                  {t.auth.signIn.forgotPassword || "¿Olvidaste tu contraseña?"}
-                </Link>
+        {redirecting ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="mb-4 animate-spin rounded-full border-4 border-[#A83935] border-t-transparent h-12 w-12" />
+            <p className="mt-4 text-lg font-semibold text-[#A83935]">Redirigiendo...</p>
+          </div>
+        ) : (
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            {error && (
+              <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">
+                {error}
               </div>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1"
-                disabled={isLoading}
-              />
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Contraseña</Label>
+                  <Link
+                    href="/auth/reset-password"
+                    className="text-sm font-medium text-[#A83935] hover:text-[#A83935]/80"
+                  >
+                    {t.auth.signIn.forgotPassword || "¿Olvidaste tu contraseña?"}
+                  </Link>
+                </div>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-1"
+                  disabled={isLoading}
+                />
+              </div>
             </div>
-          </div>
 
-          <Button 
-            type="submit" 
-            className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white" 
-            disabled={isLoading}
-          >
-            {isLoading ? t.common.loading || "Ingresando..." : t.auth.signIn.title || "Iniciar sesión"}
-          </Button>
+            <Button 
+              type="submit" 
+              className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white" 
+              disabled={isLoading}
+            >
+              {isLoading ? t.common.loading || "Ingresando..." : t.auth.signIn.title || "Iniciar sesión"}
+            </Button>
 
-          <div className="text-center text-sm">
-            {t.auth.signIn.noAccount || "¿No tienes cuenta?"} {" "}
-            <Link href="/auth/sign-up" className="font-medium text-[#A83935] hover:text-[#A83935]/80">
-              {t.auth.signIn.createAccount || "Crear cuenta"}
-            </Link>
-          </div>
-        </form>
+            <div className="text-center text-sm">
+              {t.auth.signIn.noAccount || "¿No tienes cuenta?"} {" "}
+              <Link href="/auth/sign-up" className="font-medium text-[#A83935] hover:text-[#A83935]/80">
+                {t.auth.signIn.createAccount || "Crear cuenta"}
+              </Link>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   )

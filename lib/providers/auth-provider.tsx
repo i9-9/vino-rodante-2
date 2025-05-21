@@ -6,7 +6,10 @@ import type { Session, User as SupabaseUser } from "@supabase/supabase-js"
 import { createBrowserClient } from '@supabase/ssr'
 
 // Extiendo el tipo de usuario para incluir is_admin
-export type User = SupabaseUser & { is_admin?: boolean }
+export type User = SupabaseUser & { 
+  is_admin?: boolean;
+  customerError?: any; // Error from customer data fetch
+}
 
 type AuthContextType = {
   user: User | null
@@ -43,16 +46,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('[Auth] Initial session:', session)
         setSession(session)
         if (session?.user) {
+          console.log('[Auth] Fetching customer data for user:', session.user.id)
           // Consultar la tabla customers para obtener is_admin
           const { data: customer, error: customerError } = await supabase
             .from('customers')
             .select('is_admin')
             .eq('id', session.user.id)
             .single()
+          
           if (customerError) {
             console.error('[Auth] Error fetching customer data:', customerError)
-            setUser({ ...(session.user as User), is_admin: false })
+            // Propagamos el error en lugar de solo setear is_admin: false
+            setUser({ ...(session.user as User), is_admin: false, customerError })
           } else {
+            console.log('[Auth] Customer data fetched successfully:', customer)
             setUser({ ...(session.user as User), is_admin: customer.is_admin })
           }
         } else {
@@ -76,16 +83,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         setSession(session)
         if (session?.user) {
+          console.log('[Auth] Fetching customer data after auth change for user:', session.user.id)
           // Consultar la tabla customers para obtener is_admin
           const { data: customer, error: customerError } = await supabase
             .from('customers')
             .select('is_admin')
             .eq('id', session.user.id)
             .single()
+          
           if (customerError) {
             console.error('[Auth] Error fetching customer data after auth change:', customerError)
-            setUser({ ...(session.user as User), is_admin: false })
+            // Propagamos el error en lugar de solo setear is_admin: false
+            setUser({ ...(session.user as User), is_admin: false, customerError })
           } else {
+            console.log('[Auth] Customer data fetched successfully after auth change:', customer)
             setUser({ ...(session.user as User), is_admin: customer.is_admin })
           }
         } else {
@@ -111,7 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true)
       console.log('[Auth] Attempting sign in for:', email)
       
-      const { error } = await supabase.auth.signInWithPassword({ 
+      const { data, error } = await supabase.auth.signInWithPassword({ 
         email, 
         password
       })
@@ -121,7 +132,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error }
       }
 
-      console.log('[Auth] Sign in successful')
+      if (!data.session) {
+        console.error('[Auth] No session returned after successful sign in')
+        return { error: new Error('No session returned') }
+      }
+
+      console.log('[Auth] Sign in successful:', {
+        userId: data.user?.id,
+        hasSession: !!data.session,
+        hasAccessToken: !!data.session.access_token
+      })
+
+      // Fetch customer data immediately after successful sign in
+      const { data: customer, error: customerError } = await supabase
+        .from('customers')
+        .select('is_admin')
+        .eq('id', data.user.id)
+        .single()
+
+      if (customerError) {
+        console.error('[Auth] Error fetching customer data after sign in:', customerError)
+        return { error: customerError }
+      }
+
+      console.log('[Auth] Customer data fetched successfully:', customer)
+      setUser({ ...(data.user as User), is_admin: customer.is_admin })
+      
       return { error: null }
     } catch (err) {
       console.error('[Auth] Exception in signIn:', err)
