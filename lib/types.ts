@@ -21,36 +21,35 @@ export interface OrderItem {
   id: string
   order_id: string
   product_id: string
-  product_name?: string
   quantity: number
   price: number
+  product_name?: string
 }
 
 export interface Order {
   id: string
   user_id: string
-  items: CartItem[]
-  subtotal: number
-  tax: number
-  shipping: number
+  status: 'pending' | 'processing' | 'completed' | 'cancelled'
   total: number
-  status: "pending" | "processing" | "shipped" | "delivered"
-  created_at?: string
-  order_items?: OrderItem[]
-  customer: {
-    name: string
-    email: string
-    address: {
-      line1: string
-      line2?: string
-      city: string
-      state: string
-      postal_code: string
-      country: string
-    }
-  }
-  payment: {
-    method: string
-    transaction_id: string
-  }
+  created_at: string
+  order_items: OrderItem[]
+}
+
+export interface Address {
+  id: string
+  customer_id: string
+  street: string
+  city: string
+  state: string
+  postal_code: string
+  country: string
+  is_default: boolean
+  created_at: string
+}
+
+export interface Profile {
+  id: string
+  name: string
+  email: string
+  created_at: string
 }

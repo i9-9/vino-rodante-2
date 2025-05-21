@@ -1,14 +1,18 @@
 "use server"
 
 import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 
-export async function updateProfile(userId: string, name: string) {
+export async function updateProfileAction(formData: FormData) {
+  const userId = formData.get('userId') as string
+  const name = formData.get('name') as string
   const supabase = await createClient()
   const { error } = await supabase
     .from("customers")
     .update({ name })
     .eq("id", userId)
-  return { error }
+  // Puedes manejar el error o redirigir según tu UX
+  return redirect('/account')
 }
 
 export async function getProfile(userId: string) {
