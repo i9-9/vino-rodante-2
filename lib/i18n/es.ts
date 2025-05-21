@@ -336,5 +336,20 @@ export const es = {
     chardonnayDesc: "Elegante y crujiente con acidez equilibrada y notas de manzana verde, pera y vainilla.",
     cabernetSauvignon: "Cabernet Sauvignon 2016",
     cabernetDesc: "De cuerpo completo con taninos ricos y sabores complejos de grosella negra, cedro y especias."
-  }
+  },
+  club: {
+    subscription: {
+      monthly: "Mensual",
+      quarterly: "Trimestral",
+      yearly: "Anual",
+      desc: "Entrega semanal de {bottles} botellas",
+      deliveries: "{count} entregas en el período",
+      bottles: "{count} botellas en total",
+      tastingGuide: "Guía de cata digital incluida",
+      events: "Acceso a eventos exclusivos",
+      discount5: "5% de descuento",
+      discount15: "15% de descuento",
+      annualEvent: "Evento exclusivo anual"
+    }
+  },
 }

@@ -292,5 +292,20 @@ export const en = {
     chardonnayDesc: "Elegant and crisp with balanced acidity and notes of green apple, pear, and vanilla.",
     cabernetSauvignon: "Cabernet Sauvignon 2016",
     cabernetDesc: "Full-bodied with rich tannins and complex flavors of black currant, cedar, and spice."
-  }
+  },
+  club: {
+    subscription: {
+      monthly: "Monthly",
+      quarterly: "Quarterly",
+      yearly: "Yearly",
+      desc: "Weekly delivery of {bottles} bottles",
+      deliveries: "{count} deliveries in the period",
+      bottles: "{count} bottles in total",
+      tastingGuide: "Digital tasting guide included",
+      events: "Access to exclusive events",
+      discount5: "5% discount",
+      discount15: "15% discount",
+      annualEvent: "Exclusive annual event"
+    }
+  },
 }

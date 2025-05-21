@@ -20,13 +20,13 @@ export default function MobileMenu({
   const t = useTranslations()
   const { language, setLanguage } = useLanguage()
 
+  const handleLanguageChange = (newLanguage: "en" | "es") => {
+    setLanguage(newLanguage)
+  }
+
   const handleSignOut = async () => {
     await signOut()
     onClose()
-  }
-
-  const handleLanguageChange = (lang: "en" | "es") => {
-    setLanguage(lang)
   }
 
   return (
@@ -73,13 +73,47 @@ export default function MobileMenu({
           >
             {t.navigation.allWines}
           </Link>
-          <Link
-            href="/weekly-wine"
-            className="text-foreground hover:text-secondary text-lg font-medium transition-colors"
-            onClick={onClose}
-          >
-            {t.navigation.weeklyWine}
-          </Link>
+
+          <div className="space-y-2">
+            <Link
+              href="/weekly-wine"
+              className="text-foreground hover:text-secondary text-lg font-medium transition-colors"
+              onClick={onClose}
+            >
+              {t.navigation.weeklyWine}
+            </Link>
+            <div className="pl-4 space-y-2">
+              <Link
+                href="/weekly-wine/tinto"
+                className="block text-foreground hover:text-secondary text-base transition-colors"
+                onClick={onClose}
+              >
+                Club Tinto
+              </Link>
+              <Link
+                href="/weekly-wine/blanco"
+                className="block text-foreground hover:text-secondary text-base transition-colors"
+                onClick={onClose}
+              >
+                Club Blanco
+              </Link>
+              <Link
+                href="/weekly-wine/mixto"
+                className="block text-foreground hover:text-secondary text-base transition-colors"
+                onClick={onClose}
+              >
+                Club Mixto
+              </Link>
+              <Link
+                href="/weekly-wine/naranjo"
+                className="block text-foreground hover:text-secondary text-base transition-colors"
+                onClick={onClose}
+              >
+                Club Naranjo
+              </Link>
+            </div>
+          </div>
+
           <Link
             href="/collections/red"
             className="text-foreground hover:text-secondary text-lg font-medium transition-colors"

@@ -60,7 +60,12 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
               <div className="container mx-auto px-4 py-6 bg-background border border-border rounded-lg shadow-lg">
                 <div className="grid grid-cols-12 gap-6">
                   <div className="col-span-12">
-                    <h3 className="mb-6 text-2xl font-medium border-b pb-2">{t.navigation.weeklyWine}</h3>
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-2xl font-medium border-b pb-2">{t.navigation.weeklyWine}</h3>
+                      <Link href="/weekly-wine" className="text-primary hover:underline" onClick={closeWeeklyWineMenu}>
+                        Ver todos los clubs
+                      </Link>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                       <Link href="/weekly-wine/tinto" className="group" onClick={closeWeeklyWineMenu}>
                         <div className="relative aspect-[4/3] overflow-hidden rounded-lg">
