@@ -19,8 +19,9 @@ import { useTranslations } from "@/lib/providers/translations-provider"
 import { getProfile, getOrders, getAddresses, addAddress, deleteAddress, setDefaultAddress } from './actions/auth-client'
 import { updateProfileAction } from './actions/auth'
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { createProduct, updateProduct, deleteProduct, uploadProductImage } from './actions/products'
 
-export default function AccountClient({ user }: { user: User }) {
+export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: boolean }) {
   const router = useRouter()
   const t = useTranslations()
   const [profile, setProfile] = useState<any>(null)
@@ -28,6 +29,11 @@ export default function AccountClient({ user }: { user: User }) {
   const [addresses, setAddresses] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [products, setProducts] = useState<Product[]>([])
+  const [loadingProducts, setLoadingProducts] = useState(true)
+  const [productError, setProductError] = useState<string | null>(null)
+  const [showProductModal, setShowProductModal] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
 
   useEffect(() => {
     const loadData = async () => {
@@ -56,6 +62,25 @@ export default function AccountClient({ user }: { user: User }) {
 
     loadData()
   }, [user.id])
+
+  useEffect(() => {
+    if (!isAdmin) return
+    const fetchProducts = async () => {
+      setLoadingProducts(true)
+      setProductError(null)
+      try {
+        const supabase = createClient()
+        const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false })
+        if (error) throw error
+        setProducts(data || [])
+      } catch (err: any) {
+        setProductError(err.message || 'Error cargando productos')
+      } finally {
+        setLoadingProducts(false)
+      }
+    }
+    fetchProducts()
+  }, [isAdmin])
 
   const handleUpdateProfile = async (formData: FormData) => {
     try {
@@ -114,6 +139,65 @@ export default function AccountClient({ user }: { user: User }) {
     }
   }
 
+  const handleOpenCreate = () => {
+    setEditingProduct(null)
+    setShowProductModal(true)
+  }
+
+  const handleOpenEdit = (product: Product) => {
+    setEditingProduct(product)
+    setShowProductModal(true)
+  }
+
+  const handleCloseModal = () => {
+    setEditingProduct(null)
+    setShowProductModal(false)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('¿Seguro que deseas borrar este producto?')) return
+    const { error } = await deleteProduct(id)
+    if (!error) {
+      setProducts(products.filter(p => p.id !== id))
+    } else {
+      alert('Error al borrar producto: ' + error.message)
+    }
+  }
+
+  const handleSave = async (formData: FormData) => {
+    const fields = [
+      'name', 'slug', 'description', 'price', 'image', 'category', 'year', 'region', 'varietal', 'stock', 'featured'
+    ]
+    const product: any = {}
+    fields.forEach(f => product[f] = formData.get(f))
+    product.price = parseFloat(product.price)
+    product.stock = parseInt(product.stock)
+    product.featured = formData.get('featured') === 'on'
+    if (formData.get('image') instanceof File && (formData.get('image') as File).size > 0) {
+      const file = formData.get('image') as File
+      const { data: imageUrl, error: imgErr } = await uploadProductImage(file, product.slug)
+      if (imgErr) {
+        alert('Error subiendo imagen: ' + imgErr.message)
+        return
+      }
+      product.image = imageUrl
+    }
+    let result
+    if (editingProduct) {
+      result = await updateProduct(editingProduct.id, product)
+    } else {
+      result = await createProduct(product)
+    }
+    if (result.error) {
+      alert('Error guardando producto: ' + result.error.message)
+    } else {
+      handleCloseModal()
+      const supabase = createClient()
+      const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false })
+      setProducts(data || [])
+    }
+  }
+
   if (isLoading) {
     return <div className="container py-8">Loading...</div>
   }
@@ -135,6 +219,7 @@ export default function AccountClient({ user }: { user: User }) {
           <TabsTrigger value="profile">{t.account.profile}</TabsTrigger>
           <TabsTrigger value="orders">{t.account.orders}</TabsTrigger>
           <TabsTrigger value="addresses">{t.account.addresses}</TabsTrigger>
+          {isAdmin && <TabsTrigger value="products">Productos</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="profile">
@@ -299,6 +384,83 @@ export default function AccountClient({ user }: { user: User }) {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {isAdmin && (
+          <TabsContent value="products">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Administrar Productos</h2>
+              <Button onClick={handleOpenCreate}>Agregar producto</Button>
+            </div>
+            {loadingProducts ? (
+              <div>Cargando productos...</div>
+            ) : productError ? (
+              <div className="text-red-500">{productError}</div>
+            ) : (
+              <table className="min-w-full border text-sm">
+                <thead>
+                  <tr>
+                    <th>Nombre</th><th>Slug</th><th>Precio</th><th>Stock</th><th>Destacado</th><th>Categoría</th><th>Año</th><th>Región</th><th>Varietal</th><th>Imagen</th><th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.map(product => (
+                    <tr key={product.id}>
+                      <td>{product.name}</td>
+                      <td>{product.slug}</td>
+                      <td>{product.price}</td>
+                      <td>{product.stock}</td>
+                      <td>{product.featured ? 'Sí' : 'No'}</td>
+                      <td>{product.category}</td>
+                      <td>{product.year}</td>
+                      <td>{product.region}</td>
+                      <td>{product.varietal}</td>
+                      <td>{product.image ? <img src={product.image} alt={product.name} className="w-12 h-12 object-cover" /> : '-'}</td>
+                      <td>
+                        <Button size="sm" variant="outline" onClick={() => handleOpenEdit(product)}>Editar</Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDelete(product.id)} className="ml-2">Borrar</Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {showProductModal && (
+              <Dialog open={showProductModal} onOpenChange={setShowProductModal}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{editingProduct ? 'Editar producto' : 'Agregar producto'}</DialogTitle>
+                  </DialogHeader>
+                  <form
+                    className="space-y-4"
+                    onSubmit={e => {
+                      e.preventDefault()
+                      const formData = new FormData(e.currentTarget)
+                      handleSave(formData)
+                    }}
+                  >
+                    <Input name="name" placeholder="Nombre" defaultValue={editingProduct?.name} required />
+                    <Input name="slug" placeholder="Slug" defaultValue={editingProduct?.slug} required />
+                    <Input name="description" placeholder="Descripción" defaultValue={editingProduct?.description} required />
+                    <Input name="price" type="number" step="0.01" placeholder="Precio" defaultValue={editingProduct?.price} required />
+                    <Input name="stock" type="number" placeholder="Stock" defaultValue={editingProduct?.stock} required />
+                    <Input name="category" placeholder="Categoría" defaultValue={editingProduct?.category} required />
+                    <Input name="year" placeholder="Año" defaultValue={editingProduct?.year} required />
+                    <Input name="region" placeholder="Región" defaultValue={editingProduct?.region} required />
+                    <Input name="varietal" placeholder="Varietal" defaultValue={editingProduct?.varietal} required />
+                    <label className="flex items-center gap-2">
+                      <input type="checkbox" name="featured" defaultChecked={!!editingProduct?.featured} /> Destacado
+                    </label>
+                    <Input name="image" type="file" accept="image/*" />
+                    <DialogFooter>
+                      <Button type="submit">{editingProduct ? 'Guardar cambios' : 'Crear producto'}</Button>
+                      <Button type="button" variant="outline" onClick={handleCloseModal}>Cancelar</Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            )}
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   )

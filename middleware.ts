@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-// List of public routes that don't require authentication
+// Lista de rutas públicas
 const publicRoutes = [
   '/',
   '/products',
@@ -19,10 +19,8 @@ export async function middleware(request: NextRequest) {
   // Log temporal para depuración
   console.log('Cookies en request:', request.cookies.getAll())
 
-  // Crea un solo objeto de respuesta
-  let supabaseResponse = NextResponse.next({ request })
+  let response = NextResponse.next({ request: { headers: request.headers } })
 
-  // Crea el cliente de Supabase con manejo de cookies SOLO en el response
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -32,9 +30,10 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
+          // Si se actualizan cookies, setéalas en la response
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options)
+          })
         },
       },
     }
@@ -45,8 +44,8 @@ export async function middleware(request: NextRequest) {
   console.log('Supabase user in middleware:', user, 'Error:', userError)
 
   // Rutas protegidas
-  if (request.nextUrl.pathname.startsWith("/account") && userError) {
-    return NextResponse.redirect(new URL("/auth/sign-in", request.url))
+  if (request.nextUrl.pathname.startsWith('/account') && userError) {
+    return NextResponse.redirect(new URL('/auth/sign-in', request.url))
   }
 
   // Rutas públicas
@@ -63,7 +62,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  return supabaseResponse
+  return response
 }
 
 export const config = {

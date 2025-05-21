@@ -8,5 +8,15 @@ export default async function AccountPage() {
   if (!user) {
     redirect('/auth/sign-in')
   }
-  return <AccountClient user={user} />
+
+  // Obtener el perfil extendido (incluyendo is_admin)
+  const { data: profile } = await supabase
+    .from('customers')
+    .select('is_admin')
+    .eq('id', user.id)
+    .single()
+
+  console.log('isAdmin prop:', !!profile?.is_admin)
+
+  return <AccountClient user={user} isAdmin={!!profile?.is_admin} />
 }
