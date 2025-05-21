@@ -20,6 +20,9 @@ import { getProfile, getOrders, getAddresses, addAddress, deleteAddress, setDefa
 import { updateProfileAction } from './actions/auth'
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { createProduct, updateProduct, deleteProduct, uploadProductImage } from './actions/products'
+import Spinner from "@/components/ui/Spinner"
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
+import { Switch } from "@/components/ui/switch"
 
 export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: boolean }) {
   const router = useRouter()
@@ -198,8 +201,22 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
     }
   }
 
+  // Nueva función para cambiar visibilidad
+  const handleToggleVisible = async (product: Product) => {
+    const { error } = await updateProduct(product.id, { is_visible: !product.is_visible })
+    if (!error) {
+      setProducts(products =>
+        products.map(p =>
+          p.id === product.id ? { ...p, is_visible: !p.is_visible } : p
+        )
+      )
+    } else {
+      alert('Error actualizando visibilidad: ' + error.message)
+    }
+  }
+
   if (isLoading) {
-    return <div className="container py-8">Loading...</div>
+    return <div className="flex justify-center items-center min-h-[40vh]"><Spinner size={48} /></div>
   }
 
   if (error) {
@@ -387,43 +404,75 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
 
         {isAdmin && (
           <TabsContent value="products">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Administrar Productos</h2>
-              <Button onClick={handleOpenCreate}>Agregar producto</Button>
-            </div>
-            {loadingProducts ? (
-              <div>Cargando productos...</div>
-            ) : productError ? (
-              <div className="text-red-500">{productError}</div>
-            ) : (
-              <table className="min-w-full border text-sm">
-                <thead>
-                  <tr>
-                    <th>Nombre</th><th>Slug</th><th>Precio</th><th>Stock</th><th>Destacado</th><th>Categoría</th><th>Año</th><th>Región</th><th>Varietal</th><th>Imagen</th><th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.map(product => (
-                    <tr key={product.id}>
-                      <td>{product.name}</td>
-                      <td>{product.slug}</td>
-                      <td>{product.price}</td>
-                      <td>{product.stock}</td>
-                      <td>{product.featured ? 'Sí' : 'No'}</td>
-                      <td>{product.category}</td>
-                      <td>{product.year}</td>
-                      <td>{product.region}</td>
-                      <td>{product.varietal}</td>
-                      <td>{product.image ? <img src={product.image} alt={product.name} className="w-12 h-12 object-cover" /> : '-'}</td>
-                      <td>
-                        <Button size="sm" variant="outline" onClick={() => handleOpenEdit(product)}>Editar</Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleDelete(product.id)} className="ml-2">Borrar</Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between gap-4">
+                <CardTitle>Administrar Productos</CardTitle>
+                <Button onClick={handleOpenCreate}>Agregar producto</Button>
+              </CardHeader>
+              <CardContent className="overflow-x-auto p-0">
+                {loadingProducts ? (
+                  <div className="p-6">Cargando productos...</div>
+                ) : productError ? (
+                  <div className="text-red-500 p-6">{productError}</div>
+                ) : (
+                  <Table className="min-w-[900px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nombre</TableHead>
+                        <TableHead>Slug</TableHead>
+                        <TableHead>Precio</TableHead>
+                        <TableHead>Stock</TableHead>
+                        <TableHead>Destacado</TableHead>
+                        <TableHead>Categoría</TableHead>
+                        <TableHead>Año</TableHead>
+                        <TableHead>Región</TableHead>
+                        <TableHead>Varietal</TableHead>
+                        <TableHead>Imagen</TableHead>
+                        <TableHead>Visible</TableHead>
+                        <TableHead>Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {products.map(product => (
+                        <TableRow key={product.id} className="even:bg-muted/30">
+                          <TableCell className="font-medium max-w-[160px] truncate">{product.name}</TableCell>
+                          <TableCell className="max-w-[120px] truncate">{product.slug}</TableCell>
+                          <TableCell>{formatCurrency(product.price)}</TableCell>
+                          <TableCell>{product.stock}</TableCell>
+                          <TableCell>{product.featured ? <Badge variant="default">Sí</Badge> : <Badge variant="secondary">No</Badge>}</TableCell>
+                          <TableCell className="max-w-[120px] truncate">{product.category}</TableCell>
+                          <TableCell>{product.year}</TableCell>
+                          <TableCell className="max-w-[120px] truncate">{product.region}</TableCell>
+                          <TableCell className="max-w-[120px] truncate">{product.varietal}</TableCell>
+                          <TableCell>
+                            {product.image ? (
+                              <img src={product.image} alt={product.name} className="w-12 h-12 object-cover rounded-md border" />
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Switch
+                              checked={product.is_visible}
+                              onCheckedChange={() => handleToggleVisible(product)}
+                              aria-label="Cambiar visibilidad"
+                            />
+                          </TableCell>
+                          <TableCell className="flex gap-2 flex-wrap">
+                            <Button size="sm" variant="outline" onClick={() => handleOpenEdit(product)}>
+                              Editar
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => handleDelete(product.id)}>
+                              Borrar
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
             {showProductModal && (
               <Dialog open={showProductModal} onOpenChange={setShowProductModal}>
                 <DialogContent>
@@ -449,6 +498,9 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
                     <Input name="varietal" placeholder="Varietal" defaultValue={editingProduct?.varietal} required />
                     <label className="flex items-center gap-2">
                       <input type="checkbox" name="featured" defaultChecked={!!editingProduct?.featured} /> Destacado
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input type="checkbox" name="is_visible" defaultChecked={!!editingProduct?.is_visible} /> Visible
                     </label>
                     <Input name="image" type="file" accept="image/*" />
                     <DialogFooter>
