@@ -42,6 +42,7 @@ export async function middleware(request: NextRequest) {
 
   // Refresca la sesión si está expirada
   const { data: { user }, error: userError } = await supabase.auth.getUser()
+  console.log('Supabase user in middleware:', user, 'Error:', userError)
 
   // Rutas protegidas
   if (request.nextUrl.pathname.startsWith("/account") && userError) {
