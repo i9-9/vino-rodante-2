@@ -44,7 +44,7 @@ export default function SignIn() {
       setRedirecting(true)
       const redirectTo = new URLSearchParams(window.location.search).get('redirectedFrom') || '/'
       console.log('[SignIn] Redirecting to:', redirectTo)
-      window.location.href = redirectTo
+      window.location.replace(redirectTo)
     } catch (err) {
       console.error('[SignIn] Exception:', err)
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
