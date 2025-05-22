@@ -25,7 +25,7 @@ export default function ProductShowcase({ products }: { products: Product[] }) {
           ))}
         </div>
 
-        <div className="mt-8 text-center">
+        <div className="mt-20 text-center">
           <Button variant="primary" asChild>
             <Link href="/products">{t.home.featuredWines.viewAll}</Link>
           </Button>

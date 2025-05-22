@@ -56,6 +56,17 @@ export default function Hero() {
   const [current, setCurrent] = useState(0)
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set([0]))
 
+  // Preload all images when component mounts
+  useEffect(() => {
+    slides.forEach((slide, index) => {
+      const img = new window.Image()
+      img.src = slide.image
+      img.onload = () => {
+        setLoadedImages(prev => new Set([...prev, index]))
+      }
+    })
+  }, [])
+
   useEffect(() => {
     if (!api) return
 
@@ -72,17 +83,8 @@ export default function Hero() {
     api.on("select", () => {
       const newIndex = api.selectedScrollSnap()
       setCurrent(newIndex)
-      // Precargar la siguiente imagen
-      const nextIndex = (newIndex + 1) % slides.length
-      if (!loadedImages.has(nextIndex)) {
-        const img = new window.Image()
-        img.src = slides[nextIndex].image
-        img.onload = () => {
-          setLoadedImages(prev => new Set([...prev, nextIndex]))
-        }
-      }
     })
-  }, [api, loadedImages])
+  }, [api])
 
   return (
     <section className="w-full relative">
@@ -96,7 +98,7 @@ export default function Hero() {
                     src={slide.image}
                     alt={slide.title}
                     fill
-                    priority={index === 0}
+                    priority={index <= 1}
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
                     quality={75}
                     className="object-cover object-center transition-opacity duration-300"
