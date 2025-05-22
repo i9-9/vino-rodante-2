@@ -5,7 +5,7 @@ import type { Product } from '@/lib/types'
 import ProductCard from "@/components/product-card"
 import { Button } from "@/components/ui/button"
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 
 interface ProductsClientProps {
   t: any
@@ -15,6 +15,11 @@ export default function ProductsClient({ t }: ProductsClientProps) {
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
+  const [activePrice, setActivePrice] = useState<[number, number] | null>(null)
+  const [activeRegion, setActiveRegion] = useState<string | null>(null)
+  const [activeVarietal, setActiveVarietal] = useState<string | null>(null)
+  const [activeCategory, setActiveCategory] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -24,6 +29,27 @@ export default function ProductsClient({ t }: ProductsClientProps) {
     }
     fetchProducts()
   }, [])
+
+  useEffect(() => {
+    setFilteredProducts(products)
+  }, [products])
+
+  useEffect(() => {
+    let result = [...products]
+    if (activeCategory) {
+      result = result.filter((p) => p.category === activeCategory)
+    }
+    if (activePrice) {
+      result = result.filter((p) => p.price >= activePrice[0] && p.price < activePrice[1])
+    }
+    if (activeRegion) {
+      result = result.filter((p) => p.region === activeRegion)
+    }
+    if (activeVarietal) {
+      result = result.filter((p) => p.varietal === activeVarietal)
+    }
+    setFilteredProducts(result)
+  }, [activeCategory, activePrice, activeRegion, activeVarietal, products])
 
   // Obtener regiones únicas de los productos
   const uniqueRegions = products ? Array.from(new Set(products.map((p: Product) => p.region))).filter(Boolean) : []
@@ -74,11 +100,6 @@ export default function ProductsClient({ t }: ProductsClientProps) {
     return varietal
   }
 
-  // Función para filtrar productos por rango de precio
-  function filterProductsByPrice(min: number, max: number) {
-    return products ? products.filter((p: Product) => p.price >= min && p.price <= max) : []
-  }
-
   // Función para navegar a la colección de categoría
   function navigateToCategory(type: string) {
     router.push(`/collections/${type}`)
@@ -109,19 +130,19 @@ export default function ProductsClient({ t }: ProductsClientProps) {
 
       <div className="flex flex-col md:flex-row gap-6 mb-8">
         <div className="w-full md:w-64 space-y-4">
+          <Button variant="outline" className="w-full mb-2" onClick={() => { setActiveCategory(null); setActivePrice(null); setActiveRegion(null); setActiveVarietal(null); }}>
+            Limpiar filtros
+          </Button>
           <div className="border rounded-lg p-4">
             <h2 className="font-medium text-lg mb-3">{t.products.categories}</h2>
             <div className="space-y-2">
-              <Button variant="ghost" className="w-full justify-start" onClick={() => navigateToCategory('all')}>
-                {t.navigation.allWines}
-              </Button>
-              <Button variant="ghost" className="w-full justify-start" onClick={() => navigateToCategory('red')}>
+              <Button variant={activeCategory === 'tinto' ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveCategory(activeCategory === 'tinto' ? null : 'tinto')}>
                 {t.navigation.redWines}
               </Button>
-              <Button variant="ghost" className="w-full justify-start" onClick={() => navigateToCategory('white')}>
+              <Button variant={activeCategory === 'blanco' ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveCategory(activeCategory === 'blanco' ? null : 'blanco')}>
                 {t.navigation.whiteWines}
               </Button>
-              <Button variant="ghost" className="w-full justify-start" onClick={() => navigateToCategory('sparkling')}>
+              <Button variant={activeCategory === 'espumante' ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveCategory(activeCategory === 'espumante' ? null : 'espumante')}>
                 {t.navigation.sparklingWines}
               </Button>
             </div>
@@ -130,17 +151,20 @@ export default function ProductsClient({ t }: ProductsClientProps) {
           <div className="border rounded-lg p-4">
             <h2 className="font-medium text-lg mb-3">{t.products.priceRange}</h2>
             <div className="space-y-2">
-              <Button variant="ghost" className="w-full justify-start" onClick={() => filterProductsByPrice(0, 30)}>
-                {t.filters?.under30 || "Menos de $30"}
+              <Button variant={activePrice?.[0] === 0 && activePrice?.[1] === 10000 ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActivePrice([0, 10000])}>
+                $0 - $10.000
               </Button>
-              <Button variant="ghost" className="w-full justify-start" onClick={() => filterProductsByPrice(30, 50)}>
-                {t.filters?.between30and50 || "$30 - $50"}
+              <Button variant={activePrice?.[0] === 10000 && activePrice?.[1] === 20000 ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActivePrice([10000, 20000])}>
+                $10.000 - $20.000
               </Button>
-              <Button variant="ghost" className="w-full justify-start" onClick={() => filterProductsByPrice(50, 100)}>
-                {t.filters?.between50and100 || "$50 - $100"}
+              <Button variant={activePrice?.[0] === 20000 && activePrice?.[1] === 30000 ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActivePrice([20000, 30000])}>
+                $20.000 - $30.000
               </Button>
-              <Button variant="ghost" className="w-full justify-start" onClick={() => filterProductsByPrice(100, Infinity)}>
-                {t.filters?.over100 || "Más de $100"}
+              <Button variant={activePrice?.[0] === 30000 && activePrice?.[1] === Infinity ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActivePrice([30000, Infinity])}>
+                $30.000+
+              </Button>
+              <Button variant={!activePrice ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActivePrice(null)}>
+                Todos los precios
               </Button>
             </div>
           </div>
@@ -152,7 +176,7 @@ export default function ProductsClient({ t }: ProductsClientProps) {
                 <span className="text-muted-foreground text-sm">{t.common.noResults}</span>
               ) : (
                 uniqueRegions.map((region: string) => (
-                  <Button key={region} variant="ghost" className="w-full justify-start" onClick={() => navigateToRegion(region)}>
+                  <Button key={region} variant={activeRegion === region ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveRegion(region === activeRegion ? null : region)}>
                     {getRegionLabel(region)}
                   </Button>
                 ))
@@ -167,7 +191,7 @@ export default function ProductsClient({ t }: ProductsClientProps) {
                 <span className="text-muted-foreground text-sm">{t.common.noResults}</span>
               ) : (
                 uniqueVarietals.map((varietal: string) => (
-                  <Button key={varietal} variant="ghost" className="w-full justify-start" onClick={() => navigateToVarietal(varietal)}>
+                  <Button key={varietal} variant={activeVarietal === varietal ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveVarietal(varietal === activeVarietal ? null : varietal)}>
                     {getVarietalLabel(varietal)}
                   </Button>
                 ))
@@ -178,7 +202,7 @@ export default function ProductsClient({ t }: ProductsClientProps) {
 
         <div className="flex-1">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products && products.map((product: Product) => (
+            {filteredProducts && filteredProducts.map((product: Product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

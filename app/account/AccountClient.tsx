@@ -23,6 +23,25 @@ import { createProduct, updateProduct, deleteProduct, uploadProductImage } from 
 import Spinner from "@/components/ui/Spinner"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import { Switch } from "@/components/ui/switch"
+import type { Database } from '@/lib/database.types'
+
+async function uploadPlanImage(file: File, planId: string) {
+  const supabase = createClient()
+  const fileExt = file.name.split('.').pop()
+  const fileName = `${planId}-${Date.now()}.${fileExt}`
+  const filePath = `subscription-plans/${fileName}`
+  const { data: uploadData, error: uploadError } = await supabase.storage
+    .from('subscription-plans')
+    .upload(filePath, file, { upsert: true })
+  if (uploadError) {
+    return { data: null, error: uploadError }
+  }
+  const { data: publicUrlData } = supabase.storage
+    .from('subscription-plans')
+    .getPublicUrl(filePath)
+  const publicUrl = publicUrlData?.publicUrl
+  return { data: publicUrl, error: null }
+}
 
 export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: boolean }) {
   const router = useRouter()
@@ -37,6 +56,19 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
   const [productError, setProductError] = useState<string | null>(null)
   const [showProductModal, setShowProductModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [showAddressModal, setShowAddressModal] = useState(false)
+  const [subscriptionPlans, setSubscriptionPlans] = useState<Database['public']['Tables']['subscription_plans']['Row'][]>([])
+  const [loadingPlans, setLoadingPlans] = useState(false)
+  const [editingPlan, setEditingPlan] = useState<any>(null)
+  const [planImageFile, setPlanImageFile] = useState<File | null>(null)
+  const [savingPlan, setSavingPlan] = useState(false)
+  const [showProductsModal, setShowProductsModal] = useState(false)
+  const [selectedPlan, setSelectedPlan] = useState<any>(null)
+  const [planProducts, setPlanProducts] = useState<any[]>([])
+  const [allProducts, setAllProducts] = useState<Product[]>([])
+  const [productSearch, setProductSearch] = useState('')
+  const [loadingPlanProducts, setLoadingPlanProducts] = useState(false)
+  const [addingProduct, setAddingProduct] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {
@@ -85,6 +117,18 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
     fetchProducts()
   }, [isAdmin])
 
+  useEffect(() => {
+    if (!isAdmin) return
+    const fetchPlans = async () => {
+      setLoadingPlans(true)
+      const supabase = createClient()
+      const { data, error } = await supabase.from('subscription_plans').select('*').order('created_at', { ascending: false })
+      if (!error) setSubscriptionPlans(data || [])
+      setLoadingPlans(false)
+    }
+    fetchPlans()
+  }, [isAdmin])
+
   const handleUpdateProfile = async (formData: FormData) => {
     try {
       formData.append('userId', user.id)
@@ -99,21 +143,33 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
   const handleAddAddress = async (formData: FormData) => {
     try {
       const address = {
-        street: formData.get('street') as string,
+        line1: formData.get('line1') as string,
+        line2: formData.get('line2') as string || null,
         city: formData.get('city') as string,
         state: formData.get('state') as string,
         postal_code: formData.get('postal_code') as string,
         country: formData.get('country') as string,
       }
 
+      console.log('Attempting to add address:', address)
       const { error } = await addAddress(user.id, address)
-      if (error) throw error
+      
+      if (error) {
+        console.error('Supabase error details:', error)
+        throw new Error(error.message || 'Error al agregar la dirección')
+      }
 
-      const { data: addresses } = await getAddresses(user.id)
+      const { data: addresses, error: fetchError } = await getAddresses(user.id)
+      if (fetchError) {
+        console.error('Error fetching updated addresses:', fetchError)
+        throw new Error(fetchError.message || 'Error al actualizar la lista de direcciones')
+      }
+
       setAddresses(addresses || [])
+      setShowAddressModal(false)
     } catch (err) {
       console.error('Error adding address:', err)
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      setError(err instanceof Error ? err.message : 'Ocurrió un error al agregar la dirección')
     }
   }
 
@@ -201,7 +257,6 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
     }
   }
 
-  // Nueva función para cambiar visibilidad
   const handleToggleVisible = async (product: Product) => {
     const { error } = await updateProduct(product.id, { is_visible: !product.is_visible })
     if (!error) {
@@ -212,6 +267,133 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
       )
     } else {
       alert('Error actualizando visibilidad: ' + error.message)
+    }
+  }
+
+  const handleEditPlan = (plan: any) => {
+    setEditingPlan(plan)
+    setPlanImageFile(null)
+  }
+
+  const handleSavePlan = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!editingPlan) return
+    setSavingPlan(true)
+    const form = e.currentTarget
+    const formData = new FormData(form)
+    let imageUrl = editingPlan.image
+    if (planImageFile) {
+      const { data, error } = await uploadPlanImage(planImageFile, editingPlan.id || formData.get('name'))
+      if (error) {
+        alert('Error subiendo imagen: ' + error.message)
+        setSavingPlan(false)
+        return
+      }
+      imageUrl = data
+    }
+    const supabase = createClient()
+    let error
+    if (editingPlan.id) {
+      // Update
+      ({ error } = await supabase.from('subscription_plans').update({
+        name: formData.get('name'),
+        description: formData.get('description'),
+        tagline: formData.get('tagline'),
+        price_monthly: Number(formData.get('price_monthly')),
+        price_quarterly: Number(formData.get('price_quarterly')),
+        price_yearly: Number(formData.get('price_yearly')),
+        is_visible: formData.get('is_visible') === 'on',
+        image: imageUrl
+      }).eq('id', editingPlan.id))
+    } else {
+      // Insert
+      ({ error } = await supabase.from('subscription_plans').insert({
+        name: formData.get('name'),
+        description: formData.get('description'),
+        tagline: formData.get('tagline'),
+        price_monthly: Number(formData.get('price_monthly')),
+        price_quarterly: Number(formData.get('price_quarterly')),
+        price_yearly: Number(formData.get('price_yearly')),
+        is_visible: formData.get('is_visible') === 'on',
+        image: imageUrl
+      }))
+    }
+    if (error) {
+      alert('Error guardando plan: ' + error.message)
+    } else {
+      setEditingPlan(null)
+      setPlanImageFile(null)
+      const { data } = await supabase.from('subscription_plans').select('*').order('created_at', { ascending: false })
+      setSubscriptionPlans(data || [])
+    }
+    setSavingPlan(false)
+  }
+
+  const handleOpenProducts = async (plan: any) => {
+    setSelectedPlan(plan)
+    setShowProductsModal(true)
+    setLoadingPlanProducts(true)
+    const supabase = createClient()
+    const { data: planProductsData } = await supabase
+      .from('subscription_plan_products')
+      .select('id, product_id, quantity, products(name, image)')
+      .eq('plan_id', plan.id)
+    setPlanProducts(planProductsData || [])
+    const { data: allProductsData } = await supabase
+      .from('products')
+      .select('*')
+      .order('name')
+    setAllProducts(allProductsData || [])
+    setLoadingPlanProducts(false)
+    setProductSearch('')
+  }
+
+  const handleAddProductToPlan = async (productId: string) => {
+    if (!selectedPlan) return
+    setAddingProduct(true)
+    const supabase = createClient()
+    const { error } = await supabase.from('subscription_plan_products').insert({
+      plan_id: selectedPlan.id,
+      product_id: productId,
+      quantity: 1
+    })
+    if (error) {
+      alert('Error agregando producto: ' + error.message)
+    } else {
+      handleOpenProducts(selectedPlan)
+    }
+    setAddingProduct(false)
+  }
+
+  const handleRemoveProductFromPlan = async (planProductId: string) => {
+    const supabase = createClient()
+    const { error } = await supabase.from('subscription_plan_products').delete().eq('id', planProductId)
+    if (error) {
+      alert('Error quitando producto: ' + error.message)
+    } else {
+      setPlanProducts(planProducts.filter(p => p.id !== planProductId))
+    }
+  }
+
+  const handleChangeQuantity = async (planProductId: string, quantity: number) => {
+    const supabase = createClient()
+    const { error } = await supabase.from('subscription_plan_products').update({ quantity }).eq('id', planProductId)
+    if (error) {
+      alert('Error actualizando cantidad: ' + error.message)
+    } else {
+      setPlanProducts(planProducts.map(p => p.id === planProductId ? { ...p, quantity } : p))
+    }
+  }
+
+  const handleDeletePlan = async (planId: string) => {
+    if (!confirm('¿Seguro que deseas eliminar este plan? Esta acción no se puede deshacer.')) return
+    const supabase = createClient()
+    const { error } = await supabase.from('subscription_plans').delete().eq('id', planId)
+    if (error) {
+      alert('Error eliminando plan: ' + error.message)
+    } else {
+      const { data } = await supabase.from('subscription_plans').select('*').order('created_at', { ascending: false })
+      setSubscriptionPlans(data || [])
     }
   }
 
@@ -237,6 +419,7 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
           <TabsTrigger value="orders">{t.account.orders}</TabsTrigger>
           <TabsTrigger value="addresses">{t.account.addresses}</TabsTrigger>
           {isAdmin && <TabsTrigger value="products">Productos</TabsTrigger>}
+          {isAdmin && <TabsTrigger value="subscriptions">Suscripciones</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="profile">
@@ -334,7 +517,7 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
                             {address.is_default ? (
                               <Badge variant="secondary">
                                 <Check className="w-4 h-4 mr-1" />
-                                Default
+                                {t.common.default}
                               </Badge>
                             ) : (
                               <Button
@@ -342,7 +525,7 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
                                 size="sm"
                                 onClick={() => handleSetDefaultAddress(address.id)}
                               >
-                                Set as Default
+                                {t.common.setAsDefault}
                               </Button>
                             )}
                             <Button
@@ -360,7 +543,7 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
                 </div>
               )}
 
-              <Dialog>
+              <Dialog open={showAddressModal} onOpenChange={setShowAddressModal}>
                 <DialogTrigger asChild>
                   <Button className="mt-4">
                     <Plus className="w-4 h-4 mr-2" />
@@ -373,27 +556,31 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
                   </DialogHeader>
                   <form action={handleAddAddress} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="street">Street Address</Label>
-                      <Input id="street" name="street" required />
+                      <Label htmlFor="line1">{t.checkout.address1}</Label>
+                      <Input id="line1" name="line1" required />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="city">City</Label>
+                      <Label htmlFor="line2">{t.checkout.address2}</Label>
+                      <Input id="line2" name="line2" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="city">{t.checkout.city}</Label>
                       <Input id="city" name="city" required />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="state">State/Province</Label>
+                      <Label htmlFor="state">{t.checkout.state}</Label>
                       <Input id="state" name="state" required />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="postal_code">Postal Code</Label>
+                      <Label htmlFor="postal_code">{t.checkout.postalCode}</Label>
                       <Input id="postal_code" name="postal_code" required />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="country">Country</Label>
+                      <Label htmlFor="country">{t.checkout.country}</Label>
                       <Input id="country" name="country" required />
                     </div>
                     <DialogFooter>
-                      <Button type="submit">Add Address</Button>
+                      <Button type="submit">{t.account.addNewAddress}</Button>
                     </DialogFooter>
                   </form>
                 </DialogContent>
@@ -511,6 +698,200 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
                 </DialogContent>
               </Dialog>
             )}
+          </TabsContent>
+        )}
+        {isAdmin && (
+          <TabsContent value="subscriptions">
+            <Card>
+              <CardHeader>
+                <CardTitle>Administrar Suscripciones</CardTitle>
+                <CardDescription>Gestioná los planes de suscripción y sus productos asociados.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="mb-4" onClick={() => { setEditingPlan({ name: '', description: '', tagline: '', price_monthly: '', price_quarterly: '', price_yearly: '', is_visible: true, image: null }); setPlanImageFile(null); }}>
+                  Agregar plan
+                </Button>
+                {loadingPlans ? (
+                  <div className="p-6">Cargando planes...</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full border text-sm">
+                      <thead>
+                        <tr>
+                          <th className="border px-2 py-1">Nombre</th>
+                          <th className="border px-2 py-1">Imagen</th>
+                          <th className="border px-2 py-1">Precios</th>
+                          <th className="border px-2 py-1">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {subscriptionPlans.map(plan => (
+                          <tr key={plan.id}>
+                            <td className="border px-2 py-1 font-medium">{plan.name}</td>
+                            <td className="border px-2 py-1">
+                              {plan.image ? (
+                                <img src={plan.image} alt={plan.name} className="w-16 h-16 object-cover rounded" />
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </td>
+                            <td className="border px-2 py-1">
+                              <div>Mensual: ${plan.price_monthly}</div>
+                              <div>Trimestral: ${plan.price_quarterly}</div>
+                              <div>Anual: ${plan.price_yearly}</div>
+                            </td>
+                            <td className="border px-2 py-1">
+                              <Button size="sm" variant="outline" onClick={() => handleEditPlan(plan)}>Editar</Button>
+                              <Button size="sm" variant="secondary" className="ml-2" onClick={() => handleOpenProducts(plan)}>Productos</Button>
+                              <Button size="sm" variant="destructive" className="ml-2" onClick={() => handleDeletePlan(plan.id)}>Eliminar</Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            <Dialog open={!!editingPlan} onOpenChange={open => { if (!open) setEditingPlan(null) }}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Editar Plan de Suscripción</DialogTitle>
+                </DialogHeader>
+                {editingPlan && (
+                  <form className="space-y-4" onSubmit={handleSavePlan}>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Nombre</label>
+                      <Input name="name" defaultValue={editingPlan.name} required />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Descripción</label>
+                      <Input name="description" defaultValue={editingPlan.description} required />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Tagline</label>
+                      <Input name="tagline" defaultValue={editingPlan.tagline || ''} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Precio Mensual</label>
+                      <Input name="price_monthly" type="number" step="0.01" defaultValue={editingPlan.price_monthly || ''} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Precio Trimestral</label>
+                      <Input name="price_quarterly" type="number" step="0.01" defaultValue={editingPlan.price_quarterly || ''} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Precio Anual</label>
+                      <Input name="price_yearly" type="number" step="0.01" defaultValue={editingPlan.price_yearly || ''} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Imagen</label>
+                      {editingPlan.image && (
+                        <img src={editingPlan.image} alt="Imagen actual" className="w-24 h-24 object-cover rounded mb-2" />
+                      )}
+                      <Input type="file" accept="image/*" onChange={e => setPlanImageFile(e.target.files?.[0] || null)} />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" name="is_visible" id="is_visible" defaultChecked={!!editingPlan.is_visible} />
+                      <label htmlFor="is_visible">Visible</label>
+                    </div>
+                    <DialogFooter>
+                      <Button type="submit" disabled={savingPlan}>{savingPlan ? 'Guardando...' : 'Guardar cambios'}</Button>
+                      <Button type="button" variant="outline" onClick={() => setEditingPlan(null)}>Cancelar</Button>
+                    </DialogFooter>
+                  </form>
+                )}
+              </DialogContent>
+            </Dialog>
+            <Dialog open={showProductsModal} onOpenChange={open => { if (!open) setShowProductsModal(false) }}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Productos del Plan</DialogTitle>
+                </DialogHeader>
+                {selectedPlan && (
+                  <div>
+                    <div className="mb-4">
+                      <strong>Plan:</strong> {selectedPlan.name}
+                    </div>
+                    {loadingPlanProducts ? (
+                      <div>Cargando productos...</div>
+                    ) : (
+                      <>
+                        <div className="mb-4">
+                          <strong>Agregar producto:</strong>
+                          <Input
+                            placeholder="Buscar producto..."
+                            value={productSearch}
+                            onChange={e => setProductSearch(e.target.value)}
+                            className="mt-1 mb-2"
+                          />
+                          <div className="max-h-40 overflow-y-auto border rounded">
+                            {allProducts
+                              .filter(p =>
+                                !planProducts.some(pp => pp.product_id === p.id) &&
+                                (p.name.toLowerCase().includes(productSearch.toLowerCase()) || productSearch === '')
+                              )
+                              .map(p => (
+                                <div key={p.id} className="flex items-center justify-between px-2 py-1 hover:bg-muted/30">
+                                  <div className="flex items-center gap-2">
+                                    {p.image && <img src={p.image} alt={p.name} className="w-8 h-8 object-cover rounded" />}
+                                    <span>{p.name}</span>
+                                  </div>
+                                  <Button size="sm" variant="outline" disabled={addingProduct} onClick={() => handleAddProductToPlan(p.id)}>
+                                    Agregar
+                                  </Button>
+                                </div>
+                              ))}
+                            {allProducts.filter(p => !planProducts.some(pp => pp.product_id === p.id) && (p.name.toLowerCase().includes(productSearch.toLowerCase()) || productSearch === '')).length === 0 && (
+                              <div className="px-2 py-2 text-muted-foreground text-sm">No hay productos para agregar.</div>
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <strong>Productos asociados:</strong>
+                          <table className="min-w-full border text-sm mt-2">
+                            <thead>
+                              <tr>
+                                <th className="border px-2 py-1">Producto</th>
+                                <th className="border px-2 py-1">Cantidad</th>
+                                <th className="border px-2 py-1">Acciones</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {planProducts.map(pp => (
+                                <tr key={pp.id}>
+                                  <td className="border px-2 py-1 flex items-center gap-2">
+                                    {pp.products?.image && <img src={pp.products.image} alt={pp.products.name} className="w-8 h-8 object-cover rounded" />}
+                                    {pp.products?.name}
+                                  </td>
+                                  <td className="border px-2 py-1">
+                                    <Input
+                                      type="number"
+                                      min={1}
+                                      value={pp.quantity}
+                                      onChange={e => handleChangeQuantity(pp.id, Number(e.target.value))}
+                                      className="w-16"
+                                    />
+                                  </td>
+                                  <td className="border px-2 py-1">
+                                    <Button size="sm" variant="destructive" onClick={() => handleRemoveProductFromPlan(pp.id)}>
+                                      Quitar
+                                    </Button>
+                                  </td>
+                                </tr>
+                              ))}
+                              {planProducts.length === 0 && (
+                                <tr><td colSpan={3} className="text-center text-muted-foreground py-2">No hay productos asociados.</td></tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
           </TabsContent>
         )}
       </Tabs>

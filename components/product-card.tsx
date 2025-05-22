@@ -7,6 +7,10 @@ import Link from "next/link"
 import { useCart } from "@/lib/hooks/use-cart"
 import { useTranslations } from "@/lib/providers/translations-provider"
 
+function capitalizeWords(str: string) {
+  return str.replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
 export default function ProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart()
   const t = useTranslations()
@@ -28,7 +32,7 @@ export default function ProductCard({ product }: { product: Product }) {
           <Link href={`/products/${product.slug}`}>{product.name}</Link>
         </h3>
         <p className="mt-1 text-sm text-gray-500">
-          {product.year} • {product.region}
+          {product.year} • {capitalizeWords(product.region)}{product.varietal ? ` • ${capitalizeWords(product.varietal)}` : ''}
         </p>
         <div className="mt-auto pt-4 flex items-center justify-between">
           <p className="font-medium text-[#1F1F1F]">${product.price.toFixed(2)}</p>

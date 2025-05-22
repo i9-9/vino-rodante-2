@@ -6,6 +6,7 @@ import { addToCart } from "@/lib/actions"
 import { getTranslations } from "@/lib/get-translations"
 import AddToCartButton from "@/components/add-to-cart-button"
 import type { Product } from "@/lib/types"
+import ProductCard from '@/components/product-card'
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,10 @@ export async function generateStaticParams() {
   }))
 }
 
+function capitalizeWords(str: string) {
+  return str.replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
 export default async function ProductPage({ params }: { params: { slug: string } }) {
   const product = await getProductBySlug(params.slug)
   const t = await getTranslations()
@@ -65,6 +70,16 @@ export default async function ProductPage({ params }: { params: { slug: string }
     )
   }
 
+  // Obtener productos relacionados
+  const { data: allProducts } = await getProducts()
+  let related = allProducts?.filter(p => p.id !== product.id && p.varietal === product.varietal) || []
+  if (related.length < 4) {
+    const regionRelated = (allProducts || []).filter(p => p.id !== product.id && p.region === product.region && p.varietal !== product.varietal)
+    related = [...related, ...regionRelated].slice(0, 4)
+  } else {
+    related = related.slice(0, 4)
+  }
+
   return (
     <div className="container px-4 py-12">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
@@ -82,7 +97,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
         <div className="flex flex-col">
           <h1 className="text-3xl font-bold text-[#5B0E2D] mb-2">{product.name}</h1>
           <p className="text-lg text-[#1F1F1F]/70 mb-4">
-            {product.year} • {product.region}
+            {product.year} • {capitalizeWords(product.region)}
           </p>
 
           <div className="mb-6">
@@ -107,11 +122,11 @@ export default async function ProductPage({ params }: { params: { slug: string }
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <h3 className="font-medium text-[#5B0E2D]">{t.products.varietal}</h3>
-                <p className="text-[#1F1F1F]/70">{product.varietal}</p>
+                <p className="text-[#1F1F1F]/70">{capitalizeWords(product.varietal)}</p>
               </div>
               <div>
                 <h3 className="font-medium text-[#5B0E2D]">{t.products.region}</h3>
-                <p className="text-[#1F1F1F]/70">{product.region}</p>
+                <p className="text-[#1F1F1F]/70">{capitalizeWords(product.region)}</p>
               </div>
               <div>
                 <h3 className="font-medium text-[#5B0E2D]">{t.products.year}</h3>
@@ -127,6 +142,17 @@ export default async function ProductPage({ params }: { params: { slug: string }
           </div>
         </div>
       </div>
+      {/* Productos relacionados */}
+      {related.length > 0 && (
+        <div className="mt-16">
+          <h2 className="text-2xl font-bold mb-6">Productos relacionados</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {related.map((prod) => (
+              <ProductCard key={prod.id} product={prod} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

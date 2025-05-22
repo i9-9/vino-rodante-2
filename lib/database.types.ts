@@ -166,6 +166,62 @@ export interface Database {
           status?: string
           created_at?: string
         }
+      },
+      subscription_plans: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+          description: string
+          tagline: string | null
+          image: string | null
+          features: Json | null
+          price_monthly: number | null
+          price_quarterly: number | null
+          price_yearly: number | null
+          discount_percentage: number | null
+          status: string | null
+          display_order: number | null
+          is_visible: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          slug: string
+          description: string
+          tagline?: string | null
+          image?: string | null
+          features?: Json | null
+          price_monthly?: number | null
+          price_quarterly?: number | null
+          price_yearly?: number | null
+          discount_percentage?: number | null
+          status?: string | null
+          display_order?: number | null
+          is_visible?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          slug?: string
+          description?: string
+          tagline?: string | null
+          image?: string | null
+          features?: Json | null
+          price_monthly?: number | null
+          price_quarterly?: number | null
+          price_yearly?: number | null
+          discount_percentage?: number | null
+          status?: string | null
+          display_order?: number | null
+          is_visible?: boolean
+          created_at?: string
+          updated_at?: string
+        }
       }
     }
   }

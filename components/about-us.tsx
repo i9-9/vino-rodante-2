@@ -27,20 +27,20 @@ export default function AboutUs() {
           <div className="order-1 lg:order-2 relative">
             <div className="aspect-[4/3] overflow-hidden rounded-lg shadow-lg">
               <Image
-                src="/placeholder.svg?height=600&width=800"
-                alt="Vino Rodante vineyard"
+                src="/nosotros/us.jpg"
+                alt="Vino Rodante equipo"
                 width={800}
                 height={600}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover object-center"
               />
             </div>
-            <div className="absolute -bottom-6 -left-6 hidden md:block w-48 h-48 rounded-lg overflow-hidden shadow-lg border-4 border-white">
+            <div className="absolute -bottom-6 -left-6 hidden md:block w-48 h-48 rounded-lg overflow-hidden shadow-lg border-4 border-white flex items-center justify-center bg-white">
               <Image
-                src="/placeholder.svg?height=200&width=200"
-                alt="Wine tasting"
+                src="/og-image.jpg"
+                alt="Vino Rodante branding"
                 width={200}
                 height={200}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover object-center"
               />
             </div>
           </div>

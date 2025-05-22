@@ -4,7 +4,7 @@ export const es = {
     cart: "Carrito",
     account: "Cuenta",
     signIn: "Iniciar Sesión",
-    signUp: "Registrarse",
+    signUp: "Registrate",
     signOut: "Cerrar Sesión",
     menu: "Menú",
     close: "Cerrar",
@@ -16,7 +16,7 @@ export const es = {
     continue: "Continuar",
     back: "Volver",
     remove: "Eliminar",
-    add: "Añadir",
+    add: "Agregar",
     edit: "Editar",
     update: "Actualizar",
     view: "Ver",
@@ -70,9 +70,9 @@ export const es = {
     featuredWines: {
       title: "Vinos Destacados",
       subtitle:
-        "Explora nuestra selección de vinos excepcionales de Argentina, cada uno con su propia historia y perfil de sabor único.",
+        "Explorá nuestra selección de vinos excepcionales de Argentina, cada uno con su propia historia y perfil de sabor único.",
       viewAll: "Ver Todos los Vinos",
-      description: "Explora nuestra selección cuidadosamente elegida de vinos excepcionales argentinos, cada uno con su propia historia única y perfil de sabor."
+      description: "Explorá nuestra selección cuidadosamente elegida de vinos excepcionales argentinos, cada uno con su propia historia única y perfil de sabor."
     },
     about: {
       title: "Nuestra Historia",
@@ -80,7 +80,7 @@ export const es = {
         "Vino Rodante nació de una pasión por los vinos excepcionales y el deseo de compartirlos con el mundo. Nuestro viaje comenzó en los viñedos de Argentina, donde descubrimos la magia que sucede cuando la tradición se encuentra con la innovación.",
       paragraph2:
         "Hoy, recorremos todas las regiones vitivinícolas de Argentina en busca de vinos únicos con carácter e historia. Cada botella en nuestra colección representa no solo un vino, sino un viaje, una tradición y las personas apasionadas detrás de él.",
-      cta: "Conoce Más Sobre Nosotros",
+      cta: "Conocé Más Sobre Nosotros",
       tagline: "Apasionados por el vino argentino, dedicados a la calidad, comprometidos a compartir los mejores vinos de nuestra tierra."
     },
   },
@@ -113,12 +113,12 @@ export const es = {
       title: "Nuestro Proceso de Selección",
       paragraph1: "Cada vino en nuestra colección ha sido cuidadosamente seleccionado a través de un riguroso proceso de cata. Nuestro equipo de sommeliers y expertos en vinos viaja por todas las regiones vitivinícolas de Argentina, visitando viñedos y reuniéndose con enólogos para descubrir vinos excepcionales con carácter e historia.",
       paragraph2: "Buscamos vinos que no solo tengan un sabor excepcional sino que también cuenten una historia – sobre la tierra de la que provienen, las personas que los elaboraron y las tradiciones que representan.",
-      paragraph3: "Este compromiso con la calidad y la autenticidad significa que nuestra colección evoluciona constantemente, con nuevos descubrimientos que se añaden regularmente junto a nuestros favoritos de confianza.",
-      cta: "Explora Nuestra Colección"
+      paragraph3: "Este compromiso con la calidad y la autenticidad significa que nuestra colección evoluciona constantemente, con nuevos descubrimientos que se agregan regularmente junto a nuestros favoritos de confianza.",
+      cta: "Explorá Nuestra Colección"
     },
     newsletter: {
-      title: "Únete a Nuestro Viaje Vinícola",
-      subtitle: "Suscríbete a nuestro boletín para recibir actualizaciones sobre nuevas llegadas, promociones especiales e invitaciones a eventos exclusivos de cata.",
+      title: "Unite a Nuestro Viaje Vinícola",
+      subtitle: "Suscribite a nuestro boletín para recibir actualizaciones sobre nuevas llegadas, promociones especiales e invitaciones a eventos exclusivos de cata.",
       placeholder: "Tu dirección de correo electrónico",
       button: "Suscribirse"
     }
@@ -126,11 +126,11 @@ export const es = {
   products: {
     title: "Nuestra Colección de Vinos",
     subtitle:
-      "Explora nuestra selección de vinos excepcionales de las diferentes regiones vitivinícolas de Argentina, cada uno con su propia historia y perfil de sabor único.",
+      "Explorá nuestra selección de vinos excepcionales de las diferentes regiones vitivinícolas de Argentina, cada uno con su propia historia y perfil de sabor único.",
     categories: "Categorías",
     priceRange: "Rango de Precio",
     region: "Región",
-    addToCart: "Añadir al Carrito",
+    addToCart: "Agregar al Carrito",
     inStock: "En Stock",
     outOfStock: "Agotado",
     available: "disponibles",
@@ -158,7 +158,7 @@ export const es = {
     shippingAddress: "Dirección de Envío",
     paymentInfo: "Información de Pago",
     paymentInformation: "Información de Pago",
-    paymentDescription: "Por favor completa tu pago usando Mercado Pago.",
+    paymentDescription: "Por favor completá tu pago usando Mercado Pago.",
     completeOrder: "Completar Pedido",
     orderSummary: "Resumen del Pedido",
     fullName: "Nombre Completo",
@@ -182,7 +182,7 @@ export const es = {
     free: "Gratis",
     total: "Total",
     backToInformation: "Volver a Información",
-    emptyCartMessage: "Añade productos a tu carrito antes de continuar con la compra.",
+    emptyCartMessage: "Agregá productos a tu carrito antes de continuar con la compra.",
   },
   confirmation: {
     title: "¡Gracias por tu Pedido!",
@@ -198,28 +198,46 @@ export const es = {
     step2: "Confirmación de Envío",
     step2Detail: "Recibirás un correo electrónico con la información de seguimiento una vez que tu pedido sea enviado.",
     step3: "Entrega",
-    step3Detail: "Tus vinos serán entregados en tu puerta. Ten en cuenta que se requiere la firma de un adulto.",
-    contactUs: "Si tienes alguna pregunta sobre tu pedido, por favor contacta a nuestro equipo de servicio al cliente.",
+    step3Detail: "Tus vinos serán entregados en tu puerta. Tené en cuenta que se requiere la firma de un adulto.",
+    contactUs: "Si tenés alguna pregunta sobre tu pedido, por favor contactá a nuestro equipo de servicio al cliente.",
   },
   auth: {
     signIn: {
-      title: "Inicia sesión en tu cuenta",
+      title: "Iniciá sesión en tu cuenta",
       subtitle: "Bienvenido de nuevo a Vino Rodante",
+      email: "Correo electrónico",
+      password: "Contraseña",
       forgotPassword: "¿Olvidaste tu contraseña?",
-      noAccount: "¿No tienes una cuenta?",
-      createAccount: "Crear cuenta",
+      noAccount: "¿No tenés una cuenta?",
+      createAccount: "Crear cuenta"
     },
     signUp: {
       title: "Crear una cuenta",
-      subtitle: "Únete a Vino Rodante para explorar nuestra excepcional colección de vinos",
-      passwordRequirement: "La contraseña debe tener al menos 6 caracteres",
-      alreadyHaveAccount: "¿Ya tienes una cuenta?",
+      subtitle: "Unite a Vino Rodante para explorar nuestra excepcional colección de vinos",
+      fullName: "Nombre completo",
+      email: "Correo electrónico",
+      password: "Contraseña",
+      confirmPassword: "Confirmar contraseña",
+      passwordRequirements: [
+        "Al menos 8 caracteres",
+        "Al menos 1 mayúscula",
+        "Al menos 1 minúscula",
+        "Al menos 1 número",
+        "Al menos 1 carácter especial"
+      ],
+      createAccount: "Crear cuenta",
+      alreadyHaveAccount: "¿Ya tenés una cuenta?",
+      signIn: "Iniciar sesión"
     },
     signUpSuccess: {
-      title: "¡Registro Exitoso!",
-      message:
-        "Gracias por crear una cuenta con Vino Rodante. Por favor, verifica tu correo electrónico para activar tu cuenta.",
+      title: "¡Registro exitoso!",
+      message: "Gracias por crear una cuenta en Vino Rodante. Por favor revisá tu email para verificar tu cuenta.",
+      signIn: "Iniciar sesión"
     },
+    callback: {
+      processing: "Procesando autenticación...",
+      error: "Ocurrió un error al procesar la autenticación."
+    }
   },
   account: {
     title: "Mi Cuenta",
@@ -227,28 +245,32 @@ export const es = {
     orders: "Pedidos",
     addresses: "Direcciones",
     profileInfo: "Información del Perfil",
-    updateProfile: "Actualizar tu información de cuenta",
+    updateProfile: "Actualizá tu información de cuenta",
     emailCannotChange: "El correo electrónico no se puede cambiar",
     orderHistory: "Historial de Pedidos",
     noOrders: "No has realizado ningún pedido aún.",
     savedAddresses: "Direcciones Guardadas",
-    noAddresses: "No tienes direcciones guardadas aún.",
-    addNewAddress: "Añadir Nueva Dirección",
+    noAddresses: "No tenés direcciones guardadas aún.",
+    addNewAddress: "Agregar Nueva Dirección",
   },
   newsletter: {
-    title: "Suscríbete a nuestro boletín",
+    title: "Suscribite a nuestro boletín",
     subtitle:
-      "Recibe actualizaciones sobre nuevas llegadas, promociones especiales e invitaciones a eventos exclusivos de cata.",
+      "Recibí actualizaciones sobre nuevas llegadas, promociones especiales e invitaciones a eventos exclusivos de cata.",
     placeholder: "Tu dirección de correo electrónico",
     button: "Suscribirse",
     success: "¡Gracias por suscribirte!",
-    error: "Ocurrió un error. Por favor, intenta de nuevo.",
+    error: "Ocurrió un error. Por favor, intentá de nuevo.",
   },
   footer: {
     quickLinks: "Enlaces Rápidos",
     contact: "Contacto",
     newsletter: "Boletín",
     copyright: "© {year} Vino Rodante. Todos los derechos reservados.",
+  },
+  language: {
+    en: "Inglés",
+    es: "Español",
   },
   megamenu: {
     byRegion: "Por Región",
@@ -261,10 +283,6 @@ export const es = {
     newArrivals: "Novedades",
     bestsellers: "Más Vendidos",
     giftSets: "Sets de Regalo"
-  },
-  language: {
-    en: "Inglés",
-    es: "Español",
   },
   wineRegions: {
     mendoza: "Mendoza",
@@ -349,7 +367,7 @@ export const es = {
       events: "Acceso a eventos exclusivos",
       discount5: "5% de descuento",
       discount15: "15% de descuento",
-      annualEvent: "Evento exclusivo anual"
+      annualEvent: "Evento anual exclusivo"
     }
   },
 }

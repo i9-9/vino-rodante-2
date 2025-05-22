@@ -170,12 +170,29 @@ export const en = {
     signUp: {
       title: "Create an account",
       subtitle: "Join Vino Rodante to explore our exceptional wine collection",
-      passwordRequirement: "Password must be at least 6 characters long",
+      fullName: "Full Name",
+      email: "Email address",
+      password: "Password",
+      confirmPassword: "Confirm Password",
+      passwordRequirements: [
+        "At least 8 characters",
+        "At least 1 uppercase letter",
+        "At least 1 lowercase letter",
+        "At least 1 number",
+        "At least 1 special character"
+      ],
+      createAccount: "Create account",
       alreadyHaveAccount: "Already have an account?",
+      signIn: "Sign in"
     },
     signUpSuccess: {
-      title: "Registration Successful!",
-      message: "Thank you for creating an account with Vino Rodante. Please check your email to activate your account.",
+      title: "Registration successful!",
+      message: "Thank you for creating an account with Vino Rodante. Please check your email to verify your account.",
+      signIn: "Sign in"
+    },
+    callback: {
+      processing: "Processing authentication...",
+      error: "An error occurred while processing authentication."
     },
   },
   account: {
