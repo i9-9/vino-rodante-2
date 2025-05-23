@@ -30,11 +30,11 @@ export async function middleware(request: NextRequest) {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
-              // Configuración segura de cookies
+              // Configuración segura de cookies para cross-site
               const secureOptions = {
                 ...options,
-                sameSite: 'lax' as const, // 'lax' es mejor que 'none' para auth
-                secure: process.env.NODE_ENV === 'production', // Solo HTTPS en producción
+                sameSite: 'none' as const, // Requerido para cross-site
+                secure: true, // Siempre true para sameSite: 'none'
                 httpOnly: true, // Protección contra XSS
                 path: '/', // Disponible en toda la app
               }

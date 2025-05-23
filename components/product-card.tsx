@@ -8,7 +8,9 @@ import { useCart } from "@/lib/hooks/use-cart"
 import { useTranslations } from "@/lib/providers/translations-provider"
 
 function capitalizeWords(str: string) {
-  return str.replace(/\b\w/g, (c) => c.toUpperCase())
+  return str
+    .toLocaleLowerCase('es-AR')
+    .replace(/(?:^|\s|\b)([a-záéíóúüñ])/g, (match) => match.toLocaleUpperCase('es-AR'));
 }
 
 export default function ProductCard({ product }: { product: Product }) {

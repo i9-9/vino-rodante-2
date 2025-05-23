@@ -39,7 +39,9 @@ export async function generateStaticParams() {
 }
 
 function capitalizeWords(str: string) {
-  return str.replace(/\b\w/g, (c) => c.toUpperCase())
+  return str
+    .toLocaleLowerCase('es-AR')
+    .replace(/(?:^|\s|\b)([a-záéíóúüñ])/g, (match) => match.toLocaleUpperCase('es-AR'));
 }
 
 export default async function ProductPage({ params }: { params: { slug: string } }) {
