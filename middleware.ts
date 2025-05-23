@@ -30,11 +30,20 @@ export async function middleware(request: NextRequest) {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
-              response.cookies.set(name, value, options)
+              // Configuración segura de cookies
+              const secureOptions = {
+                ...options,
+                sameSite: 'lax' as const, // 'lax' es mejor que 'none' para auth
+                secure: process.env.NODE_ENV === 'production', // Solo HTTPS en producción
+                httpOnly: true, // Protección contra XSS
+                path: '/', // Disponible en toda la app
+              }
+              
+              response.cookies.set(name, value, secureOptions)
               cookiesWereSet = true
             })
           } catch (error) {
-            // Si ocurre error en set (por ejemplo, en Server Component), ignorar
+            console.error('Error setting cookies:', error)
           }
         },
       },
@@ -80,4 +89,4 @@ export const config = {
      */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
-} 
+}

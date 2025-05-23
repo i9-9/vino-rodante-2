@@ -34,15 +34,6 @@ export default function AboutUs() {
                 className="h-full w-full object-cover object-center"
               />
             </div>
-            <div className="absolute -bottom-6 -left-6 hidden md:block w-48 h-48 rounded-lg overflow-hidden shadow-lg border-4 border-white flex items-center justify-center bg-white">
-              <Image
-                src="/og-image.jpg"
-                alt="Vino Rodante branding"
-                width={200}
-                height={200}
-                className="h-full w-full object-cover object-center"
-              />
-            </div>
           </div>
         </div>
       </div>
