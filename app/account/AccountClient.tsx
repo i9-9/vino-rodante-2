@@ -29,7 +29,25 @@ async function uploadPlanImage(file: File, planId: string) {
   const supabase = createClient()
   const fileExt = file.name.split('.').pop()
   const fileName = `${planId}-${Date.now()}.${fileExt}`
-  const filePath = `subscription-plans/${fileName}`
+  const filePath = fileName
+  const { data: uploadData, error: uploadError } = await supabase.storage
+    .from('subscription-plans')
+    .upload(filePath, file, { upsert: true })
+  if (uploadError) {
+    return { data: null, error: uploadError }
+  }
+  const { data: publicUrlData } = supabase.storage
+    .from('subscription-plans')
+    .getPublicUrl(filePath)
+  const publicUrl = publicUrlData?.publicUrl
+  return { data: publicUrl, error: null }
+}
+
+async function uploadBannerImage(file: File, planId: string) {
+  const supabase = createClient()
+  const fileExt = file.name.split('.').pop()
+  const fileName = `${planId}-banner-${Date.now()}.${fileExt}`
+  const filePath = fileName
   const { data: uploadData, error: uploadError } = await supabase.storage
     .from('subscription-plans')
     .upload(filePath, file, { upsert: true })
@@ -69,6 +87,7 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
   const [productSearch, setProductSearch] = useState('')
   const [loadingPlanProducts, setLoadingPlanProducts] = useState(false)
   const [addingProduct, setAddingProduct] = useState(false)
+  const [bannerImageFile, setBannerImageFile] = useState<File | null>(null)
 
   useEffect(() => {
     const loadData = async () => {
@@ -282,6 +301,7 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
     const form = e.currentTarget
     const formData = new FormData(form)
     let imageUrl = editingPlan.image
+    let bannerImageUrl = editingPlan.banner_image
     if (planImageFile) {
       const { data, error } = await uploadPlanImage(planImageFile, editingPlan.id || formData.get('name'))
       if (error) {
@@ -291,31 +311,44 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
       }
       imageUrl = data
     }
+    if (bannerImageFile) {
+      const { data, error } = await uploadBannerImage(bannerImageFile, editingPlan.id || formData.get('name'))
+      if (error) {
+        alert('Error subiendo imagen de banner: ' + error.message)
+        setSavingPlan(false)
+        return
+      }
+      bannerImageUrl = data
+    }
     const supabase = createClient()
     let error
     if (editingPlan.id) {
       // Update
       ({ error } = await supabase.from('subscription_plans').update({
         name: formData.get('name'),
+        club: formData.get('club'),
         description: formData.get('description'),
         tagline: formData.get('tagline'),
         price_monthly: Number(formData.get('price_monthly')),
         price_quarterly: Number(formData.get('price_quarterly')),
         price_yearly: Number(formData.get('price_yearly')),
         is_visible: formData.get('is_visible') === 'on',
-        image: imageUrl
+        image: imageUrl,
+        banner_image: bannerImageUrl
       }).eq('id', editingPlan.id))
     } else {
       // Insert
       ({ error } = await supabase.from('subscription_plans').insert({
         name: formData.get('name'),
+        club: formData.get('club'),
         description: formData.get('description'),
         tagline: formData.get('tagline'),
         price_monthly: Number(formData.get('price_monthly')),
         price_quarterly: Number(formData.get('price_quarterly')),
         price_yearly: Number(formData.get('price_yearly')),
         is_visible: formData.get('is_visible') === 'on',
-        image: imageUrl
+        image: imageUrl,
+        banner_image: bannerImageUrl
       }))
     }
     if (error) {
@@ -323,6 +356,7 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
     } else {
       setEditingPlan(null)
       setPlanImageFile(null)
+      setBannerImageFile(null)
       const { data } = await supabase.from('subscription_plans').select('*').order('created_at', { ascending: false })
       setSubscriptionPlans(data || [])
     }
@@ -708,7 +742,7 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
                 <CardDescription>Gestioná los planes de suscripción y sus productos asociados.</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="mb-4" onClick={() => { setEditingPlan({ name: '', description: '', tagline: '', price_monthly: '', price_quarterly: '', price_yearly: '', is_visible: true, image: null }); setPlanImageFile(null); }}>
+                <Button className="mb-4" onClick={() => { setEditingPlan({ name: '', description: '', tagline: '', price_monthly: '', price_quarterly: '', price_yearly: '', is_visible: true, image: null }); setPlanImageFile(null); setBannerImageFile(null); }}>
                   Agregar plan
                 </Button>
                 {loadingPlans ? (
@@ -754,7 +788,7 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
               </CardContent>
             </Card>
             <Dialog open={!!editingPlan} onOpenChange={open => { if (!open) setEditingPlan(null) }}>
-              <DialogContent>
+              <DialogContent className="max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Editar Plan de Suscripción</DialogTitle>
                 </DialogHeader>
@@ -763,6 +797,16 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
                     <div>
                       <label className="block text-sm font-medium mb-1">Nombre</label>
                       <Input name="name" defaultValue={editingPlan.name} required />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Club</label>
+                      <select name="club" defaultValue={editingPlan.club || ''} required className="w-full border rounded px-2 py-1">
+                        <option value="">Seleccionar club</option>
+                        <option value="tinto">Tinto</option>
+                        <option value="blanco">Blanco</option>
+                        <option value="mixto">Mixto</option>
+                        <option value="naranjo">Naranjo</option>
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Descripción</label>
@@ -790,6 +834,13 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
                         <img src={editingPlan.image} alt="Imagen actual" className="w-24 h-24 object-cover rounded mb-2" />
                       )}
                       <Input type="file" accept="image/*" onChange={e => setPlanImageFile(e.target.files?.[0] || null)} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Imagen de Banner</label>
+                      {editingPlan.banner_image && (
+                        <img src={editingPlan.banner_image} alt="Banner actual" className="w-32 h-20 object-cover rounded mb-2" />
+                      )}
+                      <Input type="file" accept="image/*" onChange={e => setBannerImageFile(e.target.files?.[0] || null)} />
                     </div>
                     <div className="flex items-center gap-2">
                       <input type="checkbox" name="is_visible" id="is_visible" defaultChecked={!!editingPlan.is_visible} />

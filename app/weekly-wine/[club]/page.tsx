@@ -1,15 +1,8 @@
-"use client"
-
-import { useTranslations } from "@/lib/providers/translations-provider"
-import { getProductsByCategory } from "@/lib/products-client"
-import ProductCard from "@/components/product-card"
-import { useEffect, useState, use } from "react"
-import type { Product } from "@/lib/types"
-import { Button } from "@/components/ui/button"
+import { getSubscriptionPlanByClub } from '@/lib/subscriptions-client'
 import Image from "next/image"
+import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
 const CLUB_INFO = {
   tinto: {
@@ -70,78 +63,11 @@ const CLUB_INFO = {
   }
 } as const
 
-export default function ClubPage({ params }: { params: Promise<{ club: string }> }) {
-  const t = useTranslations()
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedSubscription, setSelectedSubscription] = useState("monthly")
-  const { club } = use(params)
-  
-  const clubInfo = CLUB_INFO[club as keyof typeof CLUB_INFO]
+export default async function ClubPage({ params }: { params: { club: string } }) {
+  const { plan, error } = await getSubscriptionPlanByClub(params.club)
+  const clubInfo = CLUB_INFO[params.club as keyof typeof CLUB_INFO]
 
-  // Opciones de suscripción traducidas y con 3 botellas
-  const SUBSCRIPTION_OPTIONS = [
-    {
-      id: "monthly",
-      title: t.club.subscription.monthly,
-      price: "4.999",
-      description: t.club.subscription.desc.replace("{bottles}", "3"),
-      features: [
-        t.club.subscription.deliveries.replace("{count}", "4"),
-        t.club.subscription.bottles.replace("{count}", "12"),
-        t.club.subscription.tastingGuide,
-        t.club.subscription.events
-      ]
-    },
-    {
-      id: "quarterly",
-      title: t.club.subscription.quarterly,
-      price: "13.999",
-      description: t.club.subscription.desc.replace("{bottles}", "3"),
-      features: [
-        t.club.subscription.deliveries.replace("{count}", "12"),
-        t.club.subscription.bottles.replace("{count}", "36"),
-        t.club.subscription.tastingGuide,
-        t.club.subscription.events,
-        t.club.subscription.discount5
-      ]
-    },
-    {
-      id: "yearly",
-      title: t.club.subscription.yearly,
-      price: "49.999",
-      description: t.club.subscription.desc.replace("{bottles}", "3"),
-      features: [
-        t.club.subscription.deliveries.replace("{count}", "48"),
-        t.club.subscription.bottles.replace("{count}", "144"),
-        t.club.subscription.tastingGuide,
-        t.club.subscription.events,
-        t.club.subscription.discount15,
-        t.club.subscription.annualEvent
-      ]
-    }
-  ]
-
-  useEffect(() => {
-    async function loadProducts() {
-      setLoading(true)
-      if (clubInfo) {
-        const { data: filteredProducts, error } = await getProductsByCategory(clubInfo.category)
-        if (error) {
-          console.error("Error loading products:", error)
-          setProducts([])
-        } else {
-          setProducts(filteredProducts || [])
-        }
-      } else {
-        setProducts([])
-      }
-      setLoading(false)
-    }
-    loadProducts()
-  }, [club, clubInfo])
-
-  if (!clubInfo) {
+  if (error || !plan || !clubInfo) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <h1 className="text-3xl font-bold mb-8">Club no encontrado</h1>
@@ -152,32 +78,28 @@ export default function ClubPage({ params }: { params: Promise<{ club: string }>
 
   return (
     <div className="min-h-screen">
-      {/* Banner estático similar al hero */}
+      {/* Banner hero */}
       <section className="w-full relative">
         <div className="relative h-[70vh] w-full overflow-hidden">
           <div className="absolute inset-0">
             <Image
-              src={clubInfo.image}
-              alt={clubInfo.title}
+              src={plan.banner_image || clubInfo.image}
+              alt={plan.name}
               fill
               priority
               sizes="100vw"
               quality={75}
               className="object-cover object-center"
               style={{ filter: "brightness(0.7)" }}
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = "/placeholder.svg?height=1080&width=1920";
-              }}
             />
           </div>
           <div className="absolute inset-0 bg-gradient-to-r from-[#5B0E2D]/80 to-transparent" />
           <div className="container relative z-10 flex h-full flex-col justify-center px-4 text-white">
             <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              {clubInfo.title}
+              {plan.name}
             </h1>
             <p className="max-w-xl text-lg text-[#F2F2F2]/90 sm:text-xl">
-              {clubInfo.description}
+              {plan.description}
             </p>
           </div>
         </div>
@@ -186,53 +108,33 @@ export default function ClubPage({ params }: { params: Promise<{ club: string }>
       {/* Grid principal: producto destacado + detalles */}
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-16">
-          {/* Imagen grande del producto destacado */}
+          {/* Imagen grande del producto/plan */}
           <div className="flex flex-col items-center">
-            {loading ? (
-              <div className="text-center py-8">Cargando...</div>
-            ) : products.length > 0 ? (
-              <>
-                <div className="relative w-full aspect-[4/5] max-w-md rounded-lg overflow-hidden mb-4">
-                  <Image
-                    src={products[0].image || clubInfo.image}
-                    alt={products[0].name}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                {/* Miniaturas: si en el futuro hay más imágenes, aquí se puede mapear un array */}
-                {/* Ejemplo: products[0].images?.map((img: string, idx: number) => ... ) */}
-              </>
-            ) : (
-              <div className="text-center py-8">No hay productos disponibles</div>
-            )}
+            <div className="relative w-full aspect-[4/5] max-w-md rounded-lg overflow-hidden mb-4">
+              <Image
+                src={plan.image || clubInfo.image}
+                alt={plan.name}
+                fill
+                className="object-cover"
+              />
+            </div>
           </div>
 
           {/* Detalles del club y suscripción */}
           <div className="flex flex-col gap-6 justify-center">
-            <h2 className="text-3xl font-bold mb-2">{clubInfo.title}</h2>
+            <h2 className="text-3xl font-bold mb-2">{plan.name}</h2>
             <div className="text-2xl text-primary font-semibold mb-2">
-              {products[0]?.price ? `$${products[0].price}` : "$4.999"}
+              {plan.price_monthly ? `$${plan.price_monthly}` : ""}
             </div>
             <div className="mb-2">
-              <span className="font-medium">Suscribite:</span>
-              <RadioGroup
-                value={selectedSubscription}
-                onValueChange={setSelectedSubscription}
-                className="flex flex-col gap-2 mt-2"
-              >
-                {SUBSCRIPTION_OPTIONS.map((option) => (
-                  <div key={option.id} className="flex items-center gap-2">
-                    <RadioGroupItem value={option.id} id={option.id} />
-                    <Label htmlFor={option.id}>{option.title} ({option.description})</Label>
-                  </div>
-                ))}
-              </RadioGroup>
+              <span className="font-medium">Precios:</span>
+              <ul className="list-disc ml-6 mt-2">
+                <li>Mensual: ${plan.price_monthly}</li>
+                <li>Trimestral: ${plan.price_quarterly}</li>
+                <li>Anual: ${plan.price_yearly}</li>
+              </ul>
             </div>
-            <div className="flex items-center gap-2 mb-4">
-              <input type="checkbox" id="gift" className="accent-primary" />
-              <label htmlFor="gift" className="text-sm">¿Es un regalo?</label>
-            </div>
+            {/* Aquí podés agregar radio buttons, lógica de suscripción, etc. */}
             <Button size="lg" className="bg-[#A83935] hover:bg-[#A83935]/90 text-white w-full max-w-xs">Suscribirse</Button>
             {/* Tabs de info */}
             <div className="mt-6">
@@ -248,31 +150,18 @@ export default function ClubPage({ params }: { params: Promise<{ club: string }>
           </div>
         </div>
 
-        {/* Beneficios (What You Get) */}
+        {/* Beneficios */}
         <div className="py-12 bg-muted rounded-lg mb-12">
           <h3 className="text-2xl font-bold text-center mb-8">¿Qué recibís?</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div>
-              <div className="flex justify-center mb-2">
-                <span className="text-4xl">🍷</span>
+            {clubInfo.benefits.slice(0, 3).map((benefit, idx) => (
+              <div key={idx}>
+                <div className="flex justify-center mb-2">
+                  <span className="text-4xl">🍷</span>
+                </div>
+                <div className="font-semibold mb-1">{benefit}</div>
               </div>
-              <div className="font-semibold mb-1">Vinos seleccionados</div>
-              <div className="text-muted-foreground text-sm">Solo vinos que amamos y bodegas boutique. Sorpresas cada mes.</div>
-            </div>
-            <div>
-              <div className="flex justify-center mb-2">
-                <span className="text-4xl">📦</span>
-              </div>
-              <div className="font-semibold mb-1">Entrega a domicilio</div>
-              <div className="text-muted-foreground text-sm">Recibí tu selección en la puerta de tu casa, sin esfuerzo.</div>
-            </div>
-            <div>
-              <div className="flex justify-center mb-2">
-                <span className="text-4xl">🎁</span>
-              </div>
-              <div className="font-semibold mb-1">Beneficios exclusivos</div>
-              <div className="text-muted-foreground text-sm">Descuentos, eventos y sorpresas solo para miembros del club.</div>
-            </div>
+            ))}
           </div>
         </div>
 
@@ -284,7 +173,7 @@ export default function ClubPage({ params }: { params: Promise<{ club: string }>
           </div>
         </div>
 
-        {/* FAQ */}
+        {/* FAQ - Accordion restaurado */}
         <div className="mb-12 max-w-2xl mx-auto">
           <h3 className="text-2xl font-bold mb-4 text-center">Preguntas frecuentes</h3>
           <div className="divide-y rounded-lg border">
