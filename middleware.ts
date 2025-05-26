@@ -1,5 +1,5 @@
-import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { createClient } from '@/lib/supabase/middleware'
 
 // Lista de rutas públicas
 const publicRoutes = [
@@ -13,80 +13,43 @@ const publicRoutes = [
   '/auth/reset-password',
   '/auth/update-password',
   '/auth/sign-up-success',
+  '/auth/callback',
 ]
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({ request: { headers: request.headers } })
-  let cookiesWereSet = false
+  try {
+    const { supabase, response } = createClient(request)
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              // Configuración segura de cookies para cross-site
-              const secureOptions = {
-                ...options,
-                sameSite: 'none' as const, // Requerido para cross-site
-                secure: true, // Siempre true para sameSite: 'none'
-                httpOnly: true, // Protección contra XSS
-                path: '/', // Disponible en toda la app
-              }
-              
-              response.cookies.set(name, value, secureOptions)
-              cookiesWereSet = true
-            })
-          } catch (error) {
-            console.error('Error setting cookies:', error)
-          }
-        },
-      },
+    // Refresh session if expired - required for Server Components
+    const { error } = await supabase.auth.getSession()
+
+    if (error) {
+      // If there's an error, redirect to sign-in
+      return NextResponse.redirect(new URL('/auth/sign-in', request.url))
     }
-  )
 
-  // Refresca la sesión si está expirada
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  console.log('Supabase user in middleware:', user, 'Error:', userError)
+    // Si es una ruta pública, permitir el acceso sin verificación
+    if (publicRoutes.some(route => request.nextUrl.pathname.startsWith(route))) {
+      return response
+    }
 
-  // Rutas protegidas
-  if (request.nextUrl.pathname.startsWith('/account') && userError) {
+    return response
+  } catch (e) {
+    // If there's an error, redirect to sign-in
     return NextResponse.redirect(new URL('/auth/sign-in', request.url))
   }
-
-  // Rutas públicas
-  const isPublicRoute = publicRoutes.some(route =>
-    request.nextUrl.pathname === route ||
-    request.nextUrl.pathname.startsWith('/collections/') ||
-    request.nextUrl.pathname.startsWith('/products/')
-  )
-
-  // Si no hay usuario y la ruta no es pública, redirige a login
-  if (!user && !isPublicRoute && !request.nextUrl.pathname.startsWith('/auth')) {
-    const redirectUrl = new URL('/auth/sign-in', request.url)
-    redirectUrl.searchParams.set('redirectedFrom', request.nextUrl.pathname)
-    return NextResponse.redirect(redirectUrl)
-  }
-
-  // Solo devolver la response con cookies si realmente hubo cambios
-  return cookiesWereSet ? response : NextResponse.next()
 }
 
 export const config = {
   matcher: [
     /*
-     * Match all request paths except:
+     * Match all request paths except for the ones starting with:
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - images - .svg, .png, .jpg, .jpeg, .gif, .webp
-     * Feel free to modify this pattern to include more paths.
+     * - public folder
+     * - auth folder (auth endpoints)
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    '/((?!_next/static|_next/image|favicon.ico|public|auth).*)',
   ],
 }

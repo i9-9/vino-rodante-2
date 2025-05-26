@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { redirect } from 'next/navigation'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -18,4 +19,14 @@ export function formatDate(date: string | Date): string {
     month: "long",
     year: "numeric",
   }).format(new Date(date))
+}
+
+export function encodedRedirect(
+  type: 'error' | 'success',
+  path: string,
+  message: string
+) {
+  const searchParams = new URLSearchParams()
+  searchParams.set(type, message)
+  return redirect(`${path}?${searchParams.toString()}`)
 }

@@ -1,0 +1,16 @@
+{
+  "name": "Vino Rodante",
+  "short_name": "Vino Rodante",
+  "description": "Tu tienda de vinos online",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#5B0E2D",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+} 

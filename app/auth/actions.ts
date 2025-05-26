@@ -1,7 +1,9 @@
 "use server"
 
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { encodedRedirect } from "@/lib/utils"
+import { createClient } from "@/lib/supabase/server"
+import { headers } from "next/headers"
+import { redirect } from "next/navigation"
 
 // Helper para redirección con mensaje
 export async function redirectWithMessage(path: string, type: "error" | "success", message: string) {
@@ -12,48 +14,71 @@ export async function redirectWithMessage(path: string, type: "error" | "success
 
 // LOGIN
 export async function signInAction(formData: FormData) {
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
+  const email = formData.get("email") as string
+  const password = formData.get("password") as string
+  const returnTo = formData.get("return_to") as string || "/account"
   const supabase = await createClient()
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
 
   if (error) {
-    return redirectWithMessage("/auth/sign-in", "error", error.message)
+    return encodedRedirect("error", "/auth/sign-in", error.message)
   }
-  return redirect("/account")
+
+  return redirect(returnTo)
 }
 
 // SIGNUP
 export async function signUpAction(formData: FormData) {
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
-  const name = formData.get('name') as string
+  const email = formData.get("email")?.toString()
+  const password = formData.get("password")?.toString()
+  const name = formData.get("name")?.toString()
   const supabase = await createClient()
+  const origin = (await headers()).get("origin")
 
-  const { data, error } = await supabase.auth.signUp({
+  if (!email || !password || !name) {
+    return encodedRedirect(
+      "error",
+      "/auth/sign-up",
+      "Email, password and name are required"
+    )
+  }
+
+  const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { name },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/auth/callback`
-    }
+      emailRedirectTo: `${origin}/auth/callback`,
+    },
   })
 
   if (error) {
-    return redirectWithMessage("/auth/sign-up", "error", error.message)
+    console.error(error.code + " " + error.message)
+    return encodedRedirect("error", "/auth/sign-up", error.message)
   }
 
-  // Crea el registro en customers si el usuario fue creado
-  if (data.user) {
-    await supabase.from("customers").insert({
-      id: data.user.id,
-      name,
+  // Crear el registro en customers
+  const { error: customerError } = await supabase
+    .from("customers")
+    .insert({
       email,
+      name,
     })
+
+  if (customerError) {
+    console.error(customerError.message)
+    return encodedRedirect("error", "/auth/sign-up", "Error creating customer record")
   }
 
-  return redirectWithMessage("/auth/sign-up-success", "success", "¡Revisa tu email para verificar tu cuenta!")
+  return encodedRedirect(
+    "success",
+    "/auth/sign-up-success",
+    "Thanks for signing up! Please check your email for a verification link."
+  )
 }
 
 // RESET PASSWORD
@@ -89,3 +114,8 @@ export async function updatePasswordAction(formData: FormData) {
 }
 
 // LOGOUT: usa el endpoint /api/auth/signout ya creado 
+export async function signOutAction() {
+  const supabase = await createClient()
+  await supabase.auth.signOut()
+  return redirect("/auth/sign-in")
+} 

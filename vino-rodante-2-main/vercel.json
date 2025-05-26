@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "vinorodante.com"
+        }
+      ],
+      "destination": "https://www.vinorodante.com/$1",
+      "permanent": true
+    }
+  ]
+} 

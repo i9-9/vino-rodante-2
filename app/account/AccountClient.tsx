@@ -943,6 +943,7 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
                 )}
               </DialogContent>
             </Dialog>
+            
           </TabsContent>
         )}
       </Tabs>
