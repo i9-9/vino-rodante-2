@@ -31,6 +31,23 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
   const triggerRef = useRef<HTMLButtonElement | null>(null)
   const weeklyWineTriggerRef = useRef<HTMLButtonElement | null>(null)
 
+  // Filtrar categorías basándose en productos disponibles
+  const availableTypes = types.filter(type => {
+    if (!products || products.length === 0) return true // Mostrar todas si no hay productos cargados
+    const typeSlug = type.href.split('/').pop()
+    return products.some(product => product.category === typeSlug)
+  })
+
+  const availableRegions = regions.filter(region => {
+    if (!products || products.length === 0) return true // Mostrar todas si no hay productos cargados
+    return products.some(product => product.region === region.slug)
+  })
+
+  const availableVarietals = varietals.filter(varietal => {
+    if (!products || products.length === 0) return true // Mostrar todas si no hay productos cargados
+    return products.some(product => product.varietal === varietal.slug)
+  })
+
   // Función para cerrar el menú programáticamente
   const closeMenu = () => {
     setTimeout(() => {
@@ -141,7 +158,7 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
                   <div className="col-span-3">
                     <h3 className="mb-3 text-lg font-medium border-b pb-2">{t.megamenu.byType}</h3>
                     <ul className="space-y-2">
-                      {types.map((type) => (
+                      {availableTypes.map((type) => (
                         <li key={type.href}>
                           <Link href={type.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={closeMenu}>
                             {type.name}
@@ -167,7 +184,7 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
                     <h3 className="mb-3 text-lg font-medium border-b pb-2">{t.megamenu.byRegion}</h3>
                     <div className="grid grid-cols-2 gap-2">
                       <ul className="space-y-2">
-                        {regions.slice(0, Math.ceil(regions.length / 2)).map((region) => (
+                        {availableRegions.slice(0, Math.ceil(availableRegions.length / 2)).map((region) => (
                           <li key={region.href}>
                             <Link href={region.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={closeMenu}>
                               {t.wineRegions[region.slug as keyof typeof t.wineRegions] || prettyLabel(region.slug)}
@@ -176,7 +193,7 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
                         ))}
                       </ul>
                       <ul className="space-y-2">
-                        {regions.slice(Math.ceil(regions.length / 2)).map((region) => (
+                        {availableRegions.slice(Math.ceil(availableRegions.length / 2)).map((region) => (
                           <li key={region.href}>
                             <Link href={region.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={closeMenu}>
                               {t.wineRegions[region.slug as keyof typeof t.wineRegions] || prettyLabel(region.slug)}
@@ -192,7 +209,7 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
                     <h3 className="mb-3 text-lg font-medium border-b pb-2">{t.megamenu.byVarietal}</h3>
                     <div className="grid grid-cols-2 gap-2">
                       <ul className="space-y-2">
-                        {varietals.slice(0, Math.ceil(varietals.length / 2)).map((varietal) => (
+                        {availableVarietals.slice(0, Math.ceil(availableVarietals.length / 2)).map((varietal) => (
                           <li key={varietal.href}>
                             <Link href={varietal.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={closeMenu}>
                               {t.wineVarietals[varietal.slug as keyof typeof t.wineVarietals] || prettyLabel(varietal.slug)}
@@ -201,7 +218,7 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
                         ))}
                       </ul>
                       <ul className="space-y-2">
-                        {varietals.slice(Math.ceil(varietals.length / 2)).map((varietal) => (
+                        {availableVarietals.slice(Math.ceil(availableVarietals.length / 2)).map((varietal) => (
                           <li key={varietal.href}>
                             <Link href={varietal.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={closeMenu}>
                               {t.wineVarietals[varietal.slug as keyof typeof t.wineVarietals] || prettyLabel(varietal.slug)}

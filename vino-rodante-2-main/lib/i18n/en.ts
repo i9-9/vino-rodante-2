@@ -76,9 +76,9 @@ export const en = {
     about: {
       title: "Our Story",
       paragraph1:
-        "Vino Rodante was born from a passion for exceptional wines and a desire to share them with the world. Our journey began in the vineyards of Argentina, where we discovered the magic that happens when tradition meets innovation.",
+        "Vino Rodante is born from a passion for exceptional wines and the desire to share them. We began in the vineyards of Argentina, where we discovered producers who are faithful to their tradition and also some who want to experiment with strong support from the family winemaking culture they received.",
       paragraph2:
-        "Today, we travel throughout Argentina's wine regions in search of unique wines with character and history. Every bottle in our collection represents not just a wine, but a journey, a tradition, and the passionate people behind it.",
+        "We recognize production schools, ancient, traditional, curious and innovative winemaking approaches. We value diversity in this beautiful world of production, pleasure and enjoyment. Today, and always, we continue seeking to be surprised by the wine regions of Argentina and the world in search of unique wines with character and history. Each bottle in our collection represents a journey, a tradition and the natural exchange of passionate people behind it. We love wine, the work it generates, the connection it proposes and the music of each uncorking.",
       cta: "Learn More About Us",
     },
   },

@@ -77,9 +77,9 @@ export const es = {
     about: {
       title: "Nuestra Historia",
       paragraph1:
-        "Vino Rodante nació de una pasión por los vinos excepcionales y el deseo de compartirlos con el mundo. Nuestro viaje comenzó en los viñedos de Argentina, donde descubrimos la magia que sucede cuando la tradición se encuentra con la innovación.",
+        "Vino Rodante nace de la pasión por los vinos excepcionales y el deseo de compartirlos. Comenzamos en los viñedos de Argentina, donde descubrimos productores que son fieles a su tradición y también algunos que quieren jugar con fuerte apoyo en la cultura familiar enológica que recibieron.",
       paragraph2:
-        "Hoy, recorremos todas las regiones vitivinícolas de Argentina en busca de vinos únicos con carácter e historia. Cada botella en nuestra colección representa no solo un vino, sino un viaje, una tradición y las personas apasionadas detrás de él.",
+        "Reconocemos escuelas de producción, enologías antiguas, tradicionales, curiosas e innovadoras. Valoramos la diversidad en este hermoso mundo de producción, placer y disfrute. Hoy, y siempre, continuamos buscando sorprendernos de las regiones vitivinícolas de Argentina y del mundo en busca de vinos únicos con carácter e historia. Cada botella en nuestra colección representa un recorrido, una tradición y el intercambio natural de las personas apasionadas detrás de él. Amamos el vino, el trabajo que genera, la vinculación que propone y la música de cada descorche.",
       cta: "Conocé Más Sobre Nosotros",
       tagline: "Apasionados por el vino argentino, dedicados a la calidad, comprometidos a compartir los mejores vinos de nuestra tierra."
     },
@@ -89,9 +89,9 @@ export const es = {
     tagline: "Apasionados por el vino argentino, dedicados a la calidad, comprometidos a compartir los mejores vinos de nuestra tierra.",
     journey: {
       title: "Nuestro Viaje",
-      paragraph1: "Vino Rodante nació de una pasión por los vinos excepcionales y el deseo de compartirlos con el mundo. Nuestro viaje comenzó en los exuberantes viñedos de Argentina, donde descubrimos la magia que ocurre cuando la tradición se encuentra con la innovación.",
-      paragraph2: "Fundada en 2015 por la sommelier María Rodríguez y el enólogo Carlos Mendoza, Vino Rodante comenzó como una pequeña tienda boutique de vinos en Buenos Aires. La visión de nuestros fundadores era crear un espacio donde los entusiastas del vino pudieran descubrir vinos únicos y de alta calidad de pequeños productores argentinos.",
-      paragraph3: "Hoy, hemos crecido hasta convertirnos en un minorista online nacional, pero nuestra misión sigue siendo la misma: llevar vinos excepcionales argentinos a paladares exigentes y compartir las historias y la pasión detrás de cada botella que vendemos."
+      paragraph1: "Vino Rodante nace de la pasión por los vinos excepcionales y el deseo de compartirlos. Comenzamos en los viñedos de Argentina, donde descubrimos productores que son fieles a su tradición y también algunos que quieren jugar con fuerte apoyo en la cultura familiar enológica que recibieron.",
+      paragraph2: "Reconocemos escuelas de producción, enologías antiguas, tradicionales, curiosas e innovadoras. Valoramos la diversidad en este hermoso mundo de producción, placer y disfrute.",
+      paragraph3: "Hoy, y siempre, continuamos buscando sorprendernos de las regiones vitivinícolas de Argentina y del mundo en busca de vinos únicos con carácter e historia. Cada botella en nuestra colección representa un recorrido, una tradición y el intercambio natural de las personas apasionadas detrás de él. Amamos el vino, el trabajo que genera, la vinculación que propone y la música de cada descorche."
     },
     values: {
       title: "Nuestros Valores",
