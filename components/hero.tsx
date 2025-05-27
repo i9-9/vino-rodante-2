@@ -112,7 +112,8 @@ export default function Hero() {
                     }}
                   />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-r from-[#5B0E2D]/80 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/5 to-transparent" />
+                <div className="absolute inset-0 bg-black/10" />
                 <div className="container relative z-10 flex h-full flex-col justify-center px-4 text-white">
                   <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
                     {slide.title}

@@ -103,17 +103,7 @@ export default async function ClubPage({ params }: { params: Promise<{ club: str
               sizes="100vw"
               quality={75}
               className="object-cover object-center"
-              style={{ filter: "brightness(0.7)" }}
             />
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-r from-[#5B0E2D]/80 to-transparent" />
-          <div className="container relative z-10 flex h-full flex-col justify-center px-4 text-white">
-            <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              {plan.name}
-            </h1>
-            <p className="max-w-xl text-lg text-[#F2F2F2]/90 sm:text-xl">
-              {plan.description}
-            </p>
           </div>
         </div>
       </section>

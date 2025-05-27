@@ -103,7 +103,6 @@ export default function WeeklyWinePage() {
                 fill
                 className="object-cover transition-transform group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
               <div className="absolute inset-0 flex flex-col justify-end p-4 text-white">
                 <h3 className="text-xl font-semibold mb-2">{club.title}</h3>
                 <p className="text-sm text-white/80">{club.description}</p>

@@ -75,7 +75,6 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
                             fill
                             className="object-cover transition-transform group-hover:scale-105"
                           />
-                          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
                           <div className="absolute inset-0 flex flex-col justify-end p-4 text-white">
                             <h4 className="text-xl font-semibold">Club Tinto</h4>
                             <p className="text-sm text-white/80">Selección de vinos tintos</p>
@@ -90,7 +89,6 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
                             fill
                             className="object-cover transition-transform group-hover:scale-105"
                           />
-                          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
                           <div className="absolute inset-0 flex flex-col justify-end p-4 text-white">
                             <h4 className="text-xl font-semibold">Club Blanco</h4>
                             <p className="text-sm text-white/80">Selección de vinos blancos</p>
@@ -105,7 +103,6 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
                             fill
                             className="object-cover transition-transform group-hover:scale-105"
                           />
-                          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
                           <div className="absolute inset-0 flex flex-col justify-end p-4 text-white">
                             <h4 className="text-xl font-semibold">Club Mixto</h4>
                             <p className="text-sm text-white/80">Tintos, blancos y más</p>
@@ -120,7 +117,6 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
                             fill
                             className="object-cover transition-transform group-hover:scale-105"
                           />
-                          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
                           <div className="absolute inset-0 flex flex-col justify-end p-4 text-white">
                             <h4 className="text-xl font-semibold">Club Naranjo</h4>
                             <p className="text-sm text-white/80">Selección de vinos naranjos</p>
