@@ -10,7 +10,7 @@ export interface ApiResponse<T> {
 }
 
 export async function getProducts(): Promise<ApiResponse<Product[]>> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -21,7 +21,7 @@ export async function getProducts(): Promise<ApiResponse<Product[]>> {
 }
 
 export async function getProduct(slug: string): Promise<ApiResponse<Product>> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -33,7 +33,7 @@ export async function getProduct(slug: string): Promise<ApiResponse<Product>> {
 }
 
 export async function getFeaturedProducts(): Promise<ApiResponse<Product[]>> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -45,7 +45,7 @@ export async function getFeaturedProducts(): Promise<ApiResponse<Product[]>> {
 }
 
 export async function getProductsByCategory(categorySlug: string): Promise<ApiResponse<Product[]>> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const category = CATEGORY_SLUG_MAP[categorySlug] || categorySlug // fallback por si ya viene en español
   const { data, error } = await supabase
     .from('products')
@@ -58,7 +58,7 @@ export async function getProductsByCategory(categorySlug: string): Promise<ApiRe
 }
 
 export async function getProductsByRegion(region: string): Promise<ApiResponse<Product[]>> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -70,7 +70,7 @@ export async function getProductsByRegion(region: string): Promise<ApiResponse<P
 }
 
 export async function getProductsByVarietal(varietal: string): Promise<ApiResponse<Product[]>> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -82,7 +82,7 @@ export async function getProductsByVarietal(varietal: string): Promise<ApiRespon
 }
 
 export async function searchProducts(query: string): Promise<ApiResponse<Product[]>> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -94,7 +94,7 @@ export async function searchProducts(query: string): Promise<ApiResponse<Product
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | undefined> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('products')
     .select('*')

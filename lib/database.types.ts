@@ -177,8 +177,8 @@ export interface Database {
           image: string | null
           features: Json | null
           price_monthly: number | null
+          price_bimonthly: number | null
           price_quarterly: number | null
-          price_yearly: number | null
           discount_percentage: number | null
           status: string | null
           display_order: number | null
@@ -195,8 +195,8 @@ export interface Database {
           image?: string | null
           features?: Json | null
           price_monthly?: number | null
+          price_bimonthly?: number | null
           price_quarterly?: number | null
-          price_yearly?: number | null
           discount_percentage?: number | null
           status?: string | null
           display_order?: number | null
@@ -213,8 +213,8 @@ export interface Database {
           image?: string | null
           features?: Json | null
           price_monthly?: number | null
+          price_bimonthly?: number | null
           price_quarterly?: number | null
-          price_yearly?: number | null
           discount_percentage?: number | null
           status?: string | null
           display_order?: number | null

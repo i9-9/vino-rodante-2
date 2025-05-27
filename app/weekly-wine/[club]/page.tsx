@@ -1,8 +1,11 @@
-import { getSubscriptionPlanByClub } from '@/lib/subscriptions-client'
+import { getSubscriptionPlanByClub, getSubscriptionPlanProducts } from '@/lib/subscriptions-client'
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
+import { formatCurrency } from "@/lib/utils"
+import ClubTabs from "./ClubTabs"
+import SubscriptionSelector from "./SubscriptionSelector"
 
 const CLUB_INFO = {
   tinto: {
@@ -63,9 +66,19 @@ const CLUB_INFO = {
   }
 } as const
 
-export default async function ClubPage({ params }: { params: { club: string } }) {
-  const { plan, error } = await getSubscriptionPlanByClub(params.club)
-  const clubInfo = CLUB_INFO[params.club as keyof typeof CLUB_INFO]
+export default async function ClubPage({ params }: { params: Promise<{ club: string }> }) {
+  const { club } = await params
+  const { plan, error } = await getSubscriptionPlanByClub(club)
+  const clubInfo = CLUB_INFO[club as keyof typeof CLUB_INFO]
+  
+  // Obtener productos del plan si existe
+  let planProducts: any[] = []
+  if (plan?.id) {
+    const { products, error: productsError } = await getSubscriptionPlanProducts(plan.id)
+    if (!productsError && products) {
+      planProducts = products
+    }
+  }
 
   if (error || !plan || !clubInfo) {
     return (
@@ -110,7 +123,7 @@ export default async function ClubPage({ params }: { params: { club: string } })
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-16">
           {/* Imagen grande del producto/plan */}
           <div className="flex flex-col items-center">
-            <div className="relative w-full aspect-[4/5] max-w-md rounded-lg overflow-hidden mb-4">
+            <div className="relative w-full aspect-[4/5] max-w-xl rounded-lg overflow-hidden mb-4">
               <Image
                 src={plan.image || clubInfo.image}
                 alt={plan.name}
@@ -123,30 +136,17 @@ export default async function ClubPage({ params }: { params: { club: string } })
           {/* Detalles del club y suscripción */}
           <div className="flex flex-col gap-6 justify-center">
             <h2 className="text-3xl font-bold mb-2">{plan.name}</h2>
-            <div className="text-2xl text-primary font-semibold mb-2">
-              {plan.price_monthly ? `$${plan.price_monthly}` : ""}
+            {plan.tagline && (
+              <p className="text-lg text-muted-foreground mb-4">{plan.tagline}</p>
+            )}
+            
+            {/* Selector de suscripción */}
+            <div className="mb-6">
+              <SubscriptionSelector plan={plan} />
             </div>
-            <div className="mb-2">
-              <span className="font-medium">Precios:</span>
-              <ul className="list-disc ml-6 mt-2">
-                <li>Mensual: ${plan.price_monthly}</li>
-                <li>Trimestral: ${plan.price_quarterly}</li>
-                <li>Anual: ${plan.price_yearly}</li>
-              </ul>
-            </div>
-            {/* Aquí podés agregar radio buttons, lógica de suscripción, etc. */}
-            <Button size="lg" className="bg-[#A83935] hover:bg-[#A83935]/90 text-white w-full max-w-xs">Suscribirse</Button>
-            {/* Tabs de info */}
-            <div className="mt-6">
-              <div className="flex gap-4 border-b mb-2">
-                <button className="py-2 px-4 font-medium border-b-2 border-primary text-primary">Descripción</button>
-                <button className="py-2 px-4 font-medium text-muted-foreground">Sobre el club</button>
-                <button className="py-2 px-4 font-medium text-muted-foreground">Los vinos</button>
-              </div>
-              <div className="text-muted-foreground text-sm">
-                {clubInfo.longDescription}
-              </div>
-            </div>
+            
+            {/* Tabs funcionales */}
+            <ClubTabs plan={plan} products={planProducts} clubInfo={clubInfo} />
           </div>
         </div>
 
@@ -166,12 +166,44 @@ export default async function ClubPage({ params }: { params: { club: string } })
         </div>
 
         {/* About the Wines */}
-        <div className="mb-12 text-center">
-          <h3 className="text-2xl font-bold mb-2">Sobre los vinos</h3>
-          <div className="text-muted-foreground max-w-2xl mx-auto">
-            {clubInfo.longDescription}
+        {planProducts.length > 0 && (
+          <div className="mb-12">
+            <h3 className="text-2xl font-bold mb-6 text-center">Vinos destacados</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {planProducts.slice(0, 6).map((item) => (
+                <div key={item.id} className="border rounded-lg p-4 hover:shadow-lg transition-shadow">
+                  <div className="flex flex-col items-center text-center">
+                    {item.products.image && (
+                      <div className="relative w-24 h-32 mb-4">
+                        <Image
+                          src={item.products.image}
+                          alt={item.products.name}
+                          fill
+                          className="object-cover rounded"
+                        />
+                      </div>
+                    )}
+                    <h4 className="font-semibold mb-2">{item.products.name}</h4>
+                    <div className="text-sm text-muted-foreground space-y-1 mb-3">
+                      <div>{item.products.year} • {item.products.region}</div>
+                      <div>{item.products.varietal}</div>
+                      <div className="font-medium">Cantidad: {item.quantity}</div>
+                    </div>
+                    {item.products.description && (
+                      <p className="text-xs text-muted-foreground overflow-hidden" style={{ 
+                        display: '-webkit-box', 
+                        WebkitLineClamp: 3, 
+                        WebkitBoxOrient: 'vertical' 
+                      }}>
+                        {item.products.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* FAQ - Accordion restaurado */}
         <div className="mb-12 max-w-2xl mx-auto">

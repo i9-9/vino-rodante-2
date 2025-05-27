@@ -9,7 +9,20 @@ import { TranslationsProvider } from "@/lib/providers/translations-provider"
 import { Toaster } from "@/components/ui/toaster"
 
 
+const getBaseUrl = () => {
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`
+  }
+  return process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:3000' 
+    : 'https://www.vinorodante.com'
+}
+
 export const metadata: Metadata = {
+  metadataBase: new URL(getBaseUrl()),
   title: "Vino Rodante | Selección de Vinos Finos",
   description:
     "Descubre vinos excepcionales de todo el mundo, cuidadosamente seleccionados para los paladares más exigentes.",
@@ -19,7 +32,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Vino Rodante | El Vino Rueda en el Tiempo y Crece con la Historia",
     description: "Tienda online rodante de vinos de toda la Argentina.",
-    url: "https://vinorodante.com",
+    url: "https://www.vinorodante.com",
     siteName: "Vino Rodante",
     images: [
       {
@@ -60,7 +73,7 @@ export const metadata: Metadata = {
     apple: "/logo/logo_vr.svg",
   },
   alternates: {
-    canonical: "https://vinorodante.com"
+    canonical: "https://www.vinorodante.com"
   },
   authors: [{ name: "Vino Rodante" }],
   creator: "Vino Rodante",

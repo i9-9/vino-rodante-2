@@ -25,7 +25,8 @@ export async function subscribeToNewsletter(email: string) {
   }
 
   try {
-    const { data: existingSubscriber } = await createClient()
+    const supabase = await createClient()
+    const { data: existingSubscriber } = await supabase
       .from("newsletter_subscribers")
       .select("*")
       .eq("email", email)
@@ -35,7 +36,7 @@ export async function subscribeToNewsletter(email: string) {
       return { success: true }
     }
 
-    const { error } = await createClient()
+    const { error } = await supabase
       .from("newsletter_subscribers")
       .insert([
         {
@@ -208,21 +209,22 @@ export async function createOrder(formData: FormData) {
   try {
     const user = await getUser()
     let customerId: string
+    const supabase = await createClient()
 
     if (user) {
       customerId = user.id
-      await createClient()
+      await supabase
         .from("customers")
         .upsert({ id: user.id, name, email: user.email })
     } else {
-      const { data: existingCustomer, error: customerFetchError } = await createClient()
+      const { data: existingCustomer, error: customerFetchError } = await supabase
         .from("customers")
         .select("*")
         .eq("email", email)
         .single()
 
       if (customerFetchError || !existingCustomer) {
-        const { data: newCustomer, error: customerCreateError } = await createClient()
+        const { data: newCustomer, error: customerCreateError } = await supabase
           .from("customers")
           .insert([{ name, email }])
           .select()
@@ -239,7 +241,7 @@ export async function createOrder(formData: FormData) {
       }
     }
 
-    const { data: address, error: addressError } = await createClient()
+    const { data: address, error: addressError } = await supabase
       .from("addresses")
       .insert([
         {
@@ -262,7 +264,7 @@ export async function createOrder(formData: FormData) {
     }
 
     const orderId = uuidv4()
-    const { error: orderError } = await createClient()
+    const { error: orderError } = await supabase
       .from("orders")
       .insert([
         {
@@ -285,7 +287,7 @@ export async function createOrder(formData: FormData) {
       price: item.price,
     }))
 
-    const { error: orderItemsError } = await createClient()
+    const { error: orderItemsError } = await supabase
       .from("order_items")
       .insert(orderItems)
 

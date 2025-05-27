@@ -5,31 +5,25 @@ import { supabaseCache } from '@/lib/supabase/cache'
 import { PostgrestError } from '@supabase/supabase-js'
 
 export async function getProfile(userId: string) {
-  return supabaseCache.get(
-    `profile-${userId}`,
-    async () => {
-      const supabase = createClient()
-      const { data, error } = await supabase
-        .from('customers')
-        .select('name')
-        .eq('id', userId)
-        .single()
-      return { data, error }
-    },
-    10 * 60 * 1000 // 10 minutos para el perfil
-  )
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('customers')
+    .select('name')
+    .eq('id', userId)
+    .single()
+  return { data, error }
 }
 
 export async function getOrders(userId: string) {
   return supabaseCache.get(
     `orders-${userId}`,
     async () => {
-      const supabase = createClient()
+      const supabase = await createClient()
       try {
         // 1. Primero obtenemos las órdenes básicas
         const { data: orders, error: ordersError } = await supabase
           .from('orders')
-          .select('id, status, total, created_at')
+          .select('id, user_id, status, total, created_at')
           .eq('user_id', userId)
           .order('created_at', { ascending: false })
 
@@ -87,7 +81,7 @@ export async function getAddresses(userId: string) {
   return supabaseCache.get(
     `addresses-${userId}`,
     async () => {
-      const supabase = createClient()
+      const supabase = await createClient()
       const { data, error } = await supabase
         .from('addresses')
         .select('*')
@@ -99,7 +93,7 @@ export async function getAddresses(userId: string) {
 }
 
 export async function addAddress(userId: string, address: any) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('addresses')
     .insert([{ ...address, customer_id: userId }])
@@ -112,7 +106,7 @@ export async function addAddress(userId: string, address: any) {
 }
 
 export async function deleteAddress(id: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { error } = await supabase
     .from('addresses')
     .delete()
@@ -127,7 +121,7 @@ export async function deleteAddress(id: string) {
 }
 
 export async function setDefaultAddress(userId: string, id: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
   // Primero, desmarcar todas las direcciones como default
   await supabase
     .from('addresses')

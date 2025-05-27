@@ -7,12 +7,13 @@ export const metadata = {
   description: "Thank you for your order with Vino Rodante.",
 }
 
-export default function ConfirmationPage({
+export default async function ConfirmationPage({
   searchParams,
 }: {
-  searchParams: { orderId: string }
+  searchParams: Promise<{ orderId: string }>
 }) {
-  const orderId = searchParams.orderId
+  const params = await searchParams
+  const orderId = params.orderId
 
   if (!orderId) {
     return (

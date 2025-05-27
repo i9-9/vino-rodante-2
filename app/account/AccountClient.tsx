@@ -24,6 +24,8 @@ import Spinner from "@/components/ui/Spinner"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import { Switch } from "@/components/ui/switch"
 import type { Database } from '@/lib/database.types'
+import { savePlanAction } from './actions/subscription-plans'
+import { useActionState } from "react"
 
 async function uploadPlanImage(file: File, planId: string) {
   const supabase = createClient()
@@ -78,7 +80,9 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
   const [subscriptionPlans, setSubscriptionPlans] = useState<Database['public']['Tables']['subscription_plans']['Row'][]>([])
   const [loadingPlans, setLoadingPlans] = useState(false)
   const [editingPlan, setEditingPlan] = useState<any>(null)
-  const [planImageFile, setPlanImageFile] = useState<File | null>(null)
+  const [planImageUrl, setPlanImageUrl] = useState<string | null>(null)
+  const [planImageLoading, setPlanImageLoading] = useState(false)
+  const [planImageError, setPlanImageError] = useState<string | null>(null)
   const [savingPlan, setSavingPlan] = useState(false)
   const [showProductsModal, setShowProductsModal] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<any>(null)
@@ -87,7 +91,10 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
   const [productSearch, setProductSearch] = useState('')
   const [loadingPlanProducts, setLoadingPlanProducts] = useState(false)
   const [addingProduct, setAddingProduct] = useState(false)
-  const [bannerImageFile, setBannerImageFile] = useState<File | null>(null)
+  const [bannerImageUrl, setBannerImageUrl] = useState<string | null>(null)
+  const [bannerImageLoading, setBannerImageLoading] = useState(false)
+  const [bannerImageError, setBannerImageError] = useState<string | null>(null)
+  const [planFormState, planFormAction] = useActionState(savePlanAction, { error: null, success: false })
 
   useEffect(() => {
     const loadData = async () => {
@@ -291,76 +298,7 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
 
   const handleEditPlan = (plan: any) => {
     setEditingPlan(plan)
-    setPlanImageFile(null)
-  }
-
-  const handleSavePlan = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (!editingPlan) return
-    setSavingPlan(true)
-    const form = e.currentTarget
-    const formData = new FormData(form)
-    let imageUrl = editingPlan.image
-    let bannerImageUrl = editingPlan.banner_image
-    if (planImageFile) {
-      const { data, error } = await uploadPlanImage(planImageFile, editingPlan.id || formData.get('name'))
-      if (error) {
-        alert('Error subiendo imagen: ' + error.message)
-        setSavingPlan(false)
-        return
-      }
-      imageUrl = data
-    }
-    if (bannerImageFile) {
-      const { data, error } = await uploadBannerImage(bannerImageFile, editingPlan.id || formData.get('name'))
-      if (error) {
-        alert('Error subiendo imagen de banner: ' + error.message)
-        setSavingPlan(false)
-        return
-      }
-      bannerImageUrl = data
-    }
-    const supabase = createClient()
-    let error
-    if (editingPlan.id) {
-      // Update
-      ({ error } = await supabase.from('subscription_plans').update({
-        name: formData.get('name'),
-        club: formData.get('club'),
-        description: formData.get('description'),
-        tagline: formData.get('tagline'),
-        price_monthly: Number(formData.get('price_monthly')),
-        price_quarterly: Number(formData.get('price_quarterly')),
-        price_yearly: Number(formData.get('price_yearly')),
-        is_visible: formData.get('is_visible') === 'on',
-        image: imageUrl,
-        banner_image: bannerImageUrl
-      }).eq('id', editingPlan.id))
-    } else {
-      // Insert
-      ({ error } = await supabase.from('subscription_plans').insert({
-        name: formData.get('name'),
-        club: formData.get('club'),
-        description: formData.get('description'),
-        tagline: formData.get('tagline'),
-        price_monthly: Number(formData.get('price_monthly')),
-        price_quarterly: Number(formData.get('price_quarterly')),
-        price_yearly: Number(formData.get('price_yearly')),
-        is_visible: formData.get('is_visible') === 'on',
-        image: imageUrl,
-        banner_image: bannerImageUrl
-      }))
-    }
-    if (error) {
-      alert('Error guardando plan: ' + error.message)
-    } else {
-      setEditingPlan(null)
-      setPlanImageFile(null)
-      setBannerImageFile(null)
-      const { data } = await supabase.from('subscription_plans').select('*').order('created_at', { ascending: false })
-      setSubscriptionPlans(data || [])
-    }
-    setSavingPlan(false)
+    setPlanImageUrl(null)
   }
 
   const handleOpenProducts = async (plan: any) => {
@@ -742,7 +680,7 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
                 <CardDescription>Gestioná los planes de suscripción y sus productos asociados.</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="mb-4" onClick={() => { setEditingPlan({ name: '', description: '', tagline: '', price_monthly: '', price_quarterly: '', price_yearly: '', is_visible: true, image: null }); setPlanImageFile(null); setBannerImageFile(null); }}>
+                <Button className="mb-4" onClick={() => { setEditingPlan({ name: '', description: '', tagline: '', price_monthly: '', price_quarterly: '', price_yearly: '', is_visible: true, image: null }); setPlanImageUrl(null); setBannerImageUrl(null); }}>
                   Agregar plan
                 </Button>
                 {loadingPlans ? (
@@ -770,9 +708,9 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
                               )}
                             </td>
                             <td className="border px-2 py-1">
-                              <div>Mensual: ${plan.price_monthly}</div>
-                              <div>Trimestral: ${plan.price_quarterly}</div>
-                              <div>Anual: ${plan.price_yearly}</div>
+                              <div>Cada mes: ${plan.price_monthly}</div>
+                              <div>Cada 2 meses: ${plan.price_bimonthly || 0}</div>
+                              <div>Cada 3 meses: ${plan.price_quarterly}</div>
                             </td>
                             <td className="border px-2 py-1">
                               <Button size="sm" variant="outline" onClick={() => handleEditPlan(plan)}>Editar</Button>
@@ -793,7 +731,8 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
                   <DialogTitle>Editar Plan de Suscripción</DialogTitle>
                 </DialogHeader>
                 {editingPlan && (
-                  <form className="space-y-4" onSubmit={handleSavePlan}>
+                  <form className="space-y-4" action={planFormAction}>
+                    {planFormState.error && <div className="text-red-600 text-sm font-medium mb-2">{planFormState.error}</div>}
                     <div>
                       <label className="block text-sm font-medium mb-1">Nombre</label>
                       <Input name="name" defaultValue={editingPlan.name} required />
@@ -817,37 +756,74 @@ export default function AccountClient({ user, isAdmin }: { user: User, isAdmin: 
                       <Input name="tagline" defaultValue={editingPlan.tagline || ''} />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Precio Mensual</label>
+                      <label className="block text-sm font-medium mb-1">Precio Mensual (cada mes)</label>
                       <Input name="price_monthly" type="number" step="0.01" defaultValue={editingPlan.price_monthly || ''} />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Precio Trimestral</label>
+                      <label className="block text-sm font-medium mb-1">Precio Bimestral (cada 2 meses)</label>
+                      <Input name="price_bimonthly" type="number" step="0.01" defaultValue={editingPlan.price_bimonthly || ''} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Precio Trimestral (cada 3 meses)</label>
                       <Input name="price_quarterly" type="number" step="0.01" defaultValue={editingPlan.price_quarterly || ''} />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Precio Anual</label>
-                      <Input name="price_yearly" type="number" step="0.01" defaultValue={editingPlan.price_yearly || ''} />
-                    </div>
-                    <div>
                       <label className="block text-sm font-medium mb-1">Imagen</label>
-                      {editingPlan.image && (
-                        <img src={editingPlan.image} alt="Imagen actual" className="w-24 h-24 object-cover rounded mb-2" />
+                      {planImageUrl && (
+                        <img src={planImageUrl} alt="Imagen actual" className="w-24 h-24 object-cover rounded mb-2" />
                       )}
-                      <Input type="file" accept="image/*" onChange={e => setPlanImageFile(e.target.files?.[0] || null)} />
+                      {planImageLoading && <div className="text-sm text-blue-600">Subiendo imagen...</div>}
+                      {planImageError && <div className="text-sm text-red-600">{planImageError}</div>}
+                      <Input type="file" accept="image/*" onChange={async e => {
+                        setPlanImageError(null)
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          setPlanImageLoading(true)
+                          const { data, error } = await uploadPlanImage(file, editingPlan.id || editingPlan.name)
+                          setPlanImageLoading(false)
+                          if (error) {
+                            setPlanImageError('Error subiendo imagen: ' + error.message)
+                          } else {
+                            setPlanImageUrl(data)
+                          }
+                        }
+                      }} disabled={planImageLoading} />
+                      <input type="hidden" name="image" value={planImageUrl || editingPlan.image || ''} />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Imagen de Banner</label>
-                      {editingPlan.banner_image && (
-                        <img src={editingPlan.banner_image} alt="Banner actual" className="w-32 h-20 object-cover rounded mb-2" />
+                      {bannerImageUrl && (
+                        <img src={bannerImageUrl} alt="Banner actual" className="w-32 h-20 object-cover rounded mb-2" />
                       )}
-                      <Input type="file" accept="image/*" onChange={e => setBannerImageFile(e.target.files?.[0] || null)} />
+                      {bannerImageLoading && <div className="text-sm text-blue-600">Subiendo banner...</div>}
+                      {bannerImageError && <div className="text-sm text-red-600">{bannerImageError}</div>}
+                      <Input type="file" accept="image/*" onChange={async e => {
+                        setBannerImageError(null)
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          setBannerImageLoading(true)
+                          const { data, error } = await uploadBannerImage(file, editingPlan.id || editingPlan.name)
+                          setBannerImageLoading(false)
+                          if (error) {
+                            setBannerImageError('Error subiendo banner: ' + error.message)
+                          } else {
+                            setBannerImageUrl(data)
+                          }
+                        }
+                      }} disabled={bannerImageLoading} />
+                      <input type="hidden" name="banner_image" value={bannerImageUrl || editingPlan.banner_image || ''} />
                     </div>
                     <div className="flex items-center gap-2">
                       <input type="checkbox" name="is_visible" id="is_visible" defaultChecked={!!editingPlan.is_visible} />
                       <label htmlFor="is_visible">Visible</label>
                     </div>
+                    {editingPlan.id && <input type="hidden" name="id" value={editingPlan.id} />}
+                    {editingPlan.image && <input type="hidden" name="existing_image" value={editingPlan.image} />}
+                    {editingPlan.banner_image && <input type="hidden" name="existing_banner_image" value={editingPlan.banner_image} />}
                     <DialogFooter>
-                      <Button type="submit" disabled={savingPlan}>{savingPlan ? 'Guardando...' : 'Guardar cambios'}</Button>
+                      <Button type="submit" disabled={savingPlan || planImageLoading || bannerImageLoading}>
+                        {savingPlan ? 'Guardando...' : 'Guardar cambios'}
+                      </Button>
                       <Button type="button" variant="outline" onClick={() => setEditingPlan(null)}>Cancelar</Button>
                     </DialogFooter>
                   </form>
