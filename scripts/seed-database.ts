@@ -118,6 +118,63 @@ const products = [
     stock: 18,
     featured: false,
   },
+  // Nuevos productos con más categorías
+  {
+    name: "Rosé de Provence 2022",
+    slug: "rose-de-provence-2022",
+    description:
+      "Delicate and fresh rosé with notes of strawberry, peach, and citrus. Light and refreshing, perfect for summer.",
+    price: 34.0,
+    image: "/placeholder.svg?height=400&width=400",
+    category: "rose",
+    year: "2022",
+    region: "Provence, France",
+    varietal: "Grenache, Cinsault",
+    stock: 25,
+    featured: true,
+  },
+  {
+    name: "Orange Wine Ancestral 2021",
+    slug: "orange-wine-ancestral-2021",
+    description:
+      "Unique orange wine with skin contact fermentation. Complex notes of dried fruits, honey, and spices. Natural and wild.",
+    price: 42.0,
+    image: "/placeholder.svg?height=400&width=400",
+    category: "naranjo",
+    year: "2021",
+    region: "Mendoza, Argentina",
+    varietal: "Torrontés",
+    stock: 8,
+    featured: true,
+  },
+  {
+    name: "Malbec Rosé 2022",
+    slug: "malbec-rose-2022",
+    description:
+      "Vibrant Argentine rosé made from Malbec grapes. Fresh and fruity with notes of red berries and a crisp finish.",
+    price: 28.0,
+    image: "/placeholder.svg?height=400&width=400",
+    category: "rose",
+    year: "2022",
+    region: "Mendoza, Argentina",
+    varietal: "Malbec",
+    stock: 20,
+    featured: false,
+  },
+  {
+    name: "Port Vintage 2015",
+    slug: "port-vintage-2015",
+    description:
+      "Rich and complex fortified wine with notes of dark chocolate, figs, and spices. Perfect for dessert pairing.",
+    price: 75.0,
+    image: "/placeholder.svg?height=400&width=400",
+    category: "dessert",
+    year: "2015",
+    region: "Douro, Portugal",
+    varietal: "Touriga Nacional, Tinta Roriz",
+    stock: 6,
+    featured: false,
+  },
 ]
 
 async function seedDatabase() {

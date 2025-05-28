@@ -83,19 +83,21 @@ export const en = {
     },
   },
   products: {
-    title: "Our Wine Collection",
-    subtitle: "Explore our selection of exceptional wines from Argentina's wine regions, each with its own story and unique flavor profile.",
+    title: "Products",
+    subtitle: "Our wine selection",
     categories: "Categories",
     priceRange: "Price Range",
     region: "Region",
-    addToCart: "Add to Cart",
-    inStock: "In Stock",
-    outOfStock: "Out of Stock",
-    available: "available",
+    addToCart: "Add to cart",
+    inStock: "In stock",
+    outOfStock: "Out of stock",
+    available: "Available",
     description: "Description",
     varietal: "Varietal",
     year: "Year",
     category: "Category",
+    noProductsFound: "No products found",
+    loadingProducts: "Loading products...",
   },
   filters: {
     under30: "Under $30",
@@ -324,5 +326,15 @@ export const en = {
       discount15: "15% discount",
       annualEvent: "Exclusive annual event"
     }
+  },
+  collections: {
+    featured: "Featured",
+    newArrivals: "New Arrivals", 
+    bestsellers: "Bestsellers",
+    giftSets: "Gift Sets",
+    featuredDescription: "Our special selection of featured wines",
+    newArrivalsDescription: "Discover our newest wines",
+    bestsellersDescription: "The most popular wines among our customers",
+    giftSetsDescription: "Perfect for gifting on special occasions",
   },
 }

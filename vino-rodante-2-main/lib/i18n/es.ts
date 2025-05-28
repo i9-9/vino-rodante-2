@@ -124,20 +124,18 @@ export const es = {
     }
   },
   products: {
-    title: "Nuestra Colección de Vinos",
-    subtitle:
-      "Explorá nuestra selección de vinos excepcionales de las diferentes regiones vitivinícolas de Argentina, cada uno con su propia historia y perfil de sabor único.",
-    categories: "Categorías",
-    priceRange: "Rango de Precio",
-    region: "Región",
-    addToCart: "Agregar al Carrito",
-    inStock: "En Stock",
-    outOfStock: "Agotado",
-    available: "disponibles",
+    title: "Productos",
+    subtitle: "Nuestra selección de vinos",
+    addToCart: "Agregar al carrito",
+    inStock: "En stock",
+    outOfStock: "Sin stock",
+    available: "Disponible",
     description: "Descripción",
     varietal: "Varietal",
     year: "Año",
     category: "Categoría",
+    noProductsFound: "No se encontraron productos",
+    loadingProducts: "Cargando productos...",
   },
   filters: {
     under30: "Menos de $30",
@@ -369,5 +367,15 @@ export const es = {
       discount15: "15% de descuento",
       annualEvent: "Evento anual exclusivo"
     }
+  },
+  collections: {
+    featured: "Destacados",
+    newArrivals: "Novedades", 
+    bestsellers: "Más Vendidos",
+    giftSets: "Sets de Regalo",
+    featuredDescription: "Nuestra selección especial de vinos destacados",
+    newArrivalsDescription: "Descubre nuestros vinos más recientes",
+    bestsellersDescription: "Los vinos más populares entre nuestros clientes",
+    giftSetsDescription: "Perfectos para regalar en ocasiones especiales",
   },
 }
