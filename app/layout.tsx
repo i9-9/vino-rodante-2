@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next"
 import "./globals.css"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
+import WhatsappButton from "@/components/whatsapp-button"
 import { CartProvider } from "@/lib/providers/cart-provider"
 import { AuthProvider } from "@/lib/providers/auth-provider"
 import { TranslationsProvider } from "@/lib/providers/translations-provider"
@@ -105,6 +106,7 @@ export default function RootLayout({
                 <div className="flex-1">{children}</div>
                 <Footer />
               </div>
+              <WhatsappButton />
               <Toaster />
             </CartProvider>
           </AuthProvider>

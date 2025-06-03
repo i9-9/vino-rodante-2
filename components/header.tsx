@@ -37,6 +37,7 @@ export default function Header() {
     name: type.name,
     href: `/collections/${type.slug}`,
   }))
+
   const regions = getAllWineRegions(t).map(region => ({
     name: region.name,
     slug: region.slug,

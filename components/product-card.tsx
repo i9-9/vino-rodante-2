@@ -13,6 +13,27 @@ function capitalizeWords(str: string) {
     .replace(/(?:^|\s|\b)([a-záéíóúüñ])/g, (match) => match.toLocaleUpperCase('es-AR'));
 }
 
+function getValidImageUrl(imageUrl: string | null | undefined): string {
+  // Check if the image URL is valid
+  if (!imageUrl || imageUrl.trim() === '') {
+    return "/placeholder.svg"
+  }
+  
+  try {
+    // For relative URLs, assume they're valid
+    if (imageUrl.startsWith('/')) {
+      return imageUrl
+    }
+    
+    // For absolute URLs, validate them
+    new URL(imageUrl)
+    return imageUrl
+  } catch {
+    // If URL is invalid, return placeholder
+    return "/placeholder.svg"
+  }
+}
+
 export default function ProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart()
   const t = useTranslations()
@@ -21,11 +42,15 @@ export default function ProductCard({ product }: { product: Product }) {
     <div className="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md">
       <Link href={`/products/${product.slug}`} className="aspect-square overflow-hidden bg-gray-100">
         <Image
-          src={product.image || "/placeholder.svg"}
+          src={getValidImageUrl(product.image)}
           alt={product.name}
           width={300}
           height={300}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = "/placeholder.svg";
+          }}
         />
       </Link>
 

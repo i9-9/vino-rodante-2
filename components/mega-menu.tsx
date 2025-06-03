@@ -26,25 +26,117 @@ export interface MegaMenuProps {
 
 export default function MegaMenu({ types, regions, varietals, collections }: MegaMenuProps) {
   const t = useTranslations()
+  console.log('🔍 [MegaMenu] Component rendering')
+  
   const { products, isLoading: isLoadingProducts, isError: isErrorProducts } = useProducts()
+  console.log('🔍 [MegaMenu] useProducts result:', { 
+    productsLength: products?.length, 
+    isLoadingProducts, 
+    isErrorProducts: isErrorProducts?.message || isErrorProducts 
+  })
+  
+  // DETAILED LOGGING cuando llegan los productos
+  if (products && products.length > 0) {
+    console.log('🔍 [MegaMenu] ✅ PRODUCTS AVAILABLE!')
+    console.log('🔍 [MegaMenu] Sample products:', products.slice(0, 3).map(p => ({ 
+      name: p.name, 
+      category: p.category 
+    })))
+    console.log('🔍 [MegaMenu] All unique categories:', [...new Set(products.map(p => p.category))])
+  } else {
+    console.log('🔍 [MegaMenu] ❌ NO PRODUCTS YET')
+  }
+  
   const { products: featuredProducts, isLoading: isLoadingFeatured, isError: isErrorFeatured } = useFeaturedProducts()
   const triggerRef = useRef<HTMLButtonElement | null>(null)
   const weeklyWineTriggerRef = useRef<HTMLButtonElement | null>(null)
 
-  // Filtrar categorías basándose en productos disponibles
+  // Mapeo de categorías de la base de datos a slugs de URL
+  const categoryToSlugMap: Record<string, string> = {
+    // Categorías en español (las que aparecen en tu DB)
+    'tinto': 'red',
+    'blanco': 'white', 
+    'rosado': 'rose',
+    'espumante': 'sparkling',
+    'naranjo': 'naranjo',
+    'sidra': 'cider',
+    'gin': 'gin',
+    // Categorías que ya vienen en inglés en tu DB
+    'white': 'white',
+    'red': 'red',
+    'rose': 'rose',
+    'sparkling': 'sparkling',
+    'dessert': 'dessert',
+    'fortified': 'fortified',
+    'cider': 'cider'
+  }
+
+  console.log('🔍 [MegaMenu] Category mapping:', categoryToSlugMap)
+
+  // DEBUG TEMPORAL: Ver qué está pasando con el mapeo SOLO cuando hay productos
+  if (products && products.length > 0) {
+    console.log('🔍 [MegaMenu] 🧪 TESTING CATEGORY MATCHING...')
+    console.log('🔍 [MegaMenu] Available type slugs:', types.map(t => t.href.split('/').pop()))
+    console.log('🔍 [MegaMenu] Unique product categories:', [...new Set(products.map(p => p.category))])
+    console.log('🔍 [MegaMenu] Mapped categories:', [...new Set(products.map(p => categoryToSlugMap[p.category] || p.category))])
+    
+    // TEST: Ver si alguna categoría hace match
+    types.forEach(type => {
+      const typeSlug = type.href.split('/').pop()
+      const matchingProducts = products.filter(product => {
+        const productCategorySlug = categoryToSlugMap[product.category] || product.category
+        const matches = productCategorySlug === typeSlug
+        return matches
+      })
+      console.log(`🔍 [MegaMenu] Type "${typeSlug}" matches ${matchingProducts.length} products:`, 
+        matchingProducts.map(p => `${p.name} (${p.category})`).slice(0, 2)
+      )
+    })
+  }
+
+  // Filtrar categorías basándose en productos visibles disponibles
   const availableTypes = types.filter(type => {
-    if (!products || products.length === 0) return true // Mostrar todas si no hay productos cargados
-    const typeSlug = type.href.split('/').pop()
-    return products.some(product => product.category === typeSlug)
+    // Si los productos están cargando o hay error, no mostrar categorías
+    if (isLoadingProducts || isErrorProducts || !products || products.length === 0) {
+      return false
+    }
+    
+    const typeSlug = type.href.split('/').pop() // Esto será 'red', 'white', etc.
+    
+    // Buscar productos que tengan esta categoría
+    const hasProducts = products.some(product => {
+      // El producto ya viene filtrado por is_visible: true desde getProducts()
+      const productCategorySlug = categoryToSlugMap[product.category] || product.category
+      const match = productCategorySlug === typeSlug
+      return match
+    })
+    
+    return hasProducts
   })
+  
+  // FALLBACK TEMPORAL: Si no hay tipos disponibles, mostrar los básicos que sabemos que existen
+  const finalAvailableTypes = availableTypes.length > 0 ? availableTypes : 
+    (products && products.length > 0 ? 
+      types.filter(type => ['red', 'white', 'rose'].includes(type.href.split('/').pop() || '')) : 
+      []
+    )
+
+  console.log('🔍 [MegaMenu] Available types:', availableTypes.length, 'of', types.length)
+  console.log('🔍 [MegaMenu] Products loaded:', products?.length || 0)
 
   const availableRegions = regions.filter(region => {
-    if (!products || products.length === 0) return true // Mostrar todas si no hay productos cargados
+    if (isLoadingProducts || isErrorProducts || !products || products.length === 0) {
+      return false
+    }
+    // Los productos ya vienen filtrados por is_visible: true
     return products.some(product => product.region === region.slug)
   })
 
   const availableVarietals = varietals.filter(varietal => {
-    if (!products || products.length === 0) return true // Mostrar todas si no hay productos cargados
+    if (isLoadingProducts || isErrorProducts || !products || products.length === 0) {
+      return false
+    }
+    // Los productos ya vienen filtrados por is_visible: true
     return products.some(product => product.varietal === varietal.slug)
   })
 
@@ -158,7 +250,7 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
                   <div className="col-span-3">
                     <h3 className="mb-3 text-lg font-medium border-b pb-2">{t.megamenu.byType}</h3>
                     <ul className="space-y-2">
-                      {availableTypes.map((type) => (
+                      {finalAvailableTypes.map((type) => (
                         <li key={type.href}>
                           <Link href={type.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={closeMenu}>
                             {type.name}

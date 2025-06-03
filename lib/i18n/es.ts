@@ -343,7 +343,9 @@ export const es = {
     rose: "Rosado",
     dessert: "De Postre",
     fortified: "Fortificado",
-    naranjo: "Naranjo"
+    naranjo: "Naranjo",
+    cider: "Sidra",
+    gin: "Gin"
   },
   featuredProducts: {
     malbecReserve: "Malbec Reserva 2018",

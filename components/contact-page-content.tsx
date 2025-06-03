@@ -90,7 +90,7 @@ export default function ContactPageContent() {
               <div>
                 <h3 className="font-medium text-lg">Dirección</h3>
                 <p className="text-[#1F1F1F]/70">
-                  123 Calle Vino, Valle Viñedo, <br />
+                  Pirán 5728, Villa Urquiza, <br />
                   Buenos Aires, Argentina
                 </p>
               </div>
@@ -100,7 +100,14 @@ export default function ContactPageContent() {
               <Phone className="h-6 w-6 text-[#A83935] flex-shrink-0 mt-1" />
               <div>
                 <h3 className="font-medium text-lg">Teléfono</h3>
-                <p className="text-[#1F1F1F]/70">+54 (11) 1234-5678</p>
+                <a 
+                  href="https://wa.me/5493492706025" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-[#1F1F1F]/70 hover:text-[#A83935] transition-colors cursor-pointer"
+                >
+                  +54 9 3492.706025
+                </a>
               </div>
             </div>
             
@@ -108,15 +115,20 @@ export default function ContactPageContent() {
               <Mail className="h-6 w-6 text-[#A83935] flex-shrink-0 mt-1" />
               <div>
                 <h3 className="font-medium text-lg">Correo electrónico</h3>
-                <p className="text-[#1F1F1F]/70">info@vinorodante.com</p>
+                <a 
+                  href="mailto:vino@vinorodante.com" 
+                  className="text-[#1F1F1F]/70 hover:text-[#A83935] transition-colors cursor-pointer"
+                >
+                  vino@vinorodante.com
+                </a>
               </div>
             </div>
           </div>
           
           <div className="mt-12">
             <h3 className="font-medium text-lg mb-4">Horario de atención</h3>
-            <p className="text-[#1F1F1F]/70 mb-2">Lunes a Viernes: 9:00 - 18:00</p>
-            <p className="text-[#1F1F1F]/70">Sábado: 10:00 - 14:00</p>
+            <p className="text-[#1F1F1F]/70 mb-2">Lunes a viernes de 9 a 18hs</p>
+            <p className="text-[#1F1F1F]/70">Sábado de 10 a 14hs</p>
           </div>
         </div>
       </div>

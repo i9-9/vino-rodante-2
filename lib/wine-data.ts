@@ -7,6 +7,8 @@ export const WINE_TYPES = {
   DESSERT: 'dessert',
   FORTIFIED: 'fortified',
   NARANJO: 'naranjo',
+  CIDER: 'cider',
+  GIN: 'gin',
 } as const;
 
 // Regiones vinícolas
@@ -165,9 +167,12 @@ export const CATEGORY_SLUG_MAP: Record<string, string> = {
   naranjo: "naranjo",
   dessert: "dessert",
   fortified: "fortified",
+  cider: "cider",
+  gin: "gin",
   tinto: "red",
   blanco: "white",
   rosado: "rose",
   espumante: "sparkling",
+  sidra: "cider",
   // Puedes agregar más si agregas más categorías
 } 

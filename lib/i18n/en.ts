@@ -302,7 +302,9 @@ export const en = {
     rose: "Rosé",
     dessert: "Dessert",
     fortified: "Fortified",
-    naranjo: "Orange"
+    naranjo: "Orange",
+    cider: "Cider",
+    gin: "Gin"
   },
   featuredProducts: {
     malbecReserve: "Malbec Reserve 2018",

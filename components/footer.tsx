@@ -26,7 +26,7 @@ export default function Footer() {
               />
             </Link>
             <p className="text-primary-foreground/70 mb-6">
-              Trayendo vinos excepcionales de Argentina a tu puerta.
+            El Vino Rueda en el Tiempo y Crece con la Historia
             </p>
             <div className="flex space-x-4">
               <Button variant="ghost" size="icon" className="hover:bg-white/10 hover:text-white/80">
@@ -92,16 +92,28 @@ export default function Footer() {
               <li className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
                 <span className="text-primary-foreground/70">
-                  123 Calle Vino, Valle Viñedo, Buenos Aires, Argentina
+                  Pirán 5728, Villa Urquiza, Buenos Aires, Argentina
                 </span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="h-5 w-5 text-accent flex-shrink-0" />
-                <span className="text-primary-foreground/70">+54 (11) 1234-5678</span>
+                <a 
+                  href="https://wa.me/5493492706025" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary-foreground/70 hover:text-primary-foreground transition-colors cursor-pointer"
+                >
+                  +54 9 3492.706025
+                </a>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-accent flex-shrink-0" />
-                <span className="text-primary-foreground/70">info@vinorodante.com</span>
+                <a 
+                  href="mailto:vino@vinorodante.com" 
+                  className="text-primary-foreground/70 hover:text-primary-foreground transition-colors cursor-pointer"
+                >
+                  vino@vinorodante.com
+                </a>
               </li>
             </ul>
           </div>

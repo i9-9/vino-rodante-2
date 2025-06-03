@@ -10,18 +10,74 @@ export interface ApiResponse<T> {
 }
 
 export async function getProducts(): Promise<ApiResponse<Product[]>> {
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('is_visible', true)
-    .order('created_at', { ascending: false })
+  console.log('🔍 [getProducts] Function called')
+  
+  try {
+    const supabase = createClient()
+    console.log('🔍 [getProducts] Supabase client created')
+    
+    // Check if environment variables are available in browser
+    console.log('🔍 [getProducts] Environment check:', {
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'EXISTS' : 'MISSING',
+      key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'EXISTS' : 'MISSING'
+    })
+    
+    // PRUEBA: Primero verificar si hay productos en general
+    console.log('🔍 [getProducts] Testing: Getting ALL products first...')
+    const { data: allProducts, error: allError } = await supabase
+      .from('products')
+      .select('id, name, category, is_visible')
+      .limit(5)
+    
+    console.log('🔍 [getProducts] ALL products test result:', { 
+      allProducts, 
+      allError,
+      count: allProducts?.length 
+    })
+    
+    console.log('🔍 [getProducts] About to execute main query...')
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('is_visible', true)
+      .order('created_at', { ascending: false })
+    
+    console.log('🔍 [getProducts] Supabase query completed')
+    console.log('🔍 [getProducts] Raw result:', { 
+      data: data, 
+      error: error,
+      dataType: typeof data,
+      dataIsArray: Array.isArray(data),
+      dataLength: data?.length
+    })
 
-  return { data, error }
+    if (error) {
+      console.error('🔍 [getProducts] Supabase error:', error)
+      return { data: null, error }
+    }
+
+    if (!data) {
+      console.log('🔍 [getProducts] No data returned (null/undefined)')
+      return { data: [], error: null }
+    }
+
+    console.log('🔍 [getProducts] Success! Returning', data.length, 'products')
+    console.log('🔍 [getProducts] First few products:', data.slice(0, 3).map(p => ({ 
+      id: p.id, 
+      name: p.name, 
+      category: p.category, 
+      is_visible: p.is_visible 
+    })))
+
+    return { data, error: null }
+  } catch (err) {
+    console.error('🔍 [getProducts] Exception caught:', err)
+    return { data: null, error: err as PostgrestError }
+  }
 }
 
 export async function getProduct(slug: string): Promise<ApiResponse<Product>> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -33,7 +89,7 @@ export async function getProduct(slug: string): Promise<ApiResponse<Product>> {
 }
 
 export async function getFeaturedProducts(): Promise<ApiResponse<Product[]>> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -45,7 +101,7 @@ export async function getFeaturedProducts(): Promise<ApiResponse<Product[]>> {
 }
 
 export async function getProductsByCategory(categorySlug: string): Promise<ApiResponse<Product[]>> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const category = CATEGORY_SLUG_MAP[categorySlug] || categorySlug // fallback por si ya viene en español
   const { data, error } = await supabase
     .from('products')
@@ -58,7 +114,7 @@ export async function getProductsByCategory(categorySlug: string): Promise<ApiRe
 }
 
 export async function getProductsByRegion(region: string): Promise<ApiResponse<Product[]>> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -70,7 +126,7 @@ export async function getProductsByRegion(region: string): Promise<ApiResponse<P
 }
 
 export async function getProductsByVarietal(varietal: string): Promise<ApiResponse<Product[]>> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -82,7 +138,7 @@ export async function getProductsByVarietal(varietal: string): Promise<ApiRespon
 }
 
 export async function searchProducts(query: string): Promise<ApiResponse<Product[]>> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -94,7 +150,7 @@ export async function searchProducts(query: string): Promise<ApiResponse<Product
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | undefined> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('products')
     .select('*')
