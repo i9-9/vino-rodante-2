@@ -61,11 +61,10 @@ export const en = {
   },
   home: {
     hero: {
-      title: "Discover the Finest Wine Selection",
-      subtitle:
-        "Vino Rodante brings you exceptional wines from Argentina's best wine regions, carefully selected for the most discerning palates.",
-      cta: "Explore Collection",
-      secondaryCta: "Our Story",
+      title: "Weekly Wine",
+      subtitle: "At Vino Rodante we know: your time is for enjoying, not searching.\nThat's why we bring you a carefully curated selection of quality wines at irresistible prices.\nUncork without leaving home. Enjoy without complications.",
+      cta: "View Products",
+      secondaryCta: "Learn More",
     },
     featuredWines: {
       title: "Featured Wines",

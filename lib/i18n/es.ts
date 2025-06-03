@@ -61,18 +61,17 @@ export const es = {
   },
   home: {
     hero: {
-      title: "Descubrí la Mejor Selección de Vinos",
-      subtitle:
-        "Vino Rodante te trae vinos excepcionales de las mejores regiones vinícolas de Argentina, cuidadosamente seleccionados para los paladares más exigentes.",
-      cta: "Explorar Colección",
-      secondaryCta: "Nuestra Historia",
+      title: "Weekly Wine",
+      subtitle: "En Vino Rodante lo sabemos: tu tiempo es para disfrutar, no para buscar.\nPor eso te llevamos a casa una cuidada selección de vinos de calidad a precios irresistibles.\nDescorcha sin salir de casa. Disfruta sin complicaciones.",
+      cta: "Ver Productos",
+      secondaryCta: "Conoce más",
     },
     featuredWines: {
       title: "Vinos Destacados",
       subtitle:
         "Explorá nuestra selección de vinos excepcionales de Argentina, cada uno con su propia historia y perfil de sabor único.",
       viewAll: "Ver Todos los Vinos",
-      description: "Explorá nuestra selección cuidadosamente elegida de vinos excepcionales argentinos, cada uno con su propia historia única y perfil de sabor."
+      description: "Pensamos que cada hogar tiene su estilo para tomar vino. Algunos lo prefieren blanco, otros siempre con el tinto. Y están aquellos que se rehúsan a aferrarse a un estilo. El mixto juega. Para los curiosos: el naranjo."
     },
     about: {
       title: "Nuestra Historia",
