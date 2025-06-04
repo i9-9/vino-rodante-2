@@ -30,5 +30,14 @@ next-env.d.ts
 supabase-nextjs-template-main/
 with-supabase-app/
 
-# example directory
+# example directories and backups
 /example/
+vino-rodante-2-main/
+*-backup/
+*-old/
+*-temp/
+
+# Other common backup patterns
+*.backup
+*.bak
+*.tmp
