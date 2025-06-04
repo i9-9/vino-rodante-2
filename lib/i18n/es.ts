@@ -40,12 +40,15 @@ export const es = {
   },
   navigation: {
     home: "Inicio",
-    weeklyWine: "Weekly Wine",
+    weeklyWine: "Club de vinos",
     products: "Productos",
     allWines: "Todos los Vinos",
-    redWines: "Vinos Tintos",
-    whiteWines: "Vinos Blancos",
-    sparklingWines: "Vinos Espumosos",
+    redWines: "Tintos",
+    whiteWines: "Blancos",
+    sparklingWines: "Espumantes",
+    roseWines: "Rosé",
+    orangeWines: "Naranjo",
+    dessertWines: "Postre",
     about: "Nosotros",
     contact: "Contacto",
     myAccount: "Mi Cuenta",
@@ -58,6 +61,9 @@ export const es = {
     new: "Novedades",
     bestsellers: "Más Vendidos",
     gifts: "Sets de Regalo",
+    settings: "Configuración",
+    logout: "Cerrar sesión",
+    checkout: "Comprar",
   },
   home: {
     hero: {
@@ -97,11 +103,11 @@ export const es = {
       subtitle: "En Vino Rodante, nos guiamos por un conjunto de valores fundamentales que informan todo lo que hacemos.",
       quality: {
         title: "Calidad",
-        description: "Seleccionamos meticulosamente cada vino en nuestra colección, asegurando que cada botella cumpla con nuestros altos estándares de calidad y carácter."
+        description: "Somos un poco obsesivos con la calidad de selección. Por eso, la hacemos habiendo probado previamente, claro. Y la invitación es abierta a todo el público que quiera sumarse."
       },
       authenticity: {
         title: "Autenticidad",
-        description: "Valoramos los vinos que expresan su terroir y la visión única de sus creadores, mostrando el carácter auténtico de las regiones vinícolas argentinas."
+        description: "Reconocemos escuelas de producción, enología antigua, tradicional, curiosa e innovadora. Valoramos la diversidad que alienta a los que piensan el vino cuando aún está en la viña, el aprendizaje que propone cada territorio. Trabajamos con mucho respeto hacia este hermoso mundo de producción, placer y disfrute."
       },
       sustainability: {
         title: "Sostenibilidad",
@@ -110,8 +116,8 @@ export const es = {
     },
     selection: {
       title: "Nuestro Proceso de Selección",
-      paragraph1: "Cada vino en nuestra colección ha sido cuidadosamente seleccionado a través de un riguroso proceso de cata. Nuestro equipo de sommeliers y expertos en vinos viaja por todas las regiones vitivinícolas de Argentina, visitando viñedos y reuniéndose con enólogos para descubrir vinos excepcionales con carácter e historia.",
-      paragraph2: "Buscamos vinos que no solo tengan un sabor excepcional sino que también cuenten una historia – sobre la tierra de la que provienen, las personas que los elaboraron y las tradiciones que representan.",
+      paragraph1: "El paladar manda. Cada vino en nuestra colección es seleccionado a través de un riguroso proceso de cata. Somos un equipo de tomadores profesionales que viaja por las regiones de Argentina, visitando viñedos y reuniéndose con productores para descubrir vinos excepcionales con carácter e historia.",
+      paragraph2: "Buscamos vinos que tengan un sabor excepcional y que también cuenten una historia – sobre la tierra de la que provienen, las personas que los elaboraron y las tradiciones que representan.",
       paragraph3: "Este compromiso con la calidad y la autenticidad significa que nuestra colección evoluciona constantemente, con nuevos descubrimientos que se agregan regularmente junto a nuestros favoritos de confianza.",
       cta: "Explorá Nuestra Colección"
     },
@@ -125,6 +131,9 @@ export const es = {
   products: {
     title: "Productos",
     subtitle: "Nuestra selección de vinos",
+    categories: "Categorías",
+    priceRange: "Rango de precios",
+    region: "Región",
     addToCart: "Agregar al carrito",
     inStock: "En stock",
     outOfStock: "Sin stock",
@@ -367,6 +376,25 @@ export const es = {
       discount5: "5% de descuento",
       discount15: "15% de descuento",
       annualEvent: "Evento anual exclusivo"
+    },
+    howItWorks: {
+      title: "¿Cómo funciona?",
+      step1: "Elegí el club que más te guste",
+      step2: "Recibí vinos seleccionados cada semana",
+      step3: "Disfrutá de guías de cata y eventos exclusivos",
+      step4: "Pausá o cancelá cuando quieras"
+    },
+    benefits: {
+      title: "Beneficios",
+      benefit1: "Entrega semanal de vinos seleccionados",
+      benefit2: "Acceso a eventos exclusivos",
+      benefit3: "Descuentos especiales en compras adicionales"
+    },
+    events: {
+      title: "Eventos y Encuentros",
+      description: "Si tenés algún evento que atender, contá con nosotros. Nos gusta mucho compartir vino.",
+      thursdays: "Rodamos vino todos los jueves en un lugar distinto.",
+      invitation: "Seguinos en redes y venite: no tengas vergüenza."
     }
   },
   collections: {

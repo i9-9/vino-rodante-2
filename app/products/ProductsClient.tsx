@@ -6,6 +6,8 @@ import ProductCard from "@/components/product-card"
 import { Button } from "@/components/ui/button"
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useMemo } from 'react'
+import { Slider } from "@/components/ui/slider"
+import { CATEGORY_SLUG_MAP } from "@/lib/wine-data"
 
 interface ProductsClientProps {
   t: any
@@ -37,7 +39,8 @@ export default function ProductsClient({ t }: ProductsClientProps) {
   useEffect(() => {
     let result = [...products]
     if (activeCategory) {
-      result = result.filter((p) => p.category === activeCategory)
+      const dbCategory = CATEGORY_SLUG_MAP[activeCategory] || activeCategory
+      result = result.filter((p) => p.category === dbCategory)
     }
     if (activePrice) {
       result = result.filter((p) => p.price >= activePrice[0] && p.price < activePrice[1])
@@ -145,6 +148,15 @@ export default function ProductsClient({ t }: ProductsClientProps) {
               <Button variant={activeCategory === 'espumante' ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveCategory(activeCategory === 'espumante' ? null : 'espumante')}>
                 {t.navigation.sparklingWines}
               </Button>
+              <Button variant={activeCategory === 'rosado' ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveCategory(activeCategory === 'rosado' ? null : 'rosado')}>
+                {t.navigation.roseWines || "Vinos Rosé"}
+              </Button>
+              <Button variant={activeCategory === 'naranjo' ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveCategory(activeCategory === 'naranjo' ? null : 'naranjo')}>
+                {t.navigation.orangeWines || "Vinos Naranjo"}
+              </Button>
+              <Button variant={activeCategory === 'dessert' ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveCategory(activeCategory === 'dessert' ? null : 'dessert')}>
+                {t.navigation.dessertWines || "Vinos de Postre"}
+              </Button>
             </div>
           </div>
 
@@ -202,9 +214,15 @@ export default function ProductsClient({ t }: ProductsClientProps) {
 
         <div className="flex-1">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProducts && filteredProducts.map((product: Product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+            {filteredProducts && filteredProducts.length > 0 ? (
+              filteredProducts.map((product: Product) => (
+                <ProductCard key={product.id} product={product} />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <p className="text-gray-500 text-lg">{t.common.noResults || "No se encontraron productos en esta categoría."}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

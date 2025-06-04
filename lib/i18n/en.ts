@@ -40,12 +40,15 @@ export const en = {
   },
   navigation: {
     home: "Home",
-    weeklyWine: "Weekly Wine",
+    weeklyWine: "Wine Club",
     products: "Products",
     allWines: "All Wines",
     redWines: "Red Wines",
     whiteWines: "White Wines",
     sparklingWines: "Sparkling Wines",
+    roseWines: "Rosé Wines",
+    orangeWines: "Orange Wines",
+    dessertWines: "Dessert Wines",
     about: "About",
     contact: "Contact",
     myAccount: "My Account",
@@ -58,6 +61,11 @@ export const en = {
     new: "New Arrivals",
     bestsellers: "Bestsellers",
     gifts: "Gift Sets",
+    account: "Account",
+    orders: "Orders",
+    settings: "Settings",
+    logout: "Logout",
+    checkout: "Checkout",
   },
   home: {
     hero: {
@@ -80,6 +88,45 @@ export const en = {
         "We recognize production schools, ancient, traditional, curious and innovative winemaking approaches. We value diversity in this beautiful world of production, pleasure and enjoyment. Today, and always, we continue seeking to be surprised by the wine regions of Argentina and the world in search of unique wines with character and history. Each bottle in our collection represents a journey, a tradition and the natural exchange of passionate people behind it. We love wine, the work it generates, the connection it proposes and the music of each uncorking.",
       cta: "Learn More About Us",
     },
+  },
+  about: {
+    title: "Our Story",
+    tagline: "Passionate about Argentine wine, dedicated to quality, committed to sharing the best wines from our land.",
+    journey: {
+      title: "Our Journey",
+      paragraph1: "Vino Rodante is born from a passion for exceptional wines and the desire to share them. We began in the vineyards of Argentina, where we discovered producers who are faithful to their tradition and also some who want to experiment with strong support from the family winemaking culture they received.",
+      paragraph2: "We recognize production schools, ancient, traditional, curious and innovative winemaking approaches. We value diversity in this beautiful world of production, pleasure and enjoyment.",
+      paragraph3: "Today, and always, we continue seeking to be surprised by the wine regions of Argentina and the world in search of unique wines with character and history. Each bottle in our collection represents a journey, a tradition and the natural exchange of passionate people behind it. We love wine, the work it generates, the connection it proposes and the music of each uncorking."
+    },
+    values: {
+      title: "Our Values",
+      subtitle: "At Vino Rodante, we are guided by a set of fundamental values that inform everything we do.",
+      quality: {
+        title: "Quality",
+        description: "We are a bit obsessive about selection quality. That's why we do it having tasted beforehand, of course. And the invitation is open to all the public who want to join."
+      },
+      authenticity: {
+        title: "Authenticity",
+        description: "We recognize production schools, ancient, traditional, curious and innovative winemaking. We value the diversity that encourages those who think about wine when it's still in the vineyard, the learning that each territory proposes. We work with great respect towards this beautiful world of production, pleasure and enjoyment."
+      },
+      sustainability: {
+        title: "Sustainability",
+        description: "We prioritize wines from producers who practice sustainable, organic or biodynamic viticulture, respecting both the land and the people."
+      }
+    },
+    selection: {
+      title: "Our Selection Process",
+      paragraph1: "The palate rules. Each wine in our collection is selected through a rigorous tasting process. We are a team of professional drinkers who travel through the regions of Argentina, visiting vineyards and meeting with producers to discover exceptional wines with character and history.",
+      paragraph2: "We look for wines that have exceptional flavor and also tell a story – about the land they come from, the people who made them and the traditions they represent.",
+      paragraph3: "This commitment to quality and authenticity means that our collection constantly evolves, with new discoveries being added regularly alongside our trusted favorites.",
+      cta: "Explore Our Collection"
+    },
+    newsletter: {
+      title: "Join Our Wine Journey",
+      subtitle: "Subscribe to our newsletter to receive updates on new arrivals, special promotions and invitations to exclusive tasting events.",
+      placeholder: "Your email address",
+      button: "Subscribe"
+    }
   },
   products: {
     title: "Products",
@@ -326,6 +373,25 @@ export const en = {
       discount5: "5% discount",
       discount15: "15% discount",
       annualEvent: "Exclusive annual event"
+    },
+    howItWorks: {
+      title: "How it works?",
+      step1: "Choose the club you like the most",
+      step2: "Receive selected wines every week",
+      step3: "Enjoy tasting guides and exclusive events",
+      step4: "Pause or cancel whenever you want"
+    },
+    benefits: {
+      title: "Benefits",
+      benefit1: "Weekly delivery of selected wines",
+      benefit2: "Access to exclusive events",
+      benefit3: "Special discounts on additional purchases"
+    },
+    events: {
+      title: "Events and Gatherings",
+      description: "If you have any event to attend, count on us. We really enjoy sharing wine.",
+      thursdays: "We share wine every Thursday in a different place.",
+      invitation: "Follow us on social media and come: don't be shy."
     }
   },
   collections: {

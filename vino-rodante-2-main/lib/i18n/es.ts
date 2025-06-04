@@ -126,6 +126,9 @@ export const es = {
   products: {
     title: "Productos",
     subtitle: "Nuestra selección de vinos",
+    categories: "Categorías",
+    priceRange: "Rango de precios",
+    region: "Región",
     addToCart: "Agregar al carrito",
     inStock: "En stock",
     outOfStock: "Sin stock",

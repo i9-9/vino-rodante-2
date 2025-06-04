@@ -50,46 +50,58 @@ export default function WeeklyWinePage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
         <div>
-          <h2 className="text-2xl font-bold mb-4">¿Cómo funciona?</h2>
+          <h2 className="text-2xl font-bold mb-4">{t.club.howItWorks.title}</h2>
           <ul className="space-y-4">
             <li className="flex items-start gap-3">
               <span className="text-primary text-xl">1</span>
-              <span>Elegí el club que más te guste</span>
+              <span>{t.club.howItWorks.step1}</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="text-primary text-xl">2</span>
-              <span>Recibí vinos seleccionados cada semana</span>
+              <span>{t.club.howItWorks.step2}</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="text-primary text-xl">3</span>
-              <span>Disfrutá de guías de cata y eventos exclusivos</span>
+              <span>{t.club.howItWorks.step3}</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="text-primary text-xl">4</span>
-              <span>Pausá o cancelá cuando quieras</span>
+              <span>{t.club.howItWorks.step4}</span>
             </li>
           </ul>
         </div>
         <div>
-          <h2 className="text-2xl font-bold mb-4">Beneficios</h2>
+          <h2 className="text-2xl font-bold mb-4">{t.club.benefits.title}</h2>
           <ul className="space-y-4">
             <li className="flex items-start gap-3">
               <span className="text-primary text-xl">✓</span>
-              <span>Entrega semanal de vinos seleccionados</span>
+              <span>{t.club.benefits.benefit1}</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="text-primary text-xl">✓</span>
-              <span>Guía de cata detallada</span>
+              <span>{t.club.benefits.benefit2}</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="text-primary text-xl">✓</span>
-              <span>Acceso a eventos exclusivos</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-primary text-xl">✓</span>
-              <span>Descuentos especiales en compras adicionales</span>
+              <span>{t.club.benefits.benefit3}</span>
             </li>
           </ul>
+        </div>
+      </div>
+
+      {/* Sección de Eventos */}
+      <div className="mb-12 bg-[#F2F2F2] rounded-lg p-8 text-center">
+        <h2 className="text-2xl font-bold mb-4">{t.club.events.title}</h2>
+        <div className="max-w-2xl mx-auto space-y-4">
+          <p className="text-lg text-[#1F1F1F]/80">
+            {t.club.events.description}
+          </p>
+          <p className="text-lg text-[#1F1F1F]/80">
+            {t.club.events.thursdays}
+          </p>
+          <p className="text-lg font-medium text-[#5B0E2D]">
+            {t.club.events.invitation}
+          </p>
         </div>
       </div>
 
