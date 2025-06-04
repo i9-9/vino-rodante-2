@@ -3,11 +3,8 @@ import type { Database } from '@/lib/database.types'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export function createClient(request: NextRequest) {
-  // Create an unmodified response
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+  let supabaseResponse = NextResponse.next({
+    request,
   })
 
   const supabase = createServerClient<Database>(
@@ -15,28 +12,23 @@ export function createClient(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
+        getAll() {
+          return request.cookies.getAll()
         },
-        set(name: string, value: string, options: any) {
-          // If the cookie is updated, update the response
-          response.cookies.set({
-            name,
-            value,
-            ...options,
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value)
           })
-        },
-        remove(name: string, options: any) {
-          // If the cookie is removed, update the response
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
+          supabaseResponse = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) => {
+            supabaseResponse.cookies.set(name, value, options)
           })
         },
       },
     }
   )
 
-  return { supabase, response }
+  return { supabase, response: supabaseResponse }
 } 

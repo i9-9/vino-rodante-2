@@ -1,6 +1,9 @@
 import { getTranslations } from "@/lib/get-translations"
 import ProductsClient from "./ProductsClient"
 
+// Forzar renderizado dinámico para páginas que dependen de datos de Supabase
+export const dynamic = "force-dynamic"
+
 export async function generateMetadata() {
   const t = await getTranslations()
   
