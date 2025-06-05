@@ -22,18 +22,16 @@ export async function getProducts(): Promise<ApiResponse<Product[]>> {
       key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'EXISTS' : 'MISSING'
     })
     
-    // PRUEBA: Primero verificar si hay productos en general
-    console.log('🔍 [getProducts] Testing: Getting ALL products first...')
-    const { data: allProducts, error: allError } = await supabase
-      .from('products')
-      .select('id, name, category, is_visible')
-      .limit(5)
-    
-    console.log('🔍 [getProducts] ALL products test result:', { 
-      allProducts, 
-      allError,
-      count: allProducts?.length 
-    })
+    // Check if we're in incognito mode by trying to access sessionStorage
+    let isIncognito = false
+    try {
+      const testKey = '__test_incognito__'
+      sessionStorage.setItem(testKey, 'test')
+      sessionStorage.removeItem(testKey)
+    } catch (e) {
+      isIncognito = true
+      console.log('🔍 [getProducts] Detected incognito mode')
+    }
     
     console.log('🔍 [getProducts] About to execute main query...')
     const { data, error } = await supabase
@@ -48,11 +46,33 @@ export async function getProducts(): Promise<ApiResponse<Product[]>> {
       error: error,
       dataType: typeof data,
       dataIsArray: Array.isArray(data),
-      dataLength: data?.length
+      dataLength: data?.length,
+      isIncognito
     })
 
     if (error) {
       console.error('🔍 [getProducts] Supabase error:', error)
+      
+      // En modo incógnito, si hay error de autenticación, intentar sin filtros de seguridad
+      if (isIncognito && (error.message?.includes('auth') || error.message?.includes('policy') || error.code === 'PGRST116')) {
+        console.log('🔍 [getProducts] Attempting incognito-friendly query...')
+        
+        // Intentar query más simple para modo incógnito
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('products')
+          .select('id, name, slug, description, price, image, category, region, varietal, year, stock, featured, is_visible')
+          .eq('is_visible', true)
+          .limit(50)
+        
+        if (fallbackError) {
+          console.error('🔍 [getProducts] Fallback query also failed:', fallbackError)
+          return { data: null, error: fallbackError }
+        }
+        
+        console.log('🔍 [getProducts] Fallback query succeeded:', fallbackData?.length, 'products')
+        return { data: fallbackData || [], error: null }
+      }
+      
       return { data: null, error }
     }
 

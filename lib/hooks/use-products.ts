@@ -2,6 +2,9 @@ import { useState, useEffect, useLayoutEffect } from 'react'
 import { getProducts, getProductsByRegion } from '@/lib/products-client'
 import type { Product } from '@/lib/types'
 
+// Fallback básico de categorías para modo incógnito
+const FALLBACK_CATEGORIES = ['red', 'white', 'rose', 'sparkling', 'naranjo']
+
 export function useProducts() {
   console.log('🔍 [useProducts] Hook called')
   
@@ -29,7 +32,30 @@ export function useProducts() {
         if (error) {
           console.error('🔍 [useProducts] Error from getProducts:', error)
           setError(error)
-          setProducts([])
+          
+          // Si es un error de autenticación/política en modo incógnito, crear productos básicos para navegación
+          if (error.message?.includes('auth') || error.message?.includes('policy') || (error as any).code === 'PGRST116') {
+            console.log('🔍 [useProducts] Using fallback for incognito mode')
+            // Crear productos mínimos para que el menú funcione
+            const fallbackProducts: Product[] = FALLBACK_CATEGORIES.map((category, index) => ({
+              id: `fallback-${index}`,
+              name: `${category} wine`,
+              slug: `${category}-wine`,
+              description: `${category} wine collection`,
+              price: 1000,
+              image: '/images/wine-placeholder.jpg',
+              category: category,
+              region: 'mendoza',
+              varietal: 'cabernet-sauvignon',
+              year: '2022',
+              stock: 10,
+              featured: false,
+              is_visible: true
+            }))
+            setProducts(fallbackProducts)
+          } else {
+            setProducts([])
+          }
         } else {
           console.log('🔍 [useProducts] Setting products in state:', data?.length || 0, 'products')
           setProducts(data || [])
@@ -37,7 +63,25 @@ export function useProducts() {
       } catch (err) {
         console.error('🔍 [useProducts] Exception:', err)
         setError(err)
-        setProducts([])
+        
+        // En caso de excepción completa, usar fallback
+        console.log('🔍 [useProducts] Using fallback due to exception')
+        const fallbackProducts: Product[] = FALLBACK_CATEGORIES.map((category, index) => ({
+          id: `fallback-${index}`,
+          name: `${category} wine`,
+          slug: `${category}-wine`,
+          description: `${category} wine collection`,
+          price: 1000,
+          image: '/images/wine-placeholder.jpg',
+          category: category,
+          region: 'mendoza',
+          varietal: 'cabernet-sauvignon',
+          year: '2022',
+          stock: 10,
+          featured: false,
+          is_visible: true
+        }))
+        setProducts(fallbackProducts)
       } finally {
         setIsLoading(false)
       }

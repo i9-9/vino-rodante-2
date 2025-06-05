@@ -14,6 +14,7 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
 import { useProducts, useFeaturedProducts } from "@/lib/hooks/use-products"
+import { usePublicProducts } from "@/lib/products-public"
 import { getAllWineTypes, getAllWineRegions, getAllWineVarietals, prettyLabel } from "@/lib/wine-data"
 import { useRef } from "react"
 
@@ -28,11 +29,12 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
   const t = useTranslations()
   console.log('🔍 [MegaMenu] Component rendering')
   
-  const { products, isLoading: isLoadingProducts, isError: isErrorProducts } = useProducts()
-  console.log('🔍 [MegaMenu] useProducts result:', { 
+  // Usar el hook público más robusto para modo incógnito
+  const { products, isLoading: isLoadingProducts, error: isErrorProducts } = usePublicProducts()
+  console.log('🔍 [MegaMenu] usePublicProducts result:', { 
     productsLength: products?.length, 
     isLoadingProducts, 
-    isErrorProducts: isErrorProducts?.message || isErrorProducts 
+    isErrorProducts 
   })
   
   // DETAILED LOGGING cuando llegan los productos
@@ -114,14 +116,22 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
     return hasProducts
   })
   
-  // FALLBACK TEMPORAL: Si no hay tipos disponibles, mostrar los básicos que sabemos que existen
-  const finalAvailableTypes = availableTypes.length > 0 ? availableTypes : 
-    (products && products.length > 0 ? 
-      types.filter(type => ['red', 'white', 'rose'].includes(type.href.split('/').pop() || '')) : 
-      []
-    )
+  // FALLBACK para modo incógnito: Si hay error o no hay productos, mostrar categorías básicas
+  const fallbackTypes = types.filter(type => ['red', 'white', 'rose', 'sparkling'].includes(type.href.split('/').pop() || ''))
+  
+  // Si hay error de productos (común en modo incógnito), usar fallback
+  const finalAvailableTypes = isErrorProducts 
+    ? fallbackTypes
+    : availableTypes.length > 0 
+      ? availableTypes 
+      : (products && products.length > 0 ? 
+          types.filter(type => ['red', 'white', 'rose'].includes(type.href.split('/').pop() || '')) : 
+          []
+        )
 
   console.log('🔍 [MegaMenu] Available types:', availableTypes.length, 'of', types.length)
+  console.log('🔍 [MegaMenu] Using fallback types due to error:', isErrorProducts)
+  console.log('🔍 [MegaMenu] Final available types:', finalAvailableTypes.length)
   console.log('🔍 [MegaMenu] Products loaded:', products?.length || 0)
 
   const availableRegions = regions.filter(region => {
