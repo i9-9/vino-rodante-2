@@ -119,34 +119,46 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
     console.log('🔍 [MegaMenu] Unique product categories:', [...new Set(products.map(p => p.category))])
     console.log('🔍 [MegaMenu] Mapped categories:', [...new Set(products.map(p => categoryToSlugMap[p.category] || p.category))])
     
+    // INVESTIGAR ESPECÍFICAMENTE EFUSIVO
+    const efusivoProduct = products.find(p => p.name.toLowerCase().includes('efusivo'))
+    if (efusivoProduct) {
+      console.log('🍷 [MegaMenu] EFUSIVO ENCONTRADO:', {
+        name: efusivoProduct.name,
+        category: efusivoProduct.category,
+        is_visible: efusivoProduct.is_visible,
+        mapped_category: categoryToSlugMap[efusivoProduct.category] || efusivoProduct.category
+      })
+    } else {
+      console.log('🍷 [MegaMenu] EFUSIVO NO ENCONTRADO en productos cargados')
+      console.log('🍷 [MegaMenu] Productos con "blanc" o "sauvignon":', 
+        products.filter(p => 
+          p.name.toLowerCase().includes('blanc') || 
+          p.name.toLowerCase().includes('sauvignon')
+        ).map(p => ({ name: p.name, category: p.category, is_visible: p.is_visible }))
+      )
+    }
+    
     // TEST: Ver si alguna categoría hace match
     types.forEach(type => {
       const typeSlug = type.href.split('/').pop()
+      if (!typeSlug) return // Manejar caso undefined
+      
       const matchingProducts = products.filter(product => {
         const productCategorySlug = categoryToSlugMap[product.category] || product.category
-        const matches = productCategorySlug === typeSlug
-        return matches
+        return productCategorySlug === typeSlug
       })
-      console.log(`🔍 [MegaMenu] Type "${typeSlug}" matches ${matchingProducts.length} products:`, 
-        matchingProducts.map(p => `${p.name} (${p.category})`).slice(0, 2)
-      )
+      console.log(`🔍 [MegaMenu] ${typeSlug.toUpperCase()} type found: ${matchingProducts.length > 0} ${type.name} (${matchingProducts.length} products)`)
+      
+      // Log específico para blancos
+      if (typeSlug === 'white') {
+        console.log('🍷 [MegaMenu] BLANCO products:', matchingProducts.map(p => ({ name: p.name, category: p.category })))
+      }
+      if (typeSlug === 'red') {
+        console.log('🍷 [MegaMenu] TINTO products:', matchingProducts.length)
+      }
     })
     
-    // DEBUGGING ESPECÍFICO PARA TINTO vs BLANCO
-    const tintoProducts = products.filter(p => p.category === 'tinto')
-    const blancoProducts = products.filter(p => p.category === 'blanco')
-    console.log('🔍 [MegaMenu] 🍷 TINTO products:', tintoProducts.length, tintoProducts.slice(0, 2).map(p => p.name))
-    console.log('🔍 [MegaMenu] 🍷 BLANCO products:', blancoProducts.length, blancoProducts.slice(0, 2).map(p => p.name))
-    
-    // Test mapeo específico
-    console.log('🔍 [MegaMenu] 🔄 tinto maps to:', categoryToSlugMap['tinto'])
-    console.log('🔍 [MegaMenu] 🔄 blanco maps to:', categoryToSlugMap['blanco'])
-    
-    // Test si red y white están en types
-    const redType = types.find(t => t.href.split('/').pop() === 'red')
-    const whiteType = types.find(t => t.href.split('/').pop() === 'white')
-    console.log('🔍 [MegaMenu] 📋 RED type found:', !!redType, redType?.name)
-    console.log('🔍 [MegaMenu] 📋 WHITE type found:', !!whiteType, whiteType?.name)
+    console.log('🔍 [MegaMenu] Products loaded:', products.length)
   }
 
   // Filtrar categorías basándose en productos visibles disponibles
@@ -158,12 +170,16 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
     
     const typeSlug = type.href.split('/').pop() // Esto será 'red', 'white', etc.
     
-    // Buscar productos que tengan esta categoría
+    // Buscar productos que tengan esta categoría (en español O inglés)
     const hasProducts = products.some(product => {
       // El producto ya viene filtrado por is_visible: true desde getProducts()
       const productCategorySlug = categoryToSlugMap[product.category] || product.category
       const match = productCategorySlug === typeSlug
-      return match
+      
+      // TAMBIÉN verificar si el producto tiene la categoría directamente en inglés
+      const directMatch = product.category === typeSlug
+      
+      return match || directMatch
     })
     
     return hasProducts

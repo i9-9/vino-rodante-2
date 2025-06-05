@@ -76,13 +76,28 @@ export async function getFeaturedProducts(): Promise<ApiResponse<Product[]>> {
 
 export async function getProductsByCategory(categorySlug: string): Promise<ApiResponse<Product[]>> {
   const supabase = createClient()
-  const category = CATEGORY_SLUG_MAP[categorySlug] || categorySlug // fallback por si ya viene en español
+  
+  // Mapeo para buscar tanto en español como en inglés
+  const category = CATEGORY_SLUG_MAP[categorySlug] || categorySlug // ej: "red" → "tinto"
+  
+  // También buscar la versión en inglés por si hay productos mal categorizados
+  const englishCategory = categorySlug // ej: "red", "white", etc.
+  
+  console.log('🔍 [getProductsByCategory] Searching for categorySlug:', categorySlug)
+  console.log('🔍 [getProductsByCategory] Mapped to spanish:', category)
+  console.log('🔍 [getProductsByCategory] Also searching english:', englishCategory)
+  
   const { data, error } = await supabase
     .from('products')
     .select('*')
-    .eq('category', category)
+    .or(`category.eq.${category},category.eq.${englishCategory}`) // Buscar AMBOS: "blanco" OR "white"
     .eq('is_visible', true)
     .order('created_at', { ascending: false })
+
+  if (data) {
+    console.log('🔍 [getProductsByCategory] Found products:', data.length)
+    console.log('🔍 [getProductsByCategory] Categories found:', [...new Set(data.map(p => p.category))])
+  }
 
   return { data, error }
 }
