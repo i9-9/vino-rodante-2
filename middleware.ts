@@ -24,18 +24,30 @@ const authRoutes = [
 ]
 
 export async function middleware(request: NextRequest) {
+  const response = NextResponse.next()
+
+  // Agregar headers CORS a todas las respuestas
+  response.headers.set('Access-Control-Allow-Origin', '*')
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  response.headers.set('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Authorization, apikey')
+
+  // Manejar OPTIONS requests para CORS
+  if (request.method === 'OPTIONS') {
+    return response
+  }
+
   try {
-    const { supabase, response } = createClient(request)
+    const { supabase, response: supabaseResponse } = createClient(request)
     const pathname = request.nextUrl.pathname
 
     // NUNCA interceptar rutas de auth para evitar loops
     if (authRoutes.some(route => pathname.startsWith(route))) {
-      return response
+      return supabaseResponse
     }
 
     // Si es una ruta pública, permitir el acceso sin verificación
     if (publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))) {
-      return response
+      return supabaseResponse
     }
 
     // Para rutas protegidas, verificar autenticación
@@ -49,18 +61,18 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(redirectUrl)
     }
 
-    return response
+    return supabaseResponse
   } catch (e) {
     console.error('Middleware error:', e)
     // En caso de error, solo redirigir si no es ruta pública o auth
     const pathname = request.nextUrl.pathname
     
     if (authRoutes.some(route => pathname.startsWith(route))) {
-      return NextResponse.next()
+      return response
     }
     
     if (publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))) {
-      return NextResponse.next()
+      return response
     }
     
     return NextResponse.redirect(new URL('/auth/sign-in', request.url))
@@ -76,7 +88,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder assets
+     * - _next/webpack-hmr (dev hot reload)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api|_next/static|_next/image|_next/webpack-hmr|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
