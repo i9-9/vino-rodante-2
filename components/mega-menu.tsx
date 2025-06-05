@@ -92,15 +92,15 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
 
   // Mapeo de categorías de la base de datos a slugs de URL
   const categoryToSlugMap: Record<string, string> = {
-    // Categorías en español (las que aparecen en tu DB)
-    'tinto': 'red',
-    'blanco': 'white', 
-    'rosado': 'rose',
-    'espumante': 'sparkling',
-    'naranjo': 'naranjo',
-    'sidra': 'cider',
+    // DB → URL: Los productos en DB están en español, las URLs en inglés
+    'tinto': 'red',         // productos con category="tinto" → tipo "red" 
+    'blanco': 'white',      // productos con category="blanco" → tipo "white"
+    'rosado': 'rose',       // productos con category="rosado" → tipo "rose"
+    'espumante': 'sparkling', // productos con category="espumante" → tipo "sparkling"
+    'naranjo': 'naranjo',   // productos con category="naranjo" → tipo "naranjo"
+    'sidra': 'cider',       // productos con category="sidra" → tipo "cider"
     'gin': 'gin',
-    // Categorías que ya vienen en inglés en tu DB
+    // Fallbacks por si ya vienen en inglés en DB
     'white': 'white',
     'red': 'red',
     'rose': 'rose',

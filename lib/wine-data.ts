@@ -160,19 +160,20 @@ export function prettyLabel(slug: string) {
 
 // Mapping de slug (URL) a valor real en la base de datos
 export const CATEGORY_SLUG_MAP: Record<string, string> = {
-  red: "red",
-  white: "white",
-  rose: "rose",
-  sparkling: "sparkling",
-  naranjo: "naranjo",
+  // Mapeo URL → DB: Los productos en DB están en español
+  red: "tinto",           // /collections/red → busca productos con category="tinto"
+  white: "blanco",        // /collections/white → busca productos con category="blanco"
+  rose: "rosado",         // /collections/rose → busca productos con category="rosado"
+  sparkling: "espumante", // /collections/sparkling → busca productos con category="espumante"
+  naranjo: "naranjo",     // /collections/naranjo → busca productos con category="naranjo"
   dessert: "dessert",
   fortified: "fortified",
-  cider: "cider",
+  cider: "sidra",         // /collections/cider → busca productos con category="sidra"
   gin: "gin",
-  tinto: "red",
-  blanco: "white",
-  rosado: "rose",
-  espumante: "sparkling",
-  sidra: "cider",
-  // Puedes agregar más si agregas más categorías
+  // Fallbacks por si vienen directamente en español
+  tinto: "tinto",
+  blanco: "blanco",
+  rosado: "rosado", 
+  espumante: "espumante",
+  sidra: "sidra",
 } 
