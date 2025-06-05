@@ -29,12 +29,12 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
   const t = useTranslations()
   console.log('🔍 [MegaMenu] Component rendering')
   
-  // Usar el hook público más robusto para modo incógnito
-  const { products, isLoading: isLoadingProducts, error: isErrorProducts } = usePublicProducts()
-  console.log('🔍 [MegaMenu] usePublicProducts result:', { 
+  // Volver al hook original
+  const { products, isLoading: isLoadingProducts, isError: isErrorProducts } = useProducts()
+  console.log('🔍 [MegaMenu] useProducts result:', { 
     productsLength: products?.length, 
     isLoadingProducts, 
-    isErrorProducts 
+    isErrorProducts: isErrorProducts?.message || isErrorProducts 
   })
   
   // DETAILED LOGGING cuando llegan los productos

@@ -16,24 +16,7 @@ export async function getProducts(): Promise<ApiResponse<Product[]>> {
     const supabase = createClient()
     console.log('🔍 [getProducts] Supabase client created')
     
-    // Check if environment variables are available in browser
-    console.log('🔍 [getProducts] Environment check:', {
-      url: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'EXISTS' : 'MISSING',
-      key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'EXISTS' : 'MISSING'
-    })
-    
-    // Check if we're in incognito mode by trying to access sessionStorage
-    let isIncognito = false
-    try {
-      const testKey = '__test_incognito__'
-      sessionStorage.setItem(testKey, 'test')
-      sessionStorage.removeItem(testKey)
-    } catch (e) {
-      isIncognito = true
-      console.log('🔍 [getProducts] Detected incognito mode')
-    }
-    
-    console.log('🔍 [getProducts] About to execute main query...')
+    console.log('🔍 [getProducts] About to execute query...')
     const { data, error } = await supabase
       .from('products')
       .select('*')
@@ -46,33 +29,11 @@ export async function getProducts(): Promise<ApiResponse<Product[]>> {
       error: error,
       dataType: typeof data,
       dataIsArray: Array.isArray(data),
-      dataLength: data?.length,
-      isIncognito
+      dataLength: data?.length
     })
 
     if (error) {
       console.error('🔍 [getProducts] Supabase error:', error)
-      
-      // En modo incógnito, si hay error de autenticación, intentar sin filtros de seguridad
-      if (isIncognito && (error.message?.includes('auth') || error.message?.includes('policy') || error.code === 'PGRST116')) {
-        console.log('🔍 [getProducts] Attempting incognito-friendly query...')
-        
-        // Intentar query más simple para modo incógnito
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('products')
-          .select('id, name, slug, description, price, image, category, region, varietal, year, stock, featured, is_visible')
-          .eq('is_visible', true)
-          .limit(50)
-        
-        if (fallbackError) {
-          console.error('🔍 [getProducts] Fallback query also failed:', fallbackError)
-          return { data: null, error: fallbackError }
-        }
-        
-        console.log('🔍 [getProducts] Fallback query succeeded:', fallbackData?.length, 'products')
-        return { data: fallbackData || [], error: null }
-      }
-      
       return { data: null, error }
     }
 
@@ -82,13 +43,6 @@ export async function getProducts(): Promise<ApiResponse<Product[]>> {
     }
 
     console.log('🔍 [getProducts] Success! Returning', data.length, 'products')
-    console.log('🔍 [getProducts] First few products:', data.slice(0, 3).map(p => ({ 
-      id: p.id, 
-      name: p.name, 
-      category: p.category, 
-      is_visible: p.is_visible 
-    })))
-
     return { data, error: null }
   } catch (err) {
     console.error('🔍 [getProducts] Exception caught:', err)
