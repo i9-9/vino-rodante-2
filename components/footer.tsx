@@ -30,12 +30,10 @@ export default function Footer() {
             </p>
             <div className="flex space-x-4">
               <Button variant="ghost" size="icon" className="hover:bg-white/10 hover:text-white/80">
+              <Link href="https://www.instagram.com/vinorodante/">
                 <Instagram className="h-5 w-5" />
                 <span className="sr-only">Instagram</span>
-              </Button>
-              <Button variant="ghost" size="icon" className="hover:bg-white/10 hover:text-white/80">
-                <Twitter className="h-5 w-5" />
-                <span className="sr-only">Twitter</span>
+              </Link>
               </Button>
             </div>
           </div>
