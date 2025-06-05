@@ -131,6 +131,22 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
         matchingProducts.map(p => `${p.name} (${p.category})`).slice(0, 2)
       )
     })
+    
+    // DEBUGGING ESPECÍFICO PARA TINTO vs BLANCO
+    const tintoProducts = products.filter(p => p.category === 'tinto')
+    const blancoProducts = products.filter(p => p.category === 'blanco')
+    console.log('🔍 [MegaMenu] 🍷 TINTO products:', tintoProducts.length, tintoProducts.slice(0, 2).map(p => p.name))
+    console.log('🔍 [MegaMenu] 🍷 BLANCO products:', blancoProducts.length, blancoProducts.slice(0, 2).map(p => p.name))
+    
+    // Test mapeo específico
+    console.log('🔍 [MegaMenu] 🔄 tinto maps to:', categoryToSlugMap['tinto'])
+    console.log('🔍 [MegaMenu] 🔄 blanco maps to:', categoryToSlugMap['blanco'])
+    
+    // Test si red y white están en types
+    const redType = types.find(t => t.href.split('/').pop() === 'red')
+    const whiteType = types.find(t => t.href.split('/').pop() === 'white')
+    console.log('🔍 [MegaMenu] 📋 RED type found:', !!redType, redType?.name)
+    console.log('🔍 [MegaMenu] 📋 WHITE type found:', !!whiteType, whiteType?.name)
   }
 
   // Filtrar categorías basándose en productos visibles disponibles
