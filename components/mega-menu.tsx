@@ -13,10 +13,11 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
-import { useProducts, useFeaturedProducts } from "@/lib/hooks/use-products"
-import { usePublicProducts } from "@/lib/products-public"
+import { getProducts } from '@/lib/products-client'
+import type { Product } from '@/lib/types'
+import { useFeaturedProducts } from "@/lib/hooks/use-products"
 import { getAllWineTypes, getAllWineRegions, getAllWineVarietals, prettyLabel } from "@/lib/wine-data"
-import { useRef } from "react"
+import { useRef, useEffect, useState } from "react"
 
 export interface MegaMenuProps {
   types: { name: string; href: string }[]
@@ -29,9 +30,45 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
   const t = useTranslations()
   console.log('🔍 [MegaMenu] Component rendering')
   
-  // Volver al hook original
-  const { products, isLoading: isLoadingProducts, isError: isErrorProducts } = useProducts()
-  console.log('🔍 [MegaMenu] useProducts result:', { 
+  // CAMBIO: Usar getProducts() directamente como en ProductsClient
+  const [products, setProducts] = useState<Product[]>([])
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true)
+  const [isErrorProducts, setIsErrorProducts] = useState<any>(null)
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setIsLoadingProducts(true)
+        setIsErrorProducts(null)
+        console.log('🔍 [MegaMenu] Calling getProducts() directly (like ProductsClient)')
+        const { data, error } = await getProducts()
+        
+        console.log('🔍 [MegaMenu] getProducts result:', { 
+          dataLength: data?.length, 
+          error: error?.message || error 
+        })
+        
+        if (error) {
+          console.error('🔍 [MegaMenu] Error loading products:', error)
+          setIsErrorProducts(error)
+          setProducts([])
+        } else {
+          console.log('🔍 [MegaMenu] ✅ Products loaded successfully:', data?.length || 0)
+          setProducts(data || [])
+        }
+      } catch (err) {
+        console.error('🔍 [MegaMenu] Exception:', err)
+        setIsErrorProducts(err)
+        setProducts([])
+      } finally {
+        setIsLoadingProducts(false)
+      }
+    }
+
+    fetchProducts()
+  }, [])
+  
+  console.log('🔍 [MegaMenu] Current state:', { 
     productsLength: products?.length, 
     isLoadingProducts, 
     isErrorProducts: isErrorProducts?.message || isErrorProducts 
