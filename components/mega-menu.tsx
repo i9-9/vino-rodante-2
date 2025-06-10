@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/navigation-menu"
 import { getProducts } from '@/lib/products-client'
 import type { Product } from '@/lib/types'
-import { useFeaturedProducts } from "@/lib/hooks/use-products"
 import { getAllWineTypes, getAllWineRegions, getAllWineVarietals, prettyLabel } from "@/lib/wine-data"
 import { useRef, useEffect, useState } from "react"
 
@@ -30,7 +29,7 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
   const t = useTranslations()
   console.log('🔍 [MegaMenu] Component rendering')
   
-  // CAMBIO: Usar getProducts() directamente como en ProductsClient
+  // Use getProducts() directly like ProductsClient
   const [products, setProducts] = useState<Product[]>([])
   const [isLoadingProducts, setIsLoadingProducts] = useState(true)
   const [isErrorProducts, setIsErrorProducts] = useState<any>(null)
@@ -40,7 +39,7 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
       try {
         setIsLoadingProducts(true)
         setIsErrorProducts(null)
-        console.log('🔍 [MegaMenu] Calling getProducts() directly (like ProductsClient)')
+        console.log('🔍 [MegaMenu] Calling getProducts() directly')
         const { data, error } = await getProducts()
         
         console.log('🔍 [MegaMenu] getProducts result:', { 
@@ -74,33 +73,20 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
     isErrorProducts: isErrorProducts?.message || isErrorProducts 
   })
   
-  // DETAILED LOGGING cuando llegan los productos
-  if (products && products.length > 0) {
-    console.log('🔍 [MegaMenu] ✅ PRODUCTS AVAILABLE!')
-    console.log('🔍 [MegaMenu] Sample products:', products.slice(0, 3).map(p => ({ 
-      name: p.name, 
-      category: p.category 
-    })))
-    console.log('🔍 [MegaMenu] All unique categories:', [...new Set(products.map(p => p.category))])
-  } else {
-    console.log('🔍 [MegaMenu] ❌ NO PRODUCTS YET')
-  }
-  
-  const { products: featuredProducts, isLoading: isLoadingFeatured, isError: isErrorFeatured } = useFeaturedProducts()
   const triggerRef = useRef<HTMLButtonElement | null>(null)
   const weeklyWineTriggerRef = useRef<HTMLButtonElement | null>(null)
 
-  // Mapeo de categorías de la base de datos a slugs de URL
+  // Category mapping: Database categories to URL slugs
   const categoryToSlugMap: Record<string, string> = {
-    // DB → URL: Los productos en DB están en español, las URLs en inglés
-    'tinto': 'red',         // productos con category="tinto" → tipo "red" 
-    'blanco': 'white',      // productos con category="blanco" → tipo "white"
-    'rosado': 'rose',       // productos con category="rosado" → tipo "rose"
-    'espumante': 'sparkling', // productos con category="espumante" → tipo "sparkling"
-    'naranjo': 'naranjo',   // productos con category="naranjo" → tipo "naranjo"
-    'sidra': 'cider',       // productos con category="sidra" → tipo "cider"
+    // Spanish (DB) → English (URL)
+    'tinto': 'red',
+    'blanco': 'white',
+    'rosado': 'rose',
+    'espumante': 'sparkling',
+    'naranjo': 'naranjo',
+    'sidra': 'cider',
     'gin': 'gin',
-    // Fallbacks por si ya vienen en inglés en DB
+    // Fallbacks
     'white': 'white',
     'red': 'red',
     'rose': 'rose',
@@ -110,85 +96,29 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
     'cider': 'cider'
   }
 
-  console.log('🔍 [MegaMenu] Category mapping:', categoryToSlugMap)
-
-  // DEBUG TEMPORAL: Ver qué está pasando con el mapeo SOLO cuando hay productos
-  if (products && products.length > 0) {
-    console.log('🔍 [MegaMenu] 🧪 TESTING CATEGORY MATCHING...')
-    console.log('🔍 [MegaMenu] Available type slugs:', types.map(t => t.href.split('/').pop()))
-    console.log('🔍 [MegaMenu] Unique product categories:', [...new Set(products.map(p => p.category))])
-    console.log('🔍 [MegaMenu] Mapped categories:', [...new Set(products.map(p => categoryToSlugMap[p.category] || p.category))])
-    
-    // INVESTIGAR ESPECÍFICAMENTE EFUSIVO
-    const efusivoProduct = products.find(p => p.name.toLowerCase().includes('efusivo'))
-    if (efusivoProduct) {
-      console.log('🍷 [MegaMenu] EFUSIVO ENCONTRADO:', {
-        name: efusivoProduct.name,
-        category: efusivoProduct.category,
-        is_visible: efusivoProduct.is_visible,
-        mapped_category: categoryToSlugMap[efusivoProduct.category] || efusivoProduct.category
-      })
-    } else {
-      console.log('🍷 [MegaMenu] EFUSIVO NO ENCONTRADO en productos cargados')
-      console.log('🍷 [MegaMenu] Productos con "blanc" o "sauvignon":', 
-        products.filter(p => 
-          p.name.toLowerCase().includes('blanc') || 
-          p.name.toLowerCase().includes('sauvignon')
-        ).map(p => ({ name: p.name, category: p.category, is_visible: p.is_visible }))
-      )
-    }
-    
-    // TEST: Ver si alguna categoría hace match
-    types.forEach(type => {
-      const typeSlug = type.href.split('/').pop()
-      if (!typeSlug) return // Manejar caso undefined
-      
-      const matchingProducts = products.filter(product => {
-        const productCategorySlug = categoryToSlugMap[product.category] || product.category
-        return productCategorySlug === typeSlug
-      })
-      console.log(`🔍 [MegaMenu] ${typeSlug.toUpperCase()} type found: ${matchingProducts.length > 0} ${type.name} (${matchingProducts.length} products)`)
-      
-      // Log específico para blancos
-      if (typeSlug === 'white') {
-        console.log('🍷 [MegaMenu] BLANCO products:', matchingProducts.map(p => ({ name: p.name, category: p.category })))
-      }
-      if (typeSlug === 'red') {
-        console.log('🍷 [MegaMenu] TINTO products:', matchingProducts.length)
-      }
-    })
-    
-    console.log('🔍 [MegaMenu] Products loaded:', products.length)
-  }
-
-  // Filtrar categorías basándose en productos visibles disponibles
+  // Filter categories based on available visible products
   const availableTypes = types.filter(type => {
-    // Si los productos están cargando o hay error, no mostrar categorías
     if (isLoadingProducts || isErrorProducts || !products || products.length === 0) {
       return false
     }
     
-    const typeSlug = type.href.split('/').pop() // Esto será 'red', 'white', etc.
+    const typeSlug = type.href.split('/').pop()
     
-    // Buscar productos que tengan esta categoría (en español O inglés)
     const hasProducts = products.some(product => {
-      // El producto ya viene filtrado por is_visible: true desde getProducts()
       const productCategorySlug = categoryToSlugMap[product.category] || product.category
       const match = productCategorySlug === typeSlug
-      
-      // TAMBIÉN verificar si el producto tiene la categoría directamente en inglés
       const directMatch = product.category === typeSlug
-      
       return match || directMatch
     })
     
     return hasProducts
   })
   
-  // FALLBACK para modo incógnito: Si hay error o no hay productos, mostrar categorías básicas
-  const fallbackTypes = types.filter(type => ['red', 'white', 'rose', 'sparkling'].includes(type.href.split('/').pop() || ''))
+  // Fallback for incognito mode: basic categories
+  const fallbackTypes = types.filter(type => 
+    ['red', 'white', 'rose', 'sparkling'].includes(type.href.split('/').pop() || '')
+  )
   
-  // Si hay error de productos (común en modo incógnito), usar fallback
   const finalAvailableTypes = isErrorProducts 
     ? fallbackTypes
     : availableTypes.length > 0 
@@ -198,16 +128,12 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
           []
         )
 
-  console.log('🔍 [MegaMenu] Available types:', availableTypes.length, 'of', types.length)
-  console.log('🔍 [MegaMenu] Using fallback types due to error:', isErrorProducts)
-  console.log('🔍 [MegaMenu] Final available types:', finalAvailableTypes.length)
-  console.log('🔍 [MegaMenu] Products loaded:', products?.length || 0)
+  console.log('🔍 [MegaMenu] Final available types:', finalAvailableTypes.length, 'of', types.length)
 
   const availableRegions = regions.filter(region => {
     if (isLoadingProducts || isErrorProducts || !products || products.length === 0) {
       return false
     }
-    // Los productos ya vienen filtrados por is_visible: true
     return products.some(product => product.region === region.slug)
   })
 
@@ -215,11 +141,10 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
     if (isLoadingProducts || isErrorProducts || !products || products.length === 0) {
       return false
     }
-    // Los productos ya vienen filtrados por is_visible: true
     return products.some(product => product.varietal === varietal.slug)
   })
 
-  // Función para cerrar el menú programáticamente
+  // Functions to close menu programmatically
   const closeMenu = () => {
     setTimeout(() => {
       triggerRef.current?.click()
@@ -320,12 +245,24 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
         </NavigationMenuItem>
 
         <NavigationMenuItem>
-          <NavigationMenuTrigger ref={triggerRef}>{t.navigation.products}</NavigationMenuTrigger>
+          <NavigationMenuTrigger 
+            ref={triggerRef}
+            onClick={(e) => {
+              // If it's a simple click (not opening dropdown), navigate to products
+              if (e.detail === 1) {
+                setTimeout(() => {
+                  window.location.href = '/products';
+                }, 100);
+              }
+            }}
+          >
+            {t.navigation.products}
+          </NavigationMenuTrigger>
           <NavigationMenuContent>
             <div className="w-screen left-0 fixed">
               <div className="container mx-auto px-4 py-6 bg-background border border-border rounded-lg shadow-lg">
                 <div className="grid grid-cols-12 gap-6">
-                  {/* Categorías principales - 3 columnas */}
+                  {/* Main categories - 3 columns */}
                   <div className="col-span-3">
                     <h3 className="mb-3 text-lg font-medium border-b pb-2">{t.megamenu.byType}</h3>
                     <ul className="space-y-2">
@@ -350,7 +287,7 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
                     </ul>
                   </div>
 
-                  {/* Regiones - 3 columnas */}
+                  {/* Regions - 3 columns */}
                   <div className="col-span-3">
                     <h3 className="mb-3 text-lg font-medium border-b pb-2">{t.megamenu.byRegion}</h3>
                     <div className="grid grid-cols-2 gap-2">
@@ -375,7 +312,7 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
                     </div>
                   </div>
 
-                  {/* Varietales - 3 columnas */}
+                  {/* Varietales - 3 columns */}
                   <div className="col-span-3">
                     <h3 className="mb-3 text-lg font-medium border-b pb-2">{t.megamenu.byVarietal}</h3>
                     <div className="grid grid-cols-2 gap-2">
@@ -400,7 +337,7 @@ export default function MegaMenu({ types, regions, varietals, collections }: Meg
                     </div>
                   </div>
 
-                  {/* Espacio vacío para mantener el grid */}
+                  {/* Empty column to maintain the grid */}
                   <div className="col-span-3" />
                 </div>
               </div>

@@ -2,6 +2,7 @@
 
 import { X, Wine, User, ShoppingBag, LogOut, Globe } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet"
 import { useAuth } from "@/lib/providers/auth-provider"
 import { useTranslations } from "@/lib/providers/translations-provider"
@@ -31,16 +32,22 @@ export default function MobileMenu({
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent side="left" className="w-[300px] sm:w-[350px]">
+      <SheetContent side="left" className="w-[300px] sm:w-[400px]">
         <SheetHeader className="border-b pb-4">
-          <SheetTitle className="flex items-center gap-2">
-            <Wine className="h-5 w-5 text-primary" />
-            <span className="font-bold text-primary">Vino Rodante</span>
+          <SheetTitle className="flex items-center justify-center">
+            <Image 
+              src="/logo/logo_vr.svg" 
+              alt="Vino Rodante Logo" 
+              width={120} 
+              height={40} 
+              priority
+              className="h-10 w-auto"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = "/logo/logo2.svg";
+              }}
+            />
           </SheetTitle>
-          <SheetClose className="absolute right-4 top-4">
-            <X className="h-4 w-4" />
-            <span className="sr-only">{t.common.close}</span>
-          </SheetClose>
         </SheetHeader>
         <div className="flex flex-col gap-4 py-6">
           <div className="flex items-center gap-2 mb-2">
@@ -71,7 +78,7 @@ export default function MobileMenu({
             className="text-foreground hover:text-secondary text-lg font-medium transition-colors"
             onClick={onClose}
           >
-            {t.navigation.allWines}
+            {t.navigation.products}
           </Link>
 
           <div className="space-y-2">
@@ -160,7 +167,7 @@ export default function MobileMenu({
                 onClick={onClose}
               >
                 <User className="h-5 w-5" />
-                {t.navigation.myAccount}
+                {t.navigation.account}
               </Link>
               <Link
                 href="/account?tab=orders"
@@ -168,7 +175,7 @@ export default function MobileMenu({
                 onClick={onClose}
               >
                 <ShoppingBag className="h-5 w-5" />
-                {t.navigation.myOrders}
+                {t.account.orders}
               </Link>
               <Button
                 variant="ghost"

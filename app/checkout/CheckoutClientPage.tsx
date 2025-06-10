@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { createOrder } from "@/lib/actions"
-import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import type { CartItem } from "@/lib/types"
 import { formatCurrency } from "@/lib/utils"
@@ -17,18 +16,35 @@ export default function CheckoutClientPage() {
   const [shipping, setShipping] = useState(0)
   const [total, setTotal] = useState(0)
 
+  const handleSubmit = async (formData: FormData) => {
+    try {
+      const result = await createOrder(formData)
+      if (result?.error) {
+        console.error("Order creation error:", result.error)
+        // Handle error display here if needed
+      }
+    } catch (error) {
+      console.error("Order submission error:", error)
+    }
+  }
+
   useEffect(() => {
-    // Get cart from cookies
-    const cartCookie = cookies().get("cart")?.value
+    // Get cart from client-side cookie
+    const cartCookie = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('cart='))
+      ?.split('=')[1];
 
     if (!cartCookie) {
-      redirect("/products")
+      window.location.href = "/products";
+      return;
     }
 
     try {
-      const parsedCart: CartItem[] = JSON.parse(cartCookie)
+      const parsedCart: CartItem[] = JSON.parse(decodeURIComponent(cartCookie))
       if (parsedCart.length === 0) {
-        redirect("/products")
+        window.location.href = "/products";
+        return;
       }
       setCart(parsedCart)
 
@@ -44,7 +60,7 @@ export default function CheckoutClientPage() {
       setTotal(totalCalc)
     } catch (error) {
       console.error("Error parsing cart cookie:", error)
-      redirect("/products")
+      window.location.href = "/products";
     }
   }, [])
 
@@ -54,7 +70,7 @@ export default function CheckoutClientPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <form action={createOrder}>
+          <form action={handleSubmit}>
             <div className="space-y-8">
               <div className="border rounded-lg p-6">
                 <h2 className="text-xl font-semibold mb-4">Contact Information</h2>

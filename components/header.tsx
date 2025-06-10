@@ -49,10 +49,10 @@ export default function Header() {
     href: `/collections/varietal/${varietal.slug}`,
   }))
   const collections = [
-    { name: t.navigation.featured || t.megamenu.featured || "Destacados", href: "/collections/featured" },
-    { name: t.navigation.new || t.megamenu.newArrivals || "Novedades", href: "/collections/new-arrivals" },
-    { name: t.navigation.bestsellers || t.megamenu.bestsellers || "Más Vendidos", href: "/collections/bestsellers" },
-    { name: t.navigation.gifts || t.megamenu.giftSets || "Sets de Regalo", href: "/collections/gift-sets" },
+    { name: t.megamenu.featured || "Destacados", href: "/collections/featured" },
+    { name: t.megamenu.newArrivals || "Novedades", href: "/collections/new-arrivals" },
+    { name: t.megamenu.bestsellers || "Más Vendidos", href: "/collections/bestsellers" },
+    { name: t.megamenu.giftSets || "Sets de Regalo", href: "/collections/gift-sets" },
   ]
 
   return (
@@ -99,15 +99,15 @@ export default function Header() {
                   <span className="sr-only">{t.common.account}</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link href="/account">{t.navigation.myAccount}</Link>
+              <DropdownMenuContent align="end" className="bg-background text-foreground">
+                <DropdownMenuItem asChild className="text-foreground hover:bg-accent hover:text-accent-foreground">
+                  <Link href="/account">{t.navigation.account}</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/account?tab=orders">{t.navigation.myOrders}</Link>
+                <DropdownMenuItem asChild className="text-foreground hover:bg-accent hover:text-accent-foreground">
+                  <Link href="/account?tab=orders">{t.account.orders}</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => signOut()}>
+                <DropdownMenuItem onClick={() => signOut()} className="text-foreground hover:bg-accent hover:text-accent-foreground">
                   <LogOut className="h-4 w-4 mr-2" />
                   {t.common.signOut}
                 </DropdownMenuItem>

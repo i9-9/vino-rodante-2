@@ -44,7 +44,7 @@ export default function SearchDialog() {
       setLoading(true)
       try {
         const { data: allProducts = [] } = await getProducts()
-        setProducts(allProducts)
+        setProducts(allProducts || [])
       } catch (error) {
         console.error("Error loading products:", error)
       } finally {
