@@ -4,6 +4,16 @@ import type { OrderItem } from '@/lib/types'
 import { supabaseCache } from '@/lib/supabase/cache'
 import { PostgrestError } from '@supabase/supabase-js'
 
+// Helper function to serialize dates
+function serializeData<T>(data: T): T {
+  return JSON.parse(JSON.stringify(data, (key, value) => {
+    if (value instanceof Date) return value.toISOString();
+    if (typeof value === 'function') return undefined;
+    if (value === undefined) return null;
+    return value;
+  }));
+}
+
 export async function getProfile(userId: string) {
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -11,7 +21,7 @@ export async function getProfile(userId: string) {
     .select('name')
     .eq('id', userId)
     .single()
-  return { data, error }
+  return { data: data ? serializeData(data) : null, error }
 }
 
 export async function getOrders(userId: string) {
@@ -64,10 +74,11 @@ export async function getOrders(userId: string) {
 
         const transformedData = orders.map(order => ({
           ...order,
+          created_at: order.created_at ? new Date(order.created_at).toISOString() : null,
           order_items: itemsByOrder.get(order.id) || []
         }))
 
-        return { data: transformedData, error: null }
+        return { data: serializeData(transformedData), error: null }
       } catch (err) {
         console.error('Error in getOrders:', err)
         return { data: null, error: err as PostgrestError }
@@ -86,7 +97,7 @@ export async function getAddresses(userId: string) {
         .from('addresses')
         .select('*')
         .eq('customer_id', userId)
-      return { data, error }
+      return { data: data ? serializeData(data) : null, error }
     },
     10 * 60 * 1000 // 10 minutos para las direcciones
   )
@@ -96,13 +107,13 @@ export async function addAddress(userId: string, address: any) {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('addresses')
-    .insert([{ ...address, customer_id: userId }])
+    .insert([{ ...serializeData(address), customer_id: userId }])
     .select()
   
   // Invalidamos el cache de direcciones
   supabaseCache.invalidate(`addresses-${userId}`)
   
-  return { data, error }
+  return { data: data ? serializeData(data) : null, error }
 }
 
 export async function deleteAddress(id: string) {

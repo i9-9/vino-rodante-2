@@ -1,14 +1,13 @@
 "use client"
 
-import { X, Wine, User, ShoppingBag, LogOut, Globe } from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet"
-import { useAuth } from "@/lib/providers/auth-provider"
-import { useTranslations } from "@/lib/providers/translations-provider"
-import { useLanguage } from "@/lib/providers/translations-provider"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { Globe, User, LogOut, ShoppingBag } from "lucide-react"
+import Link from "next/link"
+import Image from "next/image"
+import { useTranslations, useLanguage } from "@/lib/providers/translations-provider"
+import { useAuth } from "@/lib/providers/auth-provider"
 
 export default function MobileMenu({
   open,
@@ -17,12 +16,53 @@ export default function MobileMenu({
   open: boolean
   onClose: () => void
 }) {
-  const { user, signOut } = useAuth()
+  const { user, signOut, isInitialized, initError } = useAuth()
   const t = useTranslations()
   const { language, setLanguage } = useLanguage()
 
-  const handleLanguageChange = (newLanguage: "en" | "es") => {
-    setLanguage(newLanguage)
+  if (!isInitialized) {
+    return null; // El menú móvil no se muestra durante la inicialización
+  }
+
+  if (initError) {
+    return null; // El menú móvil no se muestra si hay error de auth
+  }
+
+  if (!t || !language) {
+    return (
+      <Sheet open={open} onOpenChange={onClose}>
+        <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+          <SheetHeader className="border-b pb-4">
+            <SheetTitle className="flex items-center justify-center">
+              <Image 
+                src="/logo/logo_vr.svg" 
+                alt="Vino Rodante Logo" 
+                width={120} 
+                height={40} 
+                priority
+                className="h-10 w-auto"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = "/logo/logo2.svg";
+                }}
+              />
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col gap-4 py-6">
+            <Link href="/" className="text-foreground hover:text-secondary text-lg font-medium transition-colors">
+              Inicio
+            </Link>
+            <Link href="/auth/sign-in" className="text-foreground hover:text-secondary text-lg font-medium transition-colors">
+              Iniciar Sesión
+            </Link>
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  const handleLanguageChange = (lang: "en" | "es") => {
+    setLanguage(lang)
   }
 
   const handleSignOut = async () => {
@@ -52,7 +92,7 @@ export default function MobileMenu({
         <div className="flex flex-col gap-4 py-6">
           <div className="flex items-center gap-2 mb-2">
             <Globe className="h-5 w-5 text-muted-foreground" />
-            <span className="font-medium">{t.language[language as keyof typeof t.language]}</span>
+            <span className="font-medium">{t.language[language]}</span>
             <div className="flex gap-2 ml-auto">
               <Button
                 variant={language === "en" ? "default" : "outline"}
@@ -74,11 +114,11 @@ export default function MobileMenu({
           <Separator />
 
           <Link
-            href="/products"
+            href="/"
             className="text-foreground hover:text-secondary text-lg font-medium transition-colors"
             onClick={onClose}
           >
-            {t.navigation.products}
+            {t.navigation.home}
           </Link>
 
           <div className="space-y-2">
@@ -121,27 +161,82 @@ export default function MobileMenu({
             </div>
           </div>
 
-          <Link
-            href="/collections/red"
-            className="text-foreground hover:text-secondary text-lg font-medium transition-colors"
-            onClick={onClose}
-          >
-            {t.navigation.redWines}
-          </Link>
-          <Link
-            href="/collections/white"
-            className="text-foreground hover:text-secondary text-lg font-medium transition-colors"
-            onClick={onClose}
-          >
-            {t.navigation.whiteWines}
-          </Link>
-          <Link
-            href="/collections/sparkling"
-            className="text-foreground hover:text-secondary text-lg font-medium transition-colors"
-            onClick={onClose}
-          >
-            {t.navigation.sparklingWines}
-          </Link>
+          <div className="space-y-2">
+            <Link
+              href="/products"
+              className="text-foreground hover:text-secondary text-lg font-medium transition-colors"
+              onClick={onClose}
+            >
+              {t.navigation.products}
+            </Link>
+            <div className="pl-4 space-y-2">
+              <Link
+                href="/collections/red"
+                className="block text-foreground hover:text-secondary text-base transition-colors"
+                onClick={onClose}
+              >
+                {t.navigation.redWines}
+              </Link>
+              <Link
+                href="/collections/white"
+                className="block text-foreground hover:text-secondary text-base transition-colors"
+                onClick={onClose}
+              >
+                {t.navigation.whiteWines}
+              </Link>
+              <Link
+                href="/collections/sparkling"
+                className="block text-foreground hover:text-secondary text-base transition-colors"
+                onClick={onClose}
+              >
+                {t.navigation.sparklingWines}
+              </Link>
+              <Link
+                href="/collections/naranjo"
+                className="block text-foreground hover:text-secondary text-base transition-colors"
+                onClick={onClose}
+              >
+                {t.navigation.orangeWines}
+              </Link>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <span className="text-foreground text-lg font-medium">
+              {t.megamenu.collections}
+            </span>
+            <div className="pl-4 space-y-2">
+              <Link
+                href="/collections/featured"
+                className="block text-foreground hover:text-secondary text-base transition-colors"
+                onClick={onClose}
+              >
+                {t.megamenu.featured}
+              </Link>
+              <Link
+                href="/collections/new-arrivals"
+                className="block text-foreground hover:text-secondary text-base transition-colors"
+                onClick={onClose}
+              >
+                {t.megamenu.newArrivals}
+              </Link>
+              <Link
+                href="/collections/bestsellers"
+                className="block text-foreground hover:text-secondary text-base transition-colors"
+                onClick={onClose}
+              >
+                {t.megamenu.bestsellers}
+              </Link>
+              <Link
+                href="/collections/gift-sets"
+                className="block text-foreground hover:text-secondary text-base transition-colors"
+                onClick={onClose}
+              >
+                {t.megamenu.giftSets}
+              </Link>
+            </div>
+          </div>
+
           <Link
             href="/about"
             className="text-foreground hover:text-secondary text-lg font-medium transition-colors"
@@ -149,6 +244,7 @@ export default function MobileMenu({
           >
             {t.navigation.about}
           </Link>
+
           <Link
             href="/contact"
             className="text-foreground hover:text-secondary text-lg font-medium transition-colors"
@@ -187,23 +283,14 @@ export default function MobileMenu({
               </Button>
             </>
           ) : (
-            <>
-              <Link
-                href="/auth/sign-in"
-                className="flex items-center gap-2 text-foreground hover:text-secondary text-lg font-medium transition-colors"
-                onClick={onClose}
-              >
-                <User className="h-5 w-5" />
-                {t.common.signIn}
-              </Link>
-              <Link
-                href="/auth/sign-up"
-                className="flex items-center gap-2 text-foreground hover:text-secondary text-lg font-medium transition-colors"
-                onClick={onClose}
-              >
-                {t.common.signUp}
-              </Link>
-            </>
+            <Link
+              href="/auth/sign-in"
+              className="flex items-center gap-2 text-foreground hover:text-secondary text-lg font-medium transition-colors"
+              onClick={onClose}
+            >
+              <User className="h-5 w-5" />
+              {t.common.signIn}
+            </Link>
           )}
         </div>
       </SheetContent>

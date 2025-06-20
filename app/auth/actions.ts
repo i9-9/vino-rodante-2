@@ -114,8 +114,15 @@ export async function updatePasswordAction(formData: FormData) {
 }
 
 // LOGOUT: usa el endpoint /api/auth/signout ya creado 
-export async function signOutAction() {
+export async function signOut() {
   const supabase = await createClient()
-  await supabase.auth.signOut()
-  return redirect("/auth/sign-in")
+  
+  const { error } = await supabase.auth.signOut()
+  
+  if (error) {
+    console.error('Error signing out:', error)
+    return { error: error.message }
+  }
+  
+  redirect('/auth/sign-in')
 } 

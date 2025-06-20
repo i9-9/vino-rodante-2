@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -20,45 +20,86 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { getAllWineTypes, getAllWineRegions, getAllWineVarietals } from "@/lib/wine-data"
 
-export default function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [cartOpen, setCartOpen] = useState(false)
-  const { cartItems } = useCart()
-  const { user, signOut } = useAuth()
+// Componente para el menú de usuario
+function UserMenuContent() {
+  const { user, signOut, isInitialized, initError } = useAuth()
   const t = useTranslations()
 
-  console.log('HEADER user:', user)
+  if (!isInitialized) {
+    return (
+      <Button variant="ghost" size="icon" asChild>
+        <Link href="/auth/sign-in">
+          <User className="h-5 w-5" />
+          <span className="sr-only">Iniciar Sesión</span>
+        </Link>
+      </Button>
+    )
+  }
 
-  const cartItemsCount = cartItems.reduce((total, item) => total + item.quantity, 0)
+  if (user) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <User className="h-5 w-5" />
+            <span className="sr-only">{t.common.account}</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="bg-background text-foreground">
+          <DropdownMenuItem asChild className="text-foreground hover:bg-accent hover:text-accent-foreground">
+            <Link href="/account">{t.navigation.account}</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className="text-foreground hover:bg-accent hover:text-accent-foreground">
+            <Link href="/account?tab=orders">{t.account.orders}</Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => signOut()} className="text-foreground hover:bg-accent hover:text-accent-foreground">
+            <LogOut className="h-4 w-4 mr-2" />
+            {t.common.signOut}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+  }
 
-  const types = getAllWineTypes(t).map(type => ({
-    name: type.name,
-    href: `/collections/${type.slug}`,
-  }))
+  return (
+    <Button variant="ghost" size="icon" asChild>
+      <Link href="/auth/sign-in">
+        <User className="h-5 w-5" />
+        <span className="sr-only">{t.common.signIn}</span>
+      </Link>
+    </Button>
+  )
+}
 
-  const regions = getAllWineRegions(t).map(region => ({
-    name: region.name,
-    slug: region.slug,
-    href: `/collections/region/${region.slug}`,
-  }))
-  const varietals = getAllWineVarietals(t).map(varietal => ({
-    name: varietal.name,
-    slug: varietal.slug,
-    href: `/collections/varietal/${varietal.slug}`,
-  }))
-  const collections = [
-    { name: t.megamenu.featured || "Destacados", href: "/collections/featured" },
-    { name: t.megamenu.newArrivals || "Novedades", href: "/collections/new-arrivals" },
-    { name: t.megamenu.bestsellers || "Más Vendidos", href: "/collections/bestsellers" },
-    { name: t.megamenu.giftSets || "Sets de Regalo", href: "/collections/gift-sets" },
-  ]
+// Componente para el carrito
+function CartButton({ onOpen }: { onOpen: () => void }) {
+  const { itemCount } = useCart()
+  const t = useTranslations()
+
+  return (
+    <Button variant="ghost" size="icon" className="relative" onClick={onOpen}>
+      <ShoppingCart className="h-5 w-5" />
+      {itemCount > 0 && (
+        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-[10px] font-medium text-white">
+          {itemCount}
+        </span>
+      )}
+      <span className="sr-only">{t.common.cart}</span>
+    </Button>
+  )
+}
+
+export default function Header() {
+  const t = useTranslations()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isCartOpen, setIsCartOpen] = useState(false)
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background">
       <div className="container flex h-16 items-center px-4">
-        <Button variant="ghost" size="icon" className="mr-2 md:hidden" onClick={() => setMobileMenuOpen(true)}>
+        <Button variant="ghost" size="icon" className="mr-2 md:hidden" onClick={() => setIsMenuOpen(true)}>
           <Menu className="h-6 w-6" />
           <span className="sr-only">{t.common.menu}</span>
         </Button>
@@ -79,63 +120,46 @@ export default function Header() {
         </Link>
 
         <div className="mx-auto flex flex-1 justify-center">
-          <MegaMenu
-            types={types}
-            regions={regions}
-            varietals={varietals}
-            collections={collections}
-          />
+          <Suspense fallback={
+            <div className="hidden md:flex w-full justify-center">
+              <div className="h-10 w-96 bg-gray-100 rounded animate-pulse" />
+            </div>
+          }>
+            <MegaMenu />
+          </Suspense>
         </div>
 
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
-          <SearchDialog />
-
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <User className="h-5 w-5" />
-                  <span className="sr-only">{t.common.account}</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-background text-foreground">
-                <DropdownMenuItem asChild className="text-foreground hover:bg-accent hover:text-accent-foreground">
-                  <Link href="/account">{t.navigation.account}</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="text-foreground hover:bg-accent hover:text-accent-foreground">
-                  <Link href="/account?tab=orders">{t.account.orders}</Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => signOut()} className="text-foreground hover:bg-accent hover:text-accent-foreground">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  {t.common.signOut}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/auth/sign-in">
-                <User className="h-5 w-5" />
-                <span className="sr-only">{t.common.signIn}</span>
-              </Link>
+          
+          <Suspense fallback={
+            <Button variant="ghost" size="icon" disabled>
+              <div className="h-5 w-5 rounded bg-gray-200 animate-pulse" />
             </Button>
-          )}
+          }>
+            <SearchDialog />
+          </Suspense>
 
-          <Button variant="ghost" size="icon" className="relative" onClick={() => setCartOpen(true)}>
-            <ShoppingCart className="h-5 w-5" />
-            {cartItemsCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-[10px] font-medium text-white">
-                {cartItemsCount}
-              </span>
-            )}
-            <span className="sr-only">{t.common.cart}</span>
-          </Button>
+          <Suspense fallback={
+            <Button variant="ghost" size="icon">
+              <div className="h-5 w-5 rounded-full bg-gray-200 animate-pulse" />
+            </Button>
+          }>
+            <UserMenuContent />
+          </Suspense>
+
+          <Suspense fallback={
+            <Button variant="ghost" size="icon">
+              <div className="h-5 w-5 rounded bg-gray-200 animate-pulse" />
+            </Button>
+          }>
+            <CartButton onOpen={() => setIsCartOpen(true)} />
+          </Suspense>
         </div>
       </div>
 
-      <MobileMenu open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
-      <CartSidebar open={cartOpen} onClose={() => setCartOpen(false)} />
+      <MobileMenu open={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+      <CartSidebar open={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </header>
   )
 }

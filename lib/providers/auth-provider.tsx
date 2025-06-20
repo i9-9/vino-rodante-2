@@ -3,8 +3,8 @@
 import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 import type { Session } from "@supabase/supabase-js"
-import { createBrowserClient } from '@supabase/ssr'
 import type { AuthContextType, AuthError, AuthLoadingState, User } from "@/lib/types/auth"
+import { createClient } from '@/lib/supabase/client'
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -18,118 +18,164 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isSigningOut: false
   })
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  // Estados de control mejorados
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
 
+  // Fase 1: Detectar que estamos en el cliente
   useEffect(() => {
+    console.log('🔐 AuthProvider: Client Detection', {
+      timestamp: new Date().toISOString(),
+      stage: 'client-detection-start'
+    });
+    setIsClient(true);
+    console.log('🔐 AuthProvider: Client Detected', {
+      timestamp: new Date().toISOString(),
+      stage: 'client-detection-complete'
+    });
+  }, []);
+
+  // Fase 2: Inicializar auth solo cuando el cliente está listo
+  useEffect(() => {
+    if (!isClient) {
+      console.log('🔐 AuthProvider: Waiting for client', {
+        timestamp: new Date().toISOString(),
+        stage: 'waiting-for-client'
+      });
+      return;
+    }
+    
+    let isMounted = true;
+    
     const initializeAuth = async () => {
       try {
-        console.log('[Auth] Initializing auth...')
-        const { data: { session }, error } = await supabase.auth.getSession()
-        if (error) {
-          console.error('[Auth] Error getting initial session:', error)
-          setUser(null)
-          setSession(null)
-          return
+        console.log('🔐 AuthProvider: Initialization Start', {
+          timestamp: new Date().toISOString(),
+          isClient,
+          isMounted,
+          isInitialized,
+          stage: 'init-start'
+        });
+
+        // Obtener el estado inicial de autenticación
+        const supabase = createClient();
+        const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          throw sessionError;
         }
-        console.log('[Auth] Initial session:', session)
-        setSession(session)
-        if (session?.user) {
-          console.log('[Auth] Fetching customer data for user:', session.user.id)
-          const { data: customer, error: customerError } = await supabase
-            .from('customers')
-            .select('is_admin')
-            .eq('id', session.user.id)
-            .single()
+
+        if (isMounted) {
+          console.log('🔐 AuthProvider: Initial Session Check', {
+            timestamp: new Date().toISOString(),
+            hasSession: !!initialSession,
+            userId: initialSession?.user?.id,
+            stage: 'session-check'
+          });
+
+          // Actualizar el estado con la sesión inicial
+          setSession(initialSession);
+          setUser(initialSession?.user ?? null);
           
-          if (customerError) {
-            console.error('[Auth] Error fetching customer data:', customerError)
-            setUser({ 
-              ...(session.user as User), 
-              is_admin: false, 
-              customerError: {
-                message: customerError.message,
-                code: customerError.code
-              }
-            })
-          } else {
-            console.log('[Auth] Customer data fetched successfully:', customer)
-            setUser({ ...(session.user as User), is_admin: customer.is_admin })
-          }
-        } else {
-          console.log('[Auth] No user in session')
-          setUser(null)
+          // Marcar como inicializado DESPUÉS de obtener la sesión inicial
+          console.log('🔐 AuthProvider: Setting Initialized State', {
+            timestamp: new Date().toISOString(),
+            stage: 'setting-initialized'
+          });
+          setIsInitialized(true);
+          setInitError(null);
+          setIsLoading(prev => ({ ...prev, isInitializing: false }));
+          console.log('✅ AuthProvider: Initialization Complete', {
+            timestamp: new Date().toISOString(),
+            stage: 'init-complete'
+          });
         }
-      } catch (err) {
-        console.error('[Auth] Exception in initializeAuth:', err)
-        setUser(null)
-        setSession(null)
-      } finally {
-        setIsLoading(prev => ({ ...prev, isInitializing: false }))
+      } catch (error: any) {
+        console.error('❌ AuthProvider: Initialization Error', {
+          timestamp: new Date().toISOString(),
+          error: error.message,
+          stage: 'init-error'
+        });
+        if (isMounted) {
+          setInitError(error.message);
+          setIsInitialized(true); // IMPORTANTE: marcar como inicializado incluso con error
+          setIsLoading(prev => ({ ...prev, isInitializing: false }));
+        }
       }
+    };
+
+    initializeAuth();
+
+    return () => {
+      console.log('🔐 AuthProvider: Cleanup', {
+        timestamp: new Date().toISOString(),
+        stage: 'cleanup'
+      });
+      isMounted = false;
+    };
+  }, [isClient]);
+
+  // LOG adicional para monitorear el estado
+  useEffect(() => {
+    console.log('🔐 AuthProvider: State Change', { 
+      timestamp: new Date().toISOString(),
+      isInitialized, 
+      initError, 
+      isClient,
+      hasUser: !!user,
+      isLoading,
+      stage: 'state-change'
+    });
+  }, [isInitialized, initError, isClient, user, isLoading]);
+
+  // Fase 3: Suscribirse a cambios de auth solo cuando está inicializado
+  useEffect(() => {
+    if (!isInitialized) {
+      console.log('🔐 AuthProvider: Waiting for initialization', {
+        timestamp: new Date().toISOString(),
+        stage: 'waiting-for-init'
+      });
+      return;
     }
 
-    initializeAuth()
+    console.log('🔐 AuthProvider: Setting up auth subscription', {
+      timestamp: new Date().toISOString(),
+      stage: 'subscription-setup'
+    });
 
+    const supabase = createClient();
+    
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[Auth] Auth state changed:', { event, session })
+      console.log('🔐 AuthProvider: Auth State Change', {
+        timestamp: new Date().toISOString(),
+        event,
+        hasSession: !!session,
+        userId: session?.user?.id,
+        stage: 'auth-state-change'
+      });
       
-      if (event === 'TOKEN_REFRESHED') {
-        console.log('[Auth] Token refreshed')
-        setSession(session)
-        return
-      }
-
-      try {
-        setSession(session)
-        if (session?.user) {
-          console.log('[Auth] Fetching customer data after auth change for user:', session.user.id)
-          const { data: customer, error: customerError } = await supabase
-            .from('customers')
-            .select('is_admin')
-            .eq('id', session.user.id)
-            .single()
-          
-          if (customerError) {
-            console.error('[Auth] Error fetching customer data after auth change:', customerError)
-            setUser({ 
-              ...(session.user as User), 
-              is_admin: false, 
-              customerError: {
-                message: customerError.message,
-                code: customerError.code
-              }
-            })
-          } else {
-            console.log('[Auth] Customer data fetched successfully after auth change:', customer)
-            setUser({ ...(session.user as User), is_admin: customer.is_admin })
-          }
-        } else {
-          console.log('[Auth] No user in session after auth change')
-          setUser(null)
-        }
-      } catch (err) {
-        console.error('[Auth] Exception in auth state change:', err)
-        setUser(null)
-        setSession(null)
-      }
-    })
+      setSession(session);
+      setUser(session?.user ?? null);
+    });
 
     return () => {
-      console.log('[Auth] Cleaning up auth subscription')
-      subscription.unsubscribe()
-    }
-  }, [])
+      console.log('🔐 AuthProvider: Cleaning up auth subscription', {
+        timestamp: new Date().toISOString(),
+        stage: 'subscription-cleanup'
+      });
+      subscription.unsubscribe();
+    };
+  }, [isInitialized]);
 
   const signIn = async (email: string, password: string) => {
     try {
       setIsLoading(prev => ({ ...prev, isSigningIn: true }))
       console.log('[Auth] Attempting sign in for:', email)
       
+      const supabase = createClient();
       const { data, error } = await supabase.auth.signInWithPassword({ 
         email, 
         password
@@ -160,25 +206,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         hasSession: !!data.session,
         hasAccessToken: !!data.session.access_token
       })
-
-      const { data: customer, error: customerError } = await supabase
-        .from('customers')
-        .select('is_admin')
-        .eq('id', data.user.id)
-        .single()
-
-      if (customerError) {
-        console.error('[Auth] Error fetching customer data after sign in:', customerError)
-        return { 
-          error: {
-            message: customerError.message,
-            code: customerError.code
-          }
-        }
-      }
-
-      console.log('[Auth] Customer data fetched successfully:', customer)
-      setUser({ ...(data.user as User), is_admin: customer.is_admin })
       
       return { error: null }
     } catch (err) {
@@ -198,6 +225,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(prev => ({ ...prev, isSigningUp: true }))
       console.log('[Auth] Attempting sign up for:', email)
+      
+      const supabase = createClient();
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -257,6 +286,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(prev => ({ ...prev, isSigningOut: true }))
       console.log('[Auth] Attempting sign out')
+      
+      const supabase = createClient();
       const { error } = await supabase.auth.signOut()
       if (error) {
         console.error('[Auth] Error during signOut:', error)
@@ -282,16 +313,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const value = {
-    user,
-    session,
-    isLoading,
-    signIn,
-    signUp,
-    signOut,
-  }
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        isLoading,
+        isInitialized,
+        initError,
+        signIn,
+        signUp,
+        signOut,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {

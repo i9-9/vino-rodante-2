@@ -7,10 +7,52 @@ import { es } from "@/lib/i18n/es"
 import { en } from "@/lib/i18n/en"
 
 type Language = "es" | "en"
-type Translations = typeof es | typeof en
+
+// Definir la estructura completa de las traducciones
+export interface Translations {
+  common: {
+    signIn: string
+    signOut: string
+    account: string
+    menu: string
+    [key: string]: string
+  }
+  navigation: {
+    home: string
+    products: string
+    about: string
+    contact: string
+    account: string
+    weeklyWine: string
+    redWines: string
+    whiteWines: string
+    sparklingWines: string
+    orangeWines: string
+    [key: string]: string
+  }
+  megamenu: {
+    collections: string
+    featured: string
+    newArrivals: string
+    bestsellers: string
+    giftSets: string
+    [key: string]: string
+  }
+  account: {
+    orders: string
+    profile: string
+    title: string
+    profileInfo: string
+    [key: string]: string
+  }
+  language: {
+    [key: string]: string
+  }
+  [key: string]: any
+}
 
 interface TranslationsContextType {
-  translations: Translations
+  t: Translations
   language: Language
   setLanguage: (lang: Language) => void
 }
@@ -35,11 +77,11 @@ export function TranslationsProvider({ children }: { children: React.ReactNode }
   const setLanguage = (lang: Language) => {
     setLanguageState(lang)
     setTranslations(lang === "en" ? en : es)
-      localStorage.setItem("language", lang)
+    localStorage.setItem("language", lang)
   }
 
   return (
-    <TranslationsContext.Provider value={{ translations, language, setLanguage }}>
+    <TranslationsContext.Provider value={{ t: translations, language, setLanguage }}>
       {children}
     </TranslationsContext.Provider>
   )
@@ -50,7 +92,7 @@ export function useTranslations() {
   if (context === undefined) {
     throw new Error("useTranslations must be used within a TranslationsProvider")
   }
-  return context.translations
+  return context.t
 }
 
 export function useLanguage() {

@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label"
 import { formatCurrency } from "@/lib/utils"
 import ClubTabs from "./ClubTabs"
 import SubscriptionSelector from "./SubscriptionSelector"
+import { Accordion } from "@/components/ui/accordion"
 
 const CLUB_INFO = {
   tinto: {
@@ -195,27 +196,29 @@ export default async function ClubPage({ params }: { params: Promise<{ club: str
           </div>
         )}
 
-        {/* FAQ - Accordion restaurado */}
+        {/* FAQ - Accordion con animación */}
         <div className="mb-12 max-w-2xl mx-auto">
           <h3 className="text-2xl font-bold mb-4 text-center">Preguntas frecuentes</h3>
-          <div className="divide-y rounded-lg border">
-            <details className="p-4">
-              <summary className="font-medium cursor-pointer">¿Puedo pausar o cancelar mi suscripción cuando quiera?</summary>
-              <div className="mt-2 text-muted-foreground text-sm">Sí, podés pausar o cancelar tu suscripción en cualquier momento desde tu cuenta.</div>
-            </details>
-            <details className="p-4">
-              <summary className="font-medium cursor-pointer">¿Qué vinos recibo cada semana?</summary>
-              <div className="mt-2 text-muted-foreground text-sm">Recibís una selección curada por nuestros sommeliers, diferente cada semana.</div>
-            </details>
-            <details className="p-4">
-              <summary className="font-medium cursor-pointer">¿Hay costo de envío?</summary>
-              <div className="mt-2 text-muted-foreground text-sm">El envío es gratis en CABA y GBA. Consultá por otras zonas.</div>
-            </details>
-            <details className="p-4">
-              <summary className="font-medium cursor-pointer">¿Puedo regalar una suscripción?</summary>
-              <div className="mt-2 text-muted-foreground text-sm">¡Sí! Solo marcá la opción "Es un regalo" al suscribirte.</div>
-            </details>
-          </div>
+          <Accordion
+            items={[
+              {
+                title: "¿Puedo pausar o cancelar mi suscripción cuando quiera?",
+                content: "Sí, podés pausar o cancelar tu suscripción en cualquier momento desde tu cuenta."
+              },
+              {
+                title: "¿Qué vinos recibo cada semana?",
+                content: "Recibís una selección curada por nuestros sommeliers, diferente cada semana."
+              },
+              {
+                title: "¿Hay costo de envío?",
+                content: "El envío es gratis en CABA y GBA. Consultá por otras zonas."
+              },
+              {
+                title: "¿Puedo regalar una suscripción?",
+                content: "¡Sí! Solo marcá la opción \"Es un regalo\" al suscribirte."
+              }
+            ]}
+          />
         </div>
       </div>
     </div>

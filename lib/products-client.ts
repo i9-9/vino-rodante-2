@@ -16,9 +16,11 @@ export async function getProducts(): Promise<ApiResponse<Product[]>> {
     const supabase = createClient()
     console.log('🔍 [getProducts] Supabase client created')
     
-    // RETRY LOGIC para problemas intermitentes
+    // Reducir retries y delays para la página principal
+    const maxRetries = 2
+    const baseDelay = 500 // ms
+    
     let lastError: any = null
-    const maxRetries = 3
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -30,38 +32,17 @@ export async function getProducts(): Promise<ApiResponse<Product[]>> {
           .eq('is_visible', true)
           .order('created_at', { ascending: false })
         
-        console.log('🔍 [getProducts] Supabase query completed')
-        console.log('🔍 [getProducts] Raw result:', { 
-          data: data, 
-          error: error,
-          dataType: typeof data,
-          dataIsArray: Array.isArray(data),
-          dataLength: data?.length
-        })
-
         if (error) {
           lastError = error
           console.error(`🔍 [getProducts] Supabase error (attempt ${attempt}):`, error)
           
-          // DETECT problemas específicos
-          if (error.message?.includes('JWT') || error.code === 'PGRST301') {
-            console.error('🚨 [getProducts] JWT/Auth error detected - posible token grande o suspensión')
-          }
-          if (error.message?.includes('CORS') || error.message?.includes('Network')) {
-            console.error('🚨 [getProducts] CORS/Network error detected - problema intermitente')
-          }
-          if (error.message?.includes('suspended') || error.code === 'PGRST') {
-            console.error('🚨 [getProducts] Database suspended error detected')
-          }
-          
-          // Retry en algunos tipos de error
+          // Solo retry en errores de red/CORS
           if (attempt < maxRetries && (
             error.message?.includes('Network') ||
-            error.message?.includes('CORS') ||
-            error.code === 'PGRST301'
+            error.message?.includes('CORS')
           )) {
-            console.log(`🔄 [getProducts] Retrying in ${attempt * 1000}ms...`)
-            await new Promise(resolve => setTimeout(resolve, attempt * 1000))
+            console.log(`🔄 [getProducts] Retrying in ${baseDelay * attempt}ms...`)
+            await new Promise(resolve => setTimeout(resolve, baseDelay * attempt))
             continue
           }
           
@@ -81,15 +62,12 @@ export async function getProducts(): Promise<ApiResponse<Product[]>> {
         console.error(`🔍 [getProducts] Fetch exception (attempt ${attempt}):`, fetchError)
         
         if (attempt < maxRetries) {
-          console.log(`🔄 [getProducts] Retrying fetch in ${attempt * 1000}ms...`)
-          await new Promise(resolve => setTimeout(resolve, attempt * 1000))
+          await new Promise(resolve => setTimeout(resolve, baseDelay * attempt))
           continue
         }
       }
     }
     
-    // Si llegamos aquí, todos los retries fallaron
-    console.error('🔍 [getProducts] All retries failed, returning last error:', lastError)
     return { data: null, error: lastError as PostgrestError }
     
   } catch (err) {
