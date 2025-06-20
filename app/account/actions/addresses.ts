@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import type { ActionResponse } from '../types'
 import type { Database } from '@/lib/database.types'
 import { validateAddress } from '../utils/validation'
+import { supabaseCache } from '@/lib/supabase/cache'
 
 type Address = Database['public']['Tables']['addresses']['Row']
 type AddressInsert = Database['public']['Tables']['addresses']['Insert']
@@ -55,6 +56,8 @@ export async function createAddress(formData: FormData): Promise<ActionResponse>
 
     if (error) throw error
 
+    // 6. Invalidar caché y revalidar página
+    supabaseCache.invalidate(`addresses-${user.id}`)
     revalidatePath('/account')
     
     return { 
@@ -130,6 +133,8 @@ export async function updateAddress(
 
     if (error) throw error
 
+    // 7. Invalidar caché y revalidar página
+    supabaseCache.invalidate(`addresses-${user.id}`)
     revalidatePath('/account')
     
     return { 
@@ -181,6 +186,8 @@ export async function setDefaultAddress(addressId: string): Promise<ActionRespon
 
     if (error) throw error
 
+    // 5. Invalidar caché y revalidar página
+    supabaseCache.invalidate(`addresses-${user.id}`)
     revalidatePath('/account')
     
     return { 
@@ -241,6 +248,8 @@ export async function deleteAddress(addressId: string): Promise<ActionResponse> 
 
     if (error) throw error
 
+    // 5. Invalidar caché y revalidar página
+    supabaseCache.invalidate(`addresses-${user.id}`)
     revalidatePath('/account')
     
     return { 
