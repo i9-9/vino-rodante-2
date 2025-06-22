@@ -4,11 +4,19 @@ import { getTranslations } from '@/lib/get-translations'
 import AccountClientNew from './AccountClientNew'
 import { getProfile, getOrders, getAddresses } from './actions/auth-client'
 import { getAllOrders } from './actions/admin-orders'
+import { getAllProducts } from './actions/products'
 import type { Profile } from '@/lib/types'
 import type { Database } from '@/lib/database.types'
-import type { Order, Product, Subscription, Address } from './types'
+import type { Order, OrderStatus, Product, Subscription, Address } from './types'
 
-type DbOrder = Database['public']['Tables']['orders']['Row']
+type DbOrder = Database['public']['Tables']['orders']['Row'] & {
+  customer?: {
+    name: string
+    email: string
+  }
+  order_items?: DbOrderItem[]
+}
+
 type DbOrderItem = {
   id: string
   order_id: string
@@ -16,6 +24,10 @@ type DbOrderItem = {
   product_name?: string
   quantity: number
   price: number
+  products?: {
+    name: string
+    image?: string
+  }
 }
 
 type DbProfile = {
@@ -30,9 +42,9 @@ export default async function AccountPage() {
   const t = await getTranslations()
   
   // OFICIAL: Siempre usar getUser() para proteger páginas
-  const { data: { user }, error } = await supabase.auth.getUser()
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
   
-  if (error || !user) {
+  if (userError || !user) {
     redirect('/auth/sign-in')
   }
 
@@ -56,8 +68,8 @@ export default async function AccountPage() {
     isAdmin: customerData?.is_admin
   });
 
-  const userRole = customerData?.is_admin ? 'admin' : 'user'
-  const isAdmin = userRole === 'admin'
+  const isAdmin = customerData?.is_admin || false
+  const userRole = isAdmin ? 'admin' : 'user'
 
   // DEBUG: Log role assignment
   console.log('🔍 Server Debug - Role Assignment:', {
@@ -83,9 +95,17 @@ export default async function AccountPage() {
     getAddresses(user.id),
     // Only fetch admin data if user is admin
     isAdmin ? getAllOrders() : Promise.resolve({ data: null, error: null }),
-    isAdmin ? supabase.from('subscriptions').select('*') : Promise.resolve({ data: null, error: null }),
-    isAdmin ? supabase.from('products').select('*') : Promise.resolve({ data: null, error: null }),
+    isAdmin ? Promise.resolve({ data: [], error: null }) : Promise.resolve({ data: null, error: null }),
+    isAdmin ? getAllProducts() : Promise.resolve({ data: null, error: null }),
   ])
+
+  // Debug logs
+  console.log('Debug - Raw Orders Result:', ordersResult)
+  console.log('Debug - Raw Admin Orders Result:', adminOrdersResult)
+
+  if (profileResult.error) {
+    console.error('Error fetching profile:', profileResult.error)
+  }
 
   // Transform addresses to match the expected type
   const addresses: Address[] = addressesResult.data?.map(address => ({
@@ -105,14 +125,19 @@ export default async function AccountPage() {
   const orders: Order[] = ordersResult.data?.map(order => ({
     id: order.id,
     user_id: order.user_id || user.id,
-    status: order.status as 'pending' | 'processing' | 'completed' | 'cancelled',
+    status: order.status as OrderStatus,
     total: order.total,
     created_at: order.created_at || new Date().toISOString(),
+    customer: order.customer ? {
+      name: order.customer.name || '',
+      email: order.customer.email || ''
+    } : undefined,
     order_items: (order.order_items ?? []).map((item: DbOrderItem) => ({
       id: item.id,
       order_id: item.order_id,
       product_id: item.product_id,
-      product_name: item.product_name ?? 'Producto sin nombre',
+      product_name: item.product_name ?? item.products?.name ?? 'Producto sin nombre',
+      product_image: item.products?.image,
       price: item.price,
       quantity: item.quantity
     }))
@@ -123,52 +148,28 @@ export default async function AccountPage() {
     ? adminOrdersResult.data?.map(order => ({
         id: order.id,
         user_id: order.user_id || '',
-        status: order.status as 'pending' | 'processing' | 'completed' | 'cancelled',
+        status: order.status as OrderStatus,
         total: order.total,
         created_at: order.created_at || new Date().toISOString(),
+        customer: order.customer ? {
+          name: order.customer.name || '',
+          email: order.customer.email || ''
+        } : undefined,
         order_items: (order.order_items || []).map((item: DbOrderItem) => ({
           id: item.id,
           order_id: order.id,
           product_id: item.product_id,
-          product_name: item.product_name || 'Producto sin nombre',
+          product_name: item.product_name || item.products?.name || 'Producto sin nombre',
+          product_image: item.products?.image,
           price: item.price,
           quantity: item.quantity
         }))
       }))
     : undefined
 
-  // Transform admin subscriptions to match the expected type
-  const adminSubscriptions: Subscription[] | undefined = isAdmin
-    ? adminSubscriptionsResult.data?.map(subscription => ({
-        id: subscription.id,
-        name: subscription.name,
-        description: subscription.description,
-        price: subscription.price,
-        interval: subscription.interval as 'monthly' | 'quarterly' | 'yearly',
-        active: subscription.active,
-        created_at: subscription.created_at || new Date().toISOString()
-      }))
-    : undefined
-
-  // Transform admin products to match the expected type
-  const adminProducts: Product[] | undefined = isAdmin
-    ? adminProductsResult.data?.map(product => ({
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        category: product.category,
-        stock: product.stock,
-        year: product.year,
-        region: product.region,
-        varietal: product.varietal,
-        featured: product.featured,
-        image: product.image || '/placeholder.jpg',
-        is_visible: product.is_visible,
-        created_at: product.created_at || new Date().toISOString(),
-        customer_id: product.customer_id
-      }))
-    : undefined
+  // Debug logs
+  console.log('Debug - Transformed Orders:', orders)
+  console.log('Debug - Transformed Admin Orders:', adminOrders)
 
   // Transform profile to match the expected type
   const profile: Profile = customerData ? {
@@ -191,8 +192,8 @@ export default async function AccountPage() {
     ordersCount: orders.length,
     addressesCount: addresses.length,
     adminOrdersCount: adminOrders?.length || 0,
-    adminSubscriptionsCount: adminSubscriptions?.length || 0,
-    adminProductsCount: adminProducts?.length || 0,
+    adminSubscriptionsCount: adminSubscriptionsResult?.data?.length || 0,
+    adminProductsCount: adminProductsResult?.data?.length || 0,
     // Add raw data for inspection
     customerData,
     profileResult: profileResult.data,
@@ -211,8 +212,8 @@ export default async function AccountPage() {
       t={t}
       // Admin data
       adminOrders={adminOrders}
-      adminSubscriptions={adminSubscriptions}
-      adminProducts={adminProducts}
+      adminSubscriptions={adminSubscriptionsResult?.data || []}
+      adminProducts={adminProductsResult?.success ? adminProductsResult.data : []}
     />
   )
 }

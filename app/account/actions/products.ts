@@ -375,4 +375,33 @@ export async function uploadProductImage(file: File, slug: string) {
     .getPublicUrl(filePath)
   const publicUrl = publicUrlData?.publicUrl
   return { data: publicUrl, error: null }
+}
+
+export async function getAllProducts(): Promise<ActionResponse> {
+  try {
+    // 1. Verificar permisos de admin
+    await verifyAdmin()
+
+    // 2. Obtener todos los productos
+    const supabase = await createClient()
+    
+    const { data: products, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+
+    return { 
+      success: true, 
+      data: products 
+    }
+
+  } catch (error) {
+    console.error('Error getting all products:', error)
+    return { 
+      success: false, 
+      error: 'Error al obtener productos' 
+    }
+  }
 } 

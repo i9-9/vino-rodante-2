@@ -25,6 +25,7 @@ export interface OrderItem {
   quantity: number
   price: number
   product_name?: string
+  product_image?: string
 }
 
 export interface Order {
@@ -33,6 +34,10 @@ export interface Order {
   status: 'pending' | 'processing' | 'completed' | 'cancelled'
   total: number
   created_at: string
+  customer?: {
+    name: string
+    email: string
+  }
   order_items: OrderItem[]
 }
 

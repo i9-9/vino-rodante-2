@@ -45,12 +45,41 @@ export interface Address {
   created_at: string
 }
 
+export type OrderStatus = 
+  | 'pending'    // Pendiente
+  | 'paid'       // Pagado
+  | 'preparing'  // En preparación
+  | 'shipped'    // Enviado
+  | 'delivered'  // Entregado
+  | 'cancelled'  // Cancelado
+  | 'refunded'   // Reembolsado
+
+export type PaymentStatus = 
+  | 'pending'    // Pendiente
+  | 'paid'       // Pagado
+  | 'failed'     // Fallido
+  | 'refunded'   // Reembolsado
+
 export interface Order {
   id: string
   user_id: string
+  status: OrderStatus
+  payment_status: PaymentStatus
   total: number
-  status: 'pending' | 'processing' | 'completed' | 'cancelled'
   created_at: string
+  notes?: string
+  shipping_address?: {
+    line1: string
+    line2?: string
+    city: string
+    state: string
+    postal_code: string
+    country: string
+  }
+  customer?: {
+    name: string
+    email: string
+  }
   order_items: OrderItem[]
 }
 
@@ -58,18 +87,26 @@ export interface OrderItem {
   id: string
   order_id: string
   product_id: string
-  quantity: number
+  product_name?: string
+  product_image?: string
+  product_description?: string
   price: number
-  product?: Product
+  quantity: number
 }
 
 export interface Subscription {
   id: string
   name: string
   description: string
-  price: number
-  interval: 'monthly' | 'quarterly' | 'yearly'
-  active: boolean
+  club: 'tinto' | 'blanco' | 'mixto' | 'naranjo'
+  price_monthly: number
+  price_bimonthly: number
+  price_quarterly: number
+  banner_image?: string
+  image?: string
+  tagline?: string
+  features?: any
+  is_visible: boolean
   created_at: string
 }
 

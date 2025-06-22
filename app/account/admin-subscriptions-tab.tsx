@@ -7,16 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Pencil, Trash } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { deleteSubscription } from './actions/subscriptions'
-
-interface Subscription {
-  id: string
-  name: string
-  description: string
-  price: number
-  interval: 'monthly' | 'quarterly' | 'yearly'
-  active: boolean
-  created_at: string
-}
+import Image from 'next/image'
+import type { Subscription } from './types'
 
 interface AdminSubscriptionsTabProps {
   subscriptions: Subscription[]
@@ -50,29 +42,61 @@ export default function AdminSubscriptionsTab({ subscriptions, onEdit, t }: Admi
     )
   }
 
+  const formatClubName = (name: string) => {
+    // Si el nombre empieza con "Club" o "CLUB", lo quitamos y capitalizamos la primera letra
+    const cleanName = name.replace(/^club\s+/i, '')
+    return cleanName.charAt(0).toUpperCase() + cleanName.slice(1)
+  }
+
   return (
     <div className="space-y-4">
       {subscriptions.map((subscription) => (
         <Card key={subscription.id}>
           <CardContent className="pt-6">
-            <div className="flex justify-between items-start">
-              <div className="space-y-1">
-                <div className="flex items-center space-x-2">
+            <div className="flex justify-between items-start gap-4">
+              {/* Imagen del club */}
+              <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
+                <Image
+                  src={subscription.image || `/images/club/${subscription.club}.jpg`}
+                  alt={subscription.name}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+
+              {/* Información del club */}
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="font-medium">{subscription.name}</h3>
-                  <Badge variant={subscription.active ? 'default' : 'secondary'}>
-                    {subscription.active ? 'Activo' : 'Inactivo'}
+                  <Badge variant={subscription.is_visible ? 'default' : 'secondary'}>
+                    {subscription.is_visible ? 'Visible' : 'Oculto'}
                   </Badge>
                 </div>
+
+                {subscription.tagline && (
+                  <p className="text-sm text-muted-foreground italic">{subscription.tagline}</p>
+                )}
+                
                 <p className="text-sm text-muted-foreground">{subscription.description}</p>
-                <div className="flex items-center space-x-4 mt-2">
-                  <span className="font-medium">{formatCurrency(subscription.price)}</span>
-                  <Badge variant="outline">
-                    {subscription.interval === 'monthly' ? 'Mensual' :
-                     subscription.interval === 'quarterly' ? 'Trimestral' :
-                     'Anual'}
-                  </Badge>
+
+                {/* Precios */}
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="space-y-1">
+                    <div className="text-xs text-muted-foreground">Mensual</div>
+                    <span className="font-medium">{formatCurrency(subscription.price_monthly)}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-xs text-muted-foreground">Bimestral</div>
+                    <span className="font-medium">{formatCurrency(subscription.price_bimonthly)}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-xs text-muted-foreground">Trimestral</div>
+                    <span className="font-medium">{formatCurrency(subscription.price_quarterly)}</span>
+                  </div>
                 </div>
               </div>
+
+              {/* Acciones */}
               <div className="flex space-x-2">
                 <Button
                   variant="outline"

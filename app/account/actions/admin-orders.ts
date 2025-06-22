@@ -2,31 +2,69 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import type { OrderStatus } from '../types'
 
-interface OrderItem {
+interface DbOrderItem {
   id: string
   order_id: string
   product_id: string
-  product_name: string
-  price: number
   quantity: number
+  price: number
+  products?: {
+    name: string
+  }
 }
 
-interface Order {
+interface DbOrder {
   id: string
   user_id: string
-  status: 'pending' | 'processing' | 'completed' | 'cancelled'
+  status: OrderStatus
   total: number
   created_at: string
-  order_items: OrderItem[]
+  order_items: DbOrderItem[]
+  customer?: {
+    name: string
+    email: string
+  }
+  shipping_address?: {
+    line1: string
+    line2?: string
+    city: string
+    state: string
+    postal_code: string
+  }
+}
+
+async function verifyAdmin() {
+  const supabase = await createClient()
+  
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError || !user) {
+    throw new Error('No autorizado')
+  }
+
+  const { data: customer } = await supabase
+    .from('customers')
+    .select('is_admin')
+    .eq('id', user.id)
+    .single()
+
+  if (!customer?.is_admin) {
+    throw new Error('No autorizado - Se requiere ser admin')
+  }
+
+  return user.id
 }
 
 export async function getAllOrders() {
   const supabase = await createClient()
 
+  console.log('Fetching all orders as admin')
+
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   if (userError || !user) {
-    throw new Error('No autorizado')
+    console.log('No user found or error:', userError)
+    return { data: null, error: new Error('No autorizado') }
   }
 
   // Verificar si es admin
@@ -36,53 +74,212 @@ export async function getAllOrders() {
     .eq('id', user.id)
     .single()
 
+  console.log('Customer admin check:', customerData)
+
   if (!customerData?.is_admin) {
-    throw new Error('No autorizado - Se requiere ser admin')
+    console.log('User is not admin')
+    return { data: null, error: new Error('No autorizado - Se requiere ser admin') }
   }
 
-  return supabase
+  console.log('Fetching orders with details')
+
+  const { data, error } = await supabase
     .from('orders')
     .select(`
-      *,
+      id,
+      user_id,
+      status,
+      total,
+      created_at,
+      customer:user_id (
+        name,
+        email
+      ),
       order_items (
         id,
-        order_id,
         product_id,
-        product_name,
+        quantity,
         price,
-        quantity
+        products (
+          name
+        )
       )
     `)
     .order('created_at', { ascending: false })
-}
 
-export async function updateOrderStatus(orderId: string, status: Order['status']) {
-  const supabase = await createClient()
-
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  if (userError || !user) {
-    throw new Error('No autorizado')
-  }
-
-  // Verificar si es admin
-  const { data: customerData } = await supabase
-    .from('customers')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single()
-
-  if (!customerData?.is_admin) {
-    throw new Error('No autorizado - Se requiere ser admin')
-  }
-
-  const { error } = await supabase
-    .from('orders')
-    .update({ status })
-    .eq('id', orderId)
+  console.log('Orders query result:', { data, error })
 
   if (error) {
-    throw new Error(`Error al actualizar estado del pedido: ${error.message}`)
+    console.error('Error fetching orders:', error)
+    return { data: null, error }
   }
 
-  revalidatePath('/account')
+  // Transformar los datos para que coincidan con la interfaz Order
+  const transformedOrders = data.map((order) => ({
+    id: order.id,
+    user_id: order.user_id,
+    status: order.status,
+    total: order.total,
+    created_at: order.created_at,
+    customer: order.customer,
+    order_items: order.order_items.map((item) => ({
+      id: item.id,
+      order_id: order.id,
+      product_id: item.product_id,
+      product_name: item.products?.name,
+      quantity: item.quantity,
+      price: item.price
+    }))
+  }))
+
+  console.log('Transformed orders:', transformedOrders)
+
+  return { data: transformedOrders, error: null }
+}
+
+export async function updateOrderStatus(orderId: string, newStatus: OrderStatus) {
+  try {
+    // 1. Verificar permisos de admin
+    await verifyAdmin()
+
+    // 2. Actualizar estado de la orden
+    const supabase = await createClient()
+    
+    const { error } = await supabase
+      .from('orders')
+      .update({ 
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', orderId)
+
+    if (error) throw error
+
+    revalidatePath('/account')
+    
+    return { success: true }
+  } catch (error) {
+    console.error('Error updating order status:', error)
+    throw error
+  }
+}
+
+export async function getOrderById(orderId: string) {
+  try {
+    const supabase = await createClient()
+    
+    // 1. Obtener usuario actual
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return { data: null, error: new Error('No autorizado') }
+    }
+
+    // 2. Verificar permisos
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+
+    // 3. Obtener orden con todos los detalles
+    const { data, error } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        customer:user_id (
+          name,
+          email
+        ),
+        shipping_address:shipping_address_id (
+          line1,
+          line2,
+          city,
+          state,
+          postal_code
+        ),
+        order_items (
+          id,
+          product_id,
+          quantity,
+          price,
+          products (
+            name
+          )
+        )
+      `)
+      .eq('id', orderId)
+      .single()
+
+    if (error) throw error
+
+    // 4. Verificar que el usuario puede ver esta orden
+    if (!customer?.is_admin && data.user_id !== user.id) {
+      return { data: null, error: new Error('No autorizado para ver este pedido') }
+    }
+
+    // 5. Transformar los datos
+    const transformedOrder = {
+      ...data,
+      order_items: data.order_items.map((item: DbOrderItem) => ({
+        ...item,
+        product_name: item.products?.name
+      }))
+    }
+
+    return { data: transformedOrder, error: null }
+  } catch (error) {
+    console.error('Error getting order details:', error)
+    return { data: null, error }
+  }
+}
+
+export async function deleteOrder(orderId: string) {
+  try {
+    // 1. Verificar permisos de admin
+    await verifyAdmin()
+
+    // 2. Eliminar orden
+    const supabase = await createClient()
+    
+    const { error } = await supabase
+      .from('orders')
+      .delete()
+      .eq('id', orderId)
+
+    if (error) throw error
+
+    revalidatePath('/account')
+    
+    return { success: true }
+  } catch (error) {
+    console.error('Error deleting order:', error)
+    throw error
+  }
+}
+
+export async function addOrderNotes(orderId: string, notes: string) {
+  try {
+    // 1. Verificar permisos de admin
+    await verifyAdmin()
+
+    // 2. Actualizar notas de la orden
+    const supabase = await createClient()
+    
+    const { error } = await supabase
+      .from('orders')
+      .update({ 
+        notes,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', orderId)
+
+    if (error) throw error
+
+    revalidatePath('/account')
+    
+    return { success: true }
+  } catch (error) {
+    console.error('Error updating order notes:', error)
+    throw error
+  }
 } 

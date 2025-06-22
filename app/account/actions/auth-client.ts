@@ -25,67 +25,134 @@ export async function getProfile(userId: string) {
 }
 
 export async function getOrders(userId: string) {
-  return supabaseCache.get(
-    `orders-${userId}`,
-    async () => {
-      const supabase = await createClient()
+  const supabase = await createClient()
+  try {
+    console.log('Fetching orders for user:', userId)
+    
+    // 1. Primero intentemos obtener solo las órdenes básicas
+    const { data: orders, error: ordersError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('user_id', userId)
+
+    if (ordersError) {
+      console.error('Error fetching orders:', {
+        error: ordersError,
+        errorMessage: ordersError.message,
+        errorDetails: ordersError.details,
+        errorHint: ordersError.hint,
+        userId
+      })
+      throw ordersError
+    }
+
+    console.log('Basic orders query result:', {
+      ordersCount: orders?.length || 0,
+      orders,
+      userId
+    })
+
+    // 2. Si eso funciona, intentemos obtener los items
+    const { data: ordersWithItems, error: itemsError } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        order_items (
+          *,
+          products:product_id (*)
+        )
+      `)
+      .eq('user_id', userId)
+
+    if (itemsError) {
+      console.error('Error fetching orders with items:', {
+        error: itemsError,
+        errorMessage: itemsError.message,
+        errorDetails: itemsError.details,
+        errorHint: itemsError.hint,
+        userId
+      })
+      throw itemsError
+    }
+
+    console.log('Orders with items query result:', {
+      ordersCount: ordersWithItems?.length || 0,
+      firstOrder: ordersWithItems?.[0],
+      userId
+    })
+
+    if (!ordersWithItems?.length) return { data: [], error: null }
+
+    // 3. Transformar los datos
+    const transformedData = ordersWithItems.map(order => {
       try {
-        // 1. Primero obtenemos las órdenes básicas
-        const { data: orders, error: ordersError } = await supabase
-          .from('orders')
-          .select('id, user_id, status, total, created_at')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-
-        if (ordersError) throw ordersError
-        if (!orders?.length) return { data: [], error: null }
-
-        // 2. Obtenemos los items de las órdenes en una sola consulta
-        const orderIds = orders.map(order => order.id)
-        const { data: orderItems, error: itemsError } = await supabase
-          .from('order_items')
-          .select('id, order_id, product_id, quantity, price')
-          .in('order_id', orderIds)
-
-        if (itemsError) throw itemsError
-
-        // 3. Obtenemos los nombres de los productos en una sola consulta
-        const productIds = [...new Set(orderItems?.map(item => item.product_id) || [])]
-        const { data: products, error: productsError } = await supabase
-          .from('products')
-          .select('id, name')
-          .in('id', productIds)
-
-        if (productsError) throw productsError
-
-        // 4. Construimos el resultado final
-        const productMap = new Map(products?.map(p => [p.id, p.name]) || [])
-        const itemsByOrder = new Map()
-        
-        orderItems?.forEach(item => {
-          if (!itemsByOrder.has(item.order_id)) {
-            itemsByOrder.set(item.order_id, [])
-          }
-          itemsByOrder.get(item.order_id).push({
-            ...item,
-            product_name: productMap.get(item.product_id)
-          })
-        })
-
-        const transformedData = orders.map(order => ({
-          ...order,
+        return {
+          id: order.id,
+          user_id: order.user_id,
+          status: order.status,
+          payment_status: order.payment_status,
+          total: order.total,
           created_at: order.created_at ? new Date(order.created_at).toISOString() : null,
-          order_items: itemsByOrder.get(order.id) || []
-        }))
-
-        return { data: serializeData(transformedData), error: null }
-      } catch (err) {
-        console.error('Error in getOrders:', err)
-        return { data: null, error: err as PostgrestError }
+          notes: order.notes,
+          shipping_address: order.shipping_address_id ? {
+            line1: '',
+            city: '',
+            state: '',
+            postal_code: '',
+            country: ''
+          } : undefined,
+          customer: {
+            name: '',
+            email: ''
+          },
+          order_items: (order.order_items || []).map(item => {
+            try {
+              return {
+                id: item.id,
+                order_id: item.order_id,
+                product_id: item.product_id,
+                product_name: item.products?.name || 'Producto sin nombre',
+                product_image: item.products?.image || '',
+                product_description: item.products?.description || '',
+                quantity: item.quantity,
+                price: item.price
+              }
+            } catch (itemError) {
+              console.error('Error transforming order item:', {
+                error: itemError,
+                item,
+                orderId: order.id
+              })
+              throw itemError
+            }
+          })
+        }
+      } catch (orderError) {
+        console.error('Error transforming order:', {
+          error: orderError,
+          order,
+          userId
+        })
+        throw orderError
       }
-    },
-    2 * 60 * 1000 // 2 minutos para las órdenes
-  )
+    })
+
+    console.log('Transformed orders data:', {
+      transformedCount: transformedData.length,
+      firstTransformed: transformedData[0],
+      userId
+    })
+
+    return { data: transformedData, error: null }
+  } catch (err) {
+    console.error('Error in getOrders:', {
+      error: err,
+      errorMessage: err instanceof Error ? err.message : 'Unknown error',
+      errorStack: err instanceof Error ? err.stack : undefined,
+      userId
+    })
+    return { data: null, error: err as PostgrestError }
+  }
 }
 
 export async function getAddresses(userId: string) {
