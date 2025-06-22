@@ -18,6 +18,7 @@ import type { Translations } from '@/lib/i18n/types'
 import { ProfileTab } from './components/ProfileTab'
 import { OrdersTab } from './components/OrdersTab'
 import { AddressesTab } from './components/AddressesTab'
+import { SubscriptionsTab } from './components/SubscriptionsTab'
 import AdminOrdersTab from './admin-orders-tab'
 import AdminProductsTab from './admin-products-tab'
 import AdminSubscriptionsTab from './admin-subscriptions-tab'
@@ -27,6 +28,7 @@ interface AccountClientProps {
   profile: Profile
   orders: Order[]
   addresses: Address[]
+  userSubscriptions: any[]
   userRole: 'admin' | 'user'
   t: Translations
   // Admin data
@@ -40,6 +42,7 @@ export default function AccountClientNew({
   profile,
   orders,
   addresses,
+  userSubscriptions,
   userRole,
   t,
   // Admin data
@@ -88,6 +91,7 @@ export default function AccountClientNew({
               <TabsTrigger value="profile">{t.account.profile}</TabsTrigger>
               <TabsTrigger value="orders">{t.account.orders}</TabsTrigger>
               <TabsTrigger value="addresses">{t.account.addresses}</TabsTrigger>
+              <TabsTrigger value="subscriptions">{t.account.subscriptions}</TabsTrigger>
               {userRole === 'admin' && (
                 <>
                   <TabsTrigger value="admin-orders">{t.account.adminOrders}</TabsTrigger>
@@ -112,6 +116,12 @@ export default function AccountClientNew({
             <TabsContent value="addresses" className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <AddressesTab addresses={addresses} userId={user.id} t={t} />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="subscriptions" className="space-y-4">
+              <div className="grid gap-4">
+                <SubscriptionsTab subscriptions={userSubscriptions} t={t} />
               </div>
             </TabsContent>
 

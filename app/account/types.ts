@@ -11,6 +11,12 @@ export interface Customer {
   id: string
   name: string
   email: string
+  phone?: string
+  address?: string
+  city?: string
+  state?: string
+  postal_code?: string
+  country?: string
   created_at: string
   is_admin: boolean
 }
@@ -64,21 +70,18 @@ export interface Order {
   id: string
   user_id: string
   status: OrderStatus
-  payment_status: PaymentStatus
   total: number
   created_at: string
-  notes?: string
-  shipping_address?: {
-    line1: string
-    line2?: string
-    city: string
-    state: string
-    postal_code: string
-    country: string
-  }
   customer?: {
+    id: string
     name: string
     email: string
+    phone?: string
+    address?: string
+    city?: string
+    state?: string
+    postal_code?: string
+    country?: string
   }
   order_items: OrderItem[]
 }
@@ -87,11 +90,18 @@ export interface OrderItem {
   id: string
   order_id: string
   product_id: string
-  product_name?: string
-  product_image?: string
-  product_description?: string
-  price: number
   quantity: number
+  price: number
+  product: {
+    id: string
+    name: string
+    description?: string
+    image?: string
+    price: number
+    varietal?: string
+    year?: string
+    region?: string
+  }
 }
 
 export interface Subscription {

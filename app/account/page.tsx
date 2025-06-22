@@ -5,14 +5,22 @@ import AccountClientNew from './AccountClientNew'
 import { getProfile, getOrders, getAddresses } from './actions/auth-client'
 import { getAllOrders } from './actions/admin-orders'
 import { getAllProducts } from './actions/products'
+import { getUserSubscriptions } from './actions/subscriptions'
 import type { Profile } from '@/lib/types'
 import type { Database } from '@/lib/database.types'
 import type { Order, OrderStatus, Product, Subscription, Address } from './types'
 
 type DbOrder = Database['public']['Tables']['orders']['Row'] & {
   customer?: {
+    id: string
     name: string
     email: string
+    phone?: string
+    address?: string
+    city?: string
+    state?: string
+    postal_code?: string
+    country?: string
   }
   order_items?: DbOrderItem[]
 }
@@ -25,8 +33,14 @@ type DbOrderItem = {
   quantity: number
   price: number
   products?: {
+    id: string
     name: string
+    description?: string
     image?: string
+    price: number
+    varietal?: string
+    year?: number
+    region?: string
   }
 }
 
@@ -85,6 +99,7 @@ export default async function AccountPage() {
     profileResult,
     ordersResult,
     addressesResult,
+    userSubscriptionsResult,
     // Admin data if user is admin
     adminOrdersResult,
     adminSubscriptionsResult,
@@ -93,6 +108,7 @@ export default async function AccountPage() {
     getProfile(user.id),
     getOrders(user.id),
     getAddresses(user.id),
+    getUserSubscriptions(user.id),
     // Only fetch admin data if user is admin
     isAdmin ? getAllOrders() : Promise.resolve({ data: null, error: null }),
     isAdmin ? Promise.resolve({ data: [], error: null }) : Promise.resolve({ data: null, error: null }),
@@ -102,6 +118,7 @@ export default async function AccountPage() {
   // Debug logs
   console.log('Debug - Raw Orders Result:', ordersResult)
   console.log('Debug - Raw Admin Orders Result:', adminOrdersResult)
+  console.log('Debug - Raw User Subscriptions Result:', userSubscriptionsResult)
 
   if (profileResult.error) {
     console.error('Error fetching profile:', profileResult.error)
@@ -122,49 +139,117 @@ export default async function AccountPage() {
   })) || []
 
   // Transform orders to match the expected type
-  const orders: Order[] = ordersResult.data?.map(order => ({
-    id: order.id,
-    user_id: order.user_id || user.id,
-    status: order.status as OrderStatus,
-    total: order.total,
-    created_at: order.created_at || new Date().toISOString(),
-    customer: order.customer ? {
-      name: order.customer.name || '',
-      email: order.customer.email || ''
-    } : undefined,
-    order_items: (order.order_items ?? []).map((item: DbOrderItem) => ({
-      id: item.id,
-      order_id: item.order_id,
-      product_id: item.product_id,
-      product_name: item.product_name ?? item.products?.name ?? 'Producto sin nombre',
-      product_image: item.products?.image,
-      price: item.price,
-      quantity: item.quantity
-    }))
-  })) || []
+  const orders: Order[] = ordersResult.data?.map((orderData: any) => {
+    const order: DbOrder = {
+      id: orderData.id,
+      user_id: orderData.user_id,
+      status: orderData.status,
+      total: orderData.total,
+      created_at: orderData.created_at || new Date().toISOString(),
+      customer: orderData.customer ? {
+        id: orderData.customer.id,
+        name: orderData.customer.name || '',
+        email: orderData.customer.email || '',
+        phone: orderData.customer.phone,
+        address: orderData.customer.address,
+        city: orderData.customer.city,
+        state: orderData.customer.state,
+        postal_code: orderData.customer.postal_code,
+        country: orderData.customer.country
+      } : undefined,
+      order_items: orderData.order_items?.map((item: any) => ({
+        id: item.id,
+        order_id: item.order_id,
+        product_id: item.product_id,
+        product_name: item.product_name,
+        quantity: item.quantity,
+        price: item.price
+      })) || []
+    }
+
+    return {
+      id: order.id,
+      user_id: order.user_id || user.id,
+      status: order.status as OrderStatus,
+      total: order.total,
+      created_at: order.created_at,
+      customer: order.customer,
+      order_items: order.order_items.map(item => ({
+        id: item.id,
+        order_id: item.order_id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        price: item.price,
+        product: {
+          id: item.product_id,
+          name: item.product_name || 'Producto sin nombre',
+          description: undefined,
+          image: undefined,
+          price: item.price,
+          varietal: undefined,
+          year: undefined,
+          region: undefined
+        }
+      }))
+    }
+  }) || []
 
   // Transform admin orders to match the expected type
   const adminOrders: Order[] | undefined = isAdmin 
-    ? adminOrdersResult.data?.map(order => ({
-        id: order.id,
-        user_id: order.user_id || '',
-        status: order.status as OrderStatus,
-        total: order.total,
-        created_at: order.created_at || new Date().toISOString(),
-        customer: order.customer ? {
-          name: order.customer.name || '',
-          email: order.customer.email || ''
-        } : undefined,
-        order_items: (order.order_items || []).map((item: DbOrderItem) => ({
-          id: item.id,
-          order_id: order.id,
-          product_id: item.product_id,
-          product_name: item.product_name || item.products?.name || 'Producto sin nombre',
-          product_image: item.products?.image,
-          price: item.price,
-          quantity: item.quantity
-        }))
-      }))
+    ? adminOrdersResult.data?.map((orderData: any) => {
+        const order: DbOrder = {
+          id: orderData.id,
+          user_id: orderData.user_id,
+          status: orderData.status,
+          total: orderData.total,
+          created_at: orderData.created_at || new Date().toISOString(),
+          customer: orderData.customer ? {
+            id: orderData.customer.id,
+            name: orderData.customer.name || '',
+            email: orderData.customer.email || '',
+            phone: orderData.customer.phone,
+            address: orderData.customer.address,
+            city: orderData.customer.city,
+            state: orderData.customer.state,
+            postal_code: orderData.customer.postal_code,
+            country: orderData.customer.country
+          } : undefined,
+          order_items: orderData.order_items?.map((item: any) => ({
+            id: item.id,
+            order_id: item.order_id,
+            product_id: item.product_id,
+            product_name: item.product_name,
+            quantity: item.quantity,
+            price: item.price
+          })) || []
+        }
+
+        return {
+          id: order.id,
+          user_id: order.user_id || '',
+          status: order.status as OrderStatus,
+          total: order.total,
+          created_at: order.created_at,
+          customer: order.customer,
+          order_items: order.order_items.map(item => ({
+            id: item.id,
+            order_id: order.id,
+            product_id: item.product_id,
+            quantity: item.quantity,
+            price: item.price,
+            product: {
+              id: item.product_id,
+              name: item.product_name || 'Producto sin nombre',
+              description: undefined,
+              image: undefined,
+              price: item.price,
+              varietal: undefined,
+              year: undefined,
+              region: undefined
+            }
+          }))
+        }
+      })
     : undefined
 
   // Debug logs
@@ -184,23 +269,21 @@ export default async function AccountPage() {
     created_at: new Date().toISOString()
   }
 
+  // Transform user subscriptions - now directly using the array returned by getUserSubscriptions
+  const userSubscriptions = userSubscriptionsResult || []
+
   // DEBUG: Log final data being passed to client
   console.log('🔍 Server Debug - Final Data:', {
     userRole,
     isAdmin,
-    hasProfile: !!customerData,
-    ordersCount: orders.length,
-    addressesCount: addresses.length,
-    adminOrdersCount: adminOrders?.length || 0,
-    adminSubscriptionsCount: adminSubscriptionsResult?.data?.length || 0,
-    adminProductsCount: adminProductsResult?.data?.length || 0,
-    // Add raw data for inspection
-    customerData,
-    profileResult: profileResult.data,
-    adminOrdersResult: adminOrdersResult?.data,
-    adminSubscriptionsResult: adminSubscriptionsResult?.data,
-    adminProductsResult: adminProductsResult?.data
-  });
+    profile,
+    orders: orders.length,
+    addresses: addresses.length,
+    userSubscriptions: userSubscriptions.length,
+    adminOrders: adminOrders?.length,
+    adminSubscriptions: adminSubscriptionsResult.data?.length,
+    adminProducts: adminProductsResult.data?.length
+  })
 
   return (
     <AccountClientNew
@@ -208,12 +291,13 @@ export default async function AccountPage() {
       profile={profile}
       orders={orders}
       addresses={addresses}
+      userSubscriptions={userSubscriptions}
       userRole={userRole}
       t={t}
       // Admin data
       adminOrders={adminOrders}
-      adminSubscriptions={adminSubscriptionsResult?.data || []}
-      adminProducts={adminProductsResult?.success ? adminProductsResult.data : []}
+      adminSubscriptions={adminSubscriptionsResult.data || []}
+      adminProducts={adminProductsResult.data || []}
     />
   )
 }

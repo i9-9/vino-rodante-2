@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/database.types'
 import type { OrderItem } from '@/lib/types'
 import { supabaseCache } from '@/lib/supabase/cache'
@@ -14,6 +14,74 @@ function serializeData<T>(data: T): T {
   }));
 }
 
+// Helper function to validate Supabase connection
+async function validateSupabaseConnection(supabase: any) {
+  try {
+    // Intentar una consulta simple para verificar la conexión
+    const { data, error } = await supabase.from('orders').select('id').limit(1)
+    if (error) {
+      console.error('🚫 [DB Connection] Failed to validate connection:', {
+        error,
+        message: error.message,
+        hint: error.hint,
+        code: error.code
+      })
+      return { ok: false, error }
+    }
+    return { ok: true, error: null }
+  } catch (err) {
+    console.error('🚫 [DB Connection] Connection validation error:', {
+      error: err,
+      message: err instanceof Error ? err.message : 'Unknown error'
+    })
+    return { ok: false, error: err }
+  }
+}
+
+// Helper function to format PostgrestError
+function formatPostgrestError(error: PostgrestError): string {
+  const parts = []
+  if (error.message) parts.push(error.message)
+  if (error.details) parts.push(`Details: ${error.details}`)
+  if (error.hint) parts.push(`Hint: ${error.hint}`)
+  if (error.code) parts.push(`Code: ${error.code}`)
+  return parts.join(' | ')
+}
+
+// Tipos para la respuesta de la consulta de órdenes
+type OrderItemWithProduct = {
+  id: string;
+  order_id: string;
+  product_id: string;
+  quantity: number;
+  price: number;
+  product: {
+    id: string;
+    name: string;
+    description: string | null;
+    image: string | null;
+    price: number;
+    category: string | null;
+    year: string | null;
+    region: string | null;
+    varietal: string | null;
+  } | null;
+};
+
+type OrderWithDetails = {
+  id: string;
+  user_id: string;
+  status: string;
+  total: number;
+  created_at: string;
+  customer: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+  order_items: OrderItemWithProduct[];
+};
+
 export async function getProfile(userId: string) {
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -25,133 +93,194 @@ export async function getProfile(userId: string) {
 }
 
 export async function getOrders(userId: string) {
-  const supabase = await createClient()
   try {
-    console.log('Fetching orders for user:', userId)
-    
-    // 1. Primero intentemos obtener solo las órdenes básicas
-    const { data: orders, error: ordersError } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('user_id', userId)
-
-    if (ordersError) {
-      console.error('Error fetching orders:', {
-        error: ordersError,
-        errorMessage: ordersError.message,
-        errorDetails: ordersError.details,
-        errorHint: ordersError.hint,
-        userId
-      })
-      throw ordersError
+    // Validación de entrada
+    if (!userId) {
+      console.error('🚫 [getOrders] Called without userId')
+      return { 
+        data: null, 
+        error: new Error('User ID is required') 
+      }
     }
 
-    console.log('Basic orders query result:', {
-      ordersCount: orders?.length || 0,
-      orders,
-      userId
-    })
+    console.log('🔍 [getOrders] Starting to fetch orders for user:', userId)
+    
+    // Inicializar cliente de Supabase
+    let supabase
+    try {
+      supabase = await createClient()
+    } catch (initError) {
+      console.error('🚫 [getOrders] Failed to initialize Supabase client:', {
+        error: initError,
+        message: initError instanceof Error ? initError.message : 'Unknown error'
+      })
+      return {
+        data: null,
+        error: new Error('Failed to initialize database connection')
+      }
+    }
 
-    // 2. Si eso funciona, intentemos obtener los items
-    const { data: ordersWithItems, error: itemsError } = await supabase
+    // Validar conexión a la base de datos
+    const connectionStatus = await validateSupabaseConnection(supabase)
+    if (!connectionStatus.ok) {
+      return {
+        data: null,
+        error: new Error('Database connection error: ' + 
+          (connectionStatus.error instanceof Error ? 
+            connectionStatus.error.message : 
+            'Could not establish database connection'))
+      }
+    }
+    
+    // Verificar que el usuario existe y tiene acceso
+    const { data: user, error: userError } = await supabase.auth.getUser()
+    if (userError) {
+      console.error('🚫 [getOrders] Auth error:', {
+        error: userError,
+        userId,
+        message: userError.message
+      })
+      return { 
+        data: null, 
+        error: new Error('Authentication error: ' + userError.message)
+      }
+    }
+
+    if (!user) {
+      console.error('🚫 [getOrders] No authenticated user found')
+      return { 
+        data: null, 
+        error: new Error('No authenticated user found')
+      }
+    }
+
+    // Obtener órdenes con todos los detalles necesarios
+    console.log('📦 [getOrders] Executing query for orders...')
+    
+    const query = supabase
       .from('orders')
       .select(`
         *,
+        customer:customers!orders_user_id_fkey (
+          id,
+          name,
+          email
+        ),
         order_items (
-          *,
-          products:product_id (*)
+          id,
+          order_id,
+          product_id,
+          quantity,
+          price,
+          product:products!order_items_product_id_fkey (
+            id,
+            name,
+            description,
+            image,
+            price,
+            category,
+            year,
+            region,
+            varietal
+          )
         )
       `)
       .eq('user_id', userId)
+      .order('created_at', { ascending: false })
 
-    if (itemsError) {
-      console.error('Error fetching orders with items:', {
-        error: itemsError,
-        errorMessage: itemsError.message,
-        errorDetails: itemsError.details,
-        errorHint: itemsError.hint,
-        userId
+    console.log('🔍 [getOrders] Query details:', {
+      userId,
+      tables: ['orders', 'customers', 'order_items', 'products']
+    })
+
+    const { data: ordersWithDetails, error: ordersError } = await query
+
+    if (ordersError) {
+      const formattedError = formatPostgrestError(ordersError)
+      console.error('🚫 [getOrders] Database error:', {
+        error: ordersError,
+        userId,
+        formattedError,
+        tables: ['orders', 'customers', 'order_items', 'products']
       })
-      throw itemsError
+      return { 
+        data: null, 
+        error: new Error(`Database error: ${formattedError}`)
+      }
     }
 
-    console.log('Orders with items query result:', {
-      ordersCount: ordersWithItems?.length || 0,
-      firstOrder: ordersWithItems?.[0],
+    if (!ordersWithDetails) {
+      console.log('ℹ️ [getOrders] No orders found for user:', userId)
+      return { data: [], error: null }
+    }
+
+    console.log('✅ [getOrders] Successfully fetched orders:', {
+      count: ordersWithDetails.length,
       userId
     })
 
-    if (!ordersWithItems?.length) return { data: [], error: null }
-
-    // 3. Transformar los datos
-    const transformedData = ordersWithItems.map(order => {
-      try {
+    // Transformar los datos
+    try {
+      const transformedData = ordersWithDetails.map(order => {
         return {
           id: order.id,
           user_id: order.user_id,
           status: order.status,
-          payment_status: order.payment_status,
           total: order.total,
           created_at: order.created_at ? new Date(order.created_at).toISOString() : null,
-          notes: order.notes,
-          shipping_address: order.shipping_address_id ? {
-            line1: '',
-            city: '',
-            state: '',
-            postal_code: '',
-            country: ''
+          customer: order.customer ? {
+            name: order.customer.name,
+            email: order.customer.email
           } : undefined,
-          customer: {
-            name: '',
-            email: ''
-          },
-          order_items: (order.order_items || []).map(item => {
-            try {
-              return {
-                id: item.id,
-                order_id: item.order_id,
-                product_id: item.product_id,
-                product_name: item.products?.name || 'Producto sin nombre',
-                product_image: item.products?.image || '',
-                product_description: item.products?.description || '',
-                quantity: item.quantity,
-                price: item.price
-              }
-            } catch (itemError) {
-              console.error('Error transforming order item:', {
-                error: itemError,
-                item,
-                orderId: order.id
-              })
-              throw itemError
-            }
-          })
+          order_items: (order.order_items || []).map((item: OrderItemWithProduct) => ({
+            id: item.id,
+            order_id: item.order_id,
+            product_id: item.product_id,
+            product: item.product ? {
+              name: item.product.name,
+              description: item.product.description,
+              image: item.product.image,
+              price: item.product.price,
+              varietal: item.product.varietal,
+              year: item.product.year
+            } : null,
+            quantity: item.quantity,
+            price: item.price
+          }))
         }
-      } catch (orderError) {
-        console.error('Error transforming order:', {
-          error: orderError,
-          order,
-          userId
-        })
-        throw orderError
+      })
+
+      console.log('✅ [getOrders] Successfully transformed data:', {
+        count: transformedData.length,
+        userId
+      })
+
+      return { data: transformedData, error: null }
+    } catch (transformError) {
+      console.error('🚫 [getOrders] Error transforming data:', {
+        error: transformError,
+        userId,
+        message: transformError instanceof Error ? transformError.message : 'Unknown error'
+      })
+      return { 
+        data: null, 
+        error: new Error('Error transforming order data: ' + 
+          (transformError instanceof Error ? transformError.message : 'Unknown error'))
       }
-    })
-
-    console.log('Transformed orders data:', {
-      transformedCount: transformedData.length,
-      firstTransformed: transformedData[0],
-      userId
-    })
-
-    return { data: transformedData, error: null }
+    }
   } catch (err) {
-    console.error('Error in getOrders:', {
+    // Error general no manejado
+    console.error('🚫 [getOrders] Unhandled error:', {
       error: err,
-      errorMessage: err instanceof Error ? err.message : 'Unknown error',
-      errorStack: err instanceof Error ? err.stack : undefined,
-      userId
+      userId,
+      message: err instanceof Error ? err.message : 'Unknown error',
+      stack: err instanceof Error ? err.stack : undefined
     })
-    return { data: null, error: err as PostgrestError }
+    return { 
+      data: null, 
+      error: new Error('Unhandled error in getOrders: ' + 
+        (err instanceof Error ? err.message : 'Unknown error'))
+    }
   }
 }
 
@@ -205,11 +334,13 @@ export async function setDefaultAddress(userId: string, id: string) {
     .from('addresses')
     .update({ is_default: false })
     .eq('customer_id', userId)
-  // Luego, marcar la seleccionada como default
+
+  // Luego, marcar la dirección seleccionada como default
   const { error } = await supabase
     .from('addresses')
     .update({ is_default: true })
     .eq('id', id)
+    .eq('customer_id', userId)
   
   // Invalidamos el cache de direcciones
   supabaseCache.invalidate(`addresses-${userId}`)

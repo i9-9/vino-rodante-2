@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, Suspense } from "react"
+import { useState, Suspense, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -77,11 +77,16 @@ function UserMenuContent() {
 function CartButton({ onOpen }: { onOpen: () => void }) {
   const { itemCount } = useCart()
   const t = useTranslations()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   return (
     <Button variant="ghost" size="icon" className="relative" onClick={onOpen}>
       <ShoppingCart className="h-5 w-5" />
-      {itemCount > 0 && (
+      {mounted && itemCount > 0 && (
         <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-[10px] font-medium text-white">
           {itemCount}
         </span>

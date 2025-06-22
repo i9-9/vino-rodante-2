@@ -100,11 +100,32 @@ export async function getOrdersByUser(userId: string): Promise<ActionResponse> {
       .from('orders')
       .select(`
         *,
+        customer:customers (
+          id,
+          name,
+          email,
+          phone,
+          address,
+          city,
+          state,
+          postal_code,
+          country
+        ),
         order_items (
-          *,
+          id,
+          order_id,
+          product_id,
+          quantity,
+          price,
           product:products (
+            id,
             name,
-            image
+            description,
+            image,
+            price,
+            varietal,
+            year,
+            region
           )
         )
       `)
@@ -140,14 +161,31 @@ export async function getAllOrders(): Promise<ActionResponse> {
       .select(`
         *,
         customer:customers (
+          id,
           name,
-          email
+          email,
+          phone,
+          address,
+          city,
+          state,
+          postal_code,
+          country
         ),
         order_items (
-          *,
+          id,
+          order_id,
+          product_id,
+          quantity,
+          price,
           product:products (
+            id,
             name,
-            image
+            description,
+            image,
+            price,
+            varietal,
+            year,
+            region
           )
         )
       `)
