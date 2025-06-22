@@ -3,22 +3,35 @@ import Hero from "@/components/hero"
 import ProductShowcase from "@/components/product-showcase"
 import AboutUs from "@/components/about-us"
 import WineClubsShowcase from "@/components/wine-clubs-showcase"
-import { getProducts } from '@/lib/products-client'
+import { getFeaturedProducts } from '@/lib/products-client'
 
 // Forzar renderizado dinámico para páginas que dependen de datos de Supabase
 export const dynamic = "force-dynamic"
 
-// Componente asíncrono para cargar productos
+// Componente asíncrono para cargar productos destacados
 async function ProductSection() {
   console.log('📦 Rendering ProductSection...')
-  const { data: products, error } = await getProducts()
+  const { data: products, error } = await getFeaturedProducts()
   
   if (error) {
-    console.error('Error loading products:', error)
+    console.error('Error loading featured products:', error)
     return null // O un componente de error
   }
+
+  // Si no hay suficientes productos destacados, mostrar mensaje de error
+  if (!products || products.length === 0) {
+    console.warn('No featured products found')
+    return (
+      <div className="w-full py-16 bg-[#F2F2F2]">
+        <div className="container px-4 text-center text-gray-500">
+          No hay vinos destacados disponibles en este momento.
+        </div>
+      </div>
+    )
+  }
   
-  return <ProductShowcase products={(products || []).slice(0, 4)} />
+  // Tomar solo los primeros 4 productos destacados
+  return <ProductShowcase products={products.slice(0, 4)} />
 }
 
 export default function Home() {

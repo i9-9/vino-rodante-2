@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isInitialized,
           stage: 'init-start'
         });
-
+        
         // Obtener el estado inicial de autenticación
         const supabase = createClient();
         const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();

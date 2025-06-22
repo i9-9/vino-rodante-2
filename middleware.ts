@@ -21,10 +21,8 @@ const protectedRoutes = [
 ]
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+  let supabaseResponse = NextResponse.next({
+    request,
   })
 
   const supabase = createServerClient(
@@ -36,36 +34,22 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value)
-            response = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
-            })
-            response.cookies.set(name, value, options)
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({
+            request,
           })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
         },
       },
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Solo refrescar sesión
+  await supabase.auth.getUser()
 
-  // Si el usuario no está autenticado y trata de acceder a rutas protegidas
-  if (
-    !user &&
-    (request.nextUrl.pathname.startsWith('/account') ||
-      request.nextUrl.pathname.startsWith('/checkout'))
-  ) {
-    const redirectUrl = new URL('/auth/sign-in', request.url)
-    redirectUrl.searchParams.set('redirectedFrom', request.nextUrl.pathname)
-    return NextResponse.redirect(redirectUrl)
-  }
-
-  return response
+  return supabaseResponse
 }
 
 export const config = {

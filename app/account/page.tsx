@@ -31,7 +31,7 @@ export default async function AccountPage() {
   
   // OFICIAL: Siempre usar getUser() para proteger páginas
   const { data: { user }, error } = await supabase.auth.getUser()
-
+  
   if (error || !user) {
     redirect('/auth/sign-in')
   }

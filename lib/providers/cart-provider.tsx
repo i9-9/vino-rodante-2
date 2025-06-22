@@ -149,7 +149,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         clearCart
       }}
     >
-      {children}
+        {children}
     </CartContext.Provider>
   )
 }

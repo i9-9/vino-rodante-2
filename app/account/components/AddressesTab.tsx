@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -13,6 +13,17 @@ import type { Address } from '../types'
 import type { Translations } from '@/lib/i18n/types'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 
 interface AddressesTabProps {
   addresses: Address[]
@@ -22,107 +33,152 @@ interface AddressesTabProps {
 
 export function AddressesTab({ addresses, userId, t }: AddressesTabProps) {
   const router = useRouter()
+  const [isPending, startTransition] = useTransition()
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Efecto para forzar la actualización de la página cuando cambia el estado
+  useEffect(() => {
+    router.refresh()
+  }, [addresses, router])
+
   const handleAddAddress = async (formData: FormData) => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      
-      const result = await createAddress(formData)
-      if (!result.success) {
-        throw new Error(result.error)
+    setError(null)
+    startTransition(async () => {
+      try {
+        const result = await createAddress(formData)
+        if (result.error) {
+          setError(result.error)
+          toast.error(result.error)
+        } else {
+          setIsAddModalOpen(false)
+          toast.success('Dirección agregada correctamente')
+          router.refresh()
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Error inesperado'
+        setError(message)
+        toast.error(message)
       }
-      
-      toast.success(t.account.addressAdded)
-      setIsAddModalOpen(false)
-      router.refresh()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t.common.errorOccurred)
-      toast.error(err instanceof Error ? err.message : t.common.errorOccurred)
-    } finally {
-      setIsLoading(false)
-    }
+    })
   }
 
-  const handleEditAddress = async (formData: FormData) => {
+  const handleEditAddress = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
     if (!selectedAddress) return
+
+    setError(null)
+    const form = event.currentTarget
+    const formData = new FormData(form)
     
-    try {
-      setIsLoading(true)
-      setError(null)
-      
-      const result = await updateAddress(selectedAddress.id, formData)
-      if (!result.success) {
-        throw new Error(result.error)
+    // Debug log del FormData antes de enviar
+    console.log('EditAddress - FormData to send:', {
+      id: selectedAddress.id,
+      line1: formData.get('line1'),
+      line2: formData.get('line2'),
+      city: formData.get('city'),
+      state: formData.get('state'),
+      postal_code: formData.get('postal_code'),
+      is_default: formData.get('is_default')
+    })
+
+    // Asegurar que el ID esté en el FormData
+    formData.set('id', selectedAddress.id)
+
+    startTransition(async () => {
+      try {
+        const result = await updateAddress(formData)
+        
+        if (result.error) {
+          setError(result.error)
+          toast.error(result.error)
+        } else {
+          setIsEditModalOpen(false)
+          setSelectedAddress(null)
+          toast.success('Dirección actualizada correctamente')
+          router.refresh()
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Error inesperado'
+        setError(message)
+        toast.error(message)
       }
-      
-      toast.success(t.account.addressUpdated)
-      setIsEditModalOpen(false)
-      setSelectedAddress(null)
-      router.refresh()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t.common.errorOccurred)
-      toast.error(err instanceof Error ? err.message : t.common.errorOccurred)
-    } finally {
-      setIsLoading(false)
-    }
+    })
   }
 
   const handleDeleteAddress = async (addressId: string) => {
-    if (!confirm(t.account.confirmDeleteAddress)) return
+    if (!confirm('¿Estás seguro de que deseas eliminar esta dirección?')) return
+
+    setError(null)
+    const formData = new FormData()
+    formData.append('id', addressId)
     
-    try {
-      setIsLoading(true)
-      setError(null)
-      
-      const result = await deleteAddress(addressId)
-      if (!result.success) {
-        throw new Error(result.error)
+    startTransition(async () => {
+      try {
+        const result = await deleteAddress(formData)
+        if (result.error) {
+          setError(result.error)
+          toast.error(result.error)
+        } else {
+          toast.success('Dirección eliminada correctamente')
+          router.refresh()
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Error inesperado'
+        setError(message)
+        toast.error(message)
       }
-      
-      toast.success(t.account.addressDeleted)
-      router.refresh()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t.common.errorOccurred)
-      toast.error(err instanceof Error ? err.message : t.common.errorOccurred)
-    } finally {
-      setIsLoading(false)
-    }
+    })
   }
 
-  const handleSetDefaultAddress = async (addressId: string) => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      
-      const { error } = await setDefaultAddress(addressId)
-      if (error) throw error
-      
-      toast.success(t.account.addressSetAsDefault)
-      router.refresh()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t.common.errorOccurred)
-      toast.error(err instanceof Error ? err.message : t.common.errorOccurred)
-    } finally {
-      setIsLoading(false)
-    }
+  const handleSetDefaultAddress = async (address: Address) => {
+    if (address.is_default) return
+    
+    setError(null)
+    const formData = new FormData()
+    formData.append('id', address.id)
+    
+    startTransition(async () => {
+      try {
+        const result = await setDefaultAddress(formData)
+        if (result.error) {
+          setError(result.error)
+          toast.error(result.error)
+        } else {
+          toast.success('Dirección predeterminada actualizada')
+          router.refresh()
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Error inesperado'
+        setError(message)
+        toast.error(message)
+      }
+    })
+  }
+
+  const handleOpenEditModal = (address: Address) => {
+    setSelectedAddress({...address}) // Crear una copia del objeto
+    setError(null)
+    setIsEditModalOpen(true)
+  }
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false)
+    setSelectedAddress(null)
+    setError(null)
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">DIRECCIONES</h2>
-        <Button 
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-semibold">Direcciones</h2>
+        <Button
           onClick={() => setIsAddModalOpen(true)}
           className="bg-[#7B1E1E] hover:bg-[#5E1717] text-white"
-          disabled={isLoading}
         >
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="mr-2 h-4 w-4" />
           Agregar dirección
         </Button>
       </div>
@@ -133,130 +189,164 @@ export function AddressesTab({ addresses, userId, t }: AddressesTabProps) {
         </Alert>
       )}
 
-      <div className="space-y-4">
+      <div className="grid gap-4">
         {addresses.map((address) => (
-          <div 
-            key={address.id} 
-            className="bg-white rounded-lg border p-4 relative"
+          <div
+            key={address.id}
+            className="flex items-start justify-between rounded-lg border p-4"
           >
-            <div className="flex items-start gap-3">
-              <div className="text-[#7B1E1E]">
-                <MapPin className="h-5 w-5" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium">{address.line1}</span>
-                  {address.is_default && (
-                    <span className="text-xs bg-[#7B1E1E] text-white px-2 py-0.5 rounded">
-                      Predeterminada
-                    </span>
-                  )}
+            <div className="flex items-start space-x-4">
+              <MapPin className="h-5 w-5 text-gray-500 mt-0.5" />
+              <div>
+                <div className="font-medium">
+                  {address.line1}
+                  {address.line2 && `, ${address.line2}`}
                 </div>
-                {address.line2 && (
-                  <p className="text-gray-600 text-sm">{address.line2}</p>
-                )}
-                <p className="text-gray-600 text-sm">
+                <div className="text-sm text-gray-500">
                   {address.city}, {address.state} {address.postal_code}
-                </p>
-                <p className="text-gray-600 text-sm">{address.country}</p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setSelectedAddress(address)
-                    setIsEditModalOpen(true)
-                  }}
-                  className="text-gray-600 hover:text-[#7B1E1E] transition-colors"
-                  disabled={isLoading}
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
-                {!address.is_default && (
-                  <button
-                    onClick={() => handleSetDefaultAddress(address.id)}
-                    className="text-gray-600 hover:text-[#7B1E1E] transition-colors"
-                    disabled={isLoading}
-                    title="Establecer como predeterminada"
-                  >
-                    <Check className="h-4 w-4" />
-                  </button>
+                </div>
+                {address.is_default && (
+                  <div className="mt-1 flex items-center text-sm text-green-600">
+                    <Check className="mr-1 h-4 w-4" />
+                    Dirección predeterminada
+                  </div>
                 )}
-                <button
-                  onClick={() => handleDeleteAddress(address.id)}
-                  className="text-gray-600 hover:text-red-600 transition-colors"
-                  disabled={isLoading}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
               </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handleOpenEditModal(address)}
+                disabled={isPending}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              {!address.is_default && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleSetDefaultAddress(address)}
+                  disabled={isPending}
+                >
+                  <Check className="h-4 w-4" />
+                </Button>
+              )}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    disabled={isPending || address.is_default}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>¿Eliminar dirección?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta acción no se puede deshacer.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => handleDeleteAddress(address.id)}
+                    >
+                      Eliminar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         ))}
-
-        {addresses.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            <MapPin className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-            <p className="mb-4">No tienes direcciones guardadas</p>
-            <Button
-              onClick={() => setIsAddModalOpen(true)}
-              className="bg-[#7B1E1E] hover:bg-[#5E1717] text-white"
-            >
-              Agregar primera dirección
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Add Address Modal */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Agregar dirección</DialogTitle>
+            <DialogTitle className="text-xl font-semibold">Agregar dirección</DialogTitle>
           </DialogHeader>
           <form action={handleAddAddress} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="line1">Dirección</Label>
-              <Input id="line1" name="line1" required />
+              <Label htmlFor="line1" className="text-sm font-medium">
+                Calle y número *
+              </Label>
+              <Input 
+                id="line1" 
+                name="line1" 
+                placeholder="Ej: Av. Santa Fe 1234"
+                required 
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="line2">Dirección (línea 2)</Label>
-              <Input id="line2" name="line2" />
+              <Label htmlFor="line2" className="text-sm font-medium">
+                Piso y departamento (opcional)
+              </Label>
+              <Input 
+                id="line2" 
+                name="line2" 
+                placeholder="Ej: Piso 3, Depto B"
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="city">Ciudad</Label>
-              <Input id="city" name="city" required />
+              <Label htmlFor="city" className="text-sm font-medium">
+                Ciudad *
+              </Label>
+              <Input 
+                id="city" 
+                name="city" 
+                placeholder="Ej: Buenos Aires"
+                required 
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="state">Provincia</Label>
-              <Input id="state" name="state" required />
+              <Label htmlFor="state" className="text-sm font-medium">
+                Provincia *
+              </Label>
+              <Input 
+                id="state" 
+                name="state" 
+                placeholder="Ej: Buenos Aires"
+                required 
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="postal_code">Código postal</Label>
-              <Input id="postal_code" name="postal_code" required />
+              <Label htmlFor="postal_code" className="text-sm font-medium">
+                Código postal *
+              </Label>
+              <Input 
+                id="postal_code" 
+                name="postal_code" 
+                placeholder="Ej: 1425"
+                required 
+              />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="country">País</Label>
-              <Input id="country" name="country" required defaultValue="Argentina" />
-            </div>
-            <div className="flex items-center space-x-2">
+            <input type="hidden" name="country" value="Argentina" />
+            <div className="flex items-center space-x-2 pt-2">
               <Checkbox id="is_default" name="is_default" />
-              <Label htmlFor="is_default">Establecer como dirección predeterminada</Label>
+              <Label htmlFor="is_default" className="text-sm">
+                Establecer como dirección predeterminada
+              </Label>
             </div>
-            <DialogFooter>
+            <DialogFooter className="pt-4">
               <Button 
                 type="button" 
                 variant="outline"
                 onClick={() => setIsAddModalOpen(false)}
-                disabled={isLoading}
+                disabled={isPending}
               >
                 Cancelar
               </Button>
               <Button 
                 type="submit"
                 className="bg-[#7B1E1E] hover:bg-[#5E1717] text-white"
-                disabled={isLoading}
+                disabled={isPending}
               >
-                {isLoading ? 'Guardando...' : 'Guardar'}
+                {isPending ? 'Guardando...' : 'Guardar'}
               </Button>
             </DialogFooter>
           </form>
@@ -264,91 +354,102 @@ export function AddressesTab({ addresses, userId, t }: AddressesTabProps) {
       </Dialog>
 
       {/* Edit Address Modal */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent>
+      <Dialog 
+        open={isEditModalOpen} 
+        onOpenChange={(open) => {
+          if (!open) handleCloseEditModal()
+        }}
+      >
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Editar dirección</DialogTitle>
+            <DialogTitle className="text-xl font-semibold">Editar dirección</DialogTitle>
           </DialogHeader>
-          <form action={handleEditAddress} className="space-y-4">
+          <form onSubmit={handleEditAddress} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-line1">Dirección</Label>
+              <Label htmlFor="edit-line1" className="text-sm font-medium">
+                Calle y número *
+              </Label>
               <Input 
                 id="edit-line1" 
                 name="line1" 
                 defaultValue={selectedAddress?.line1}
+                placeholder="Ej: Av. Santa Fe 1234"
                 required 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-line2">Dirección (línea 2)</Label>
+              <Label htmlFor="edit-line2" className="text-sm font-medium">
+                Piso y departamento (opcional)
+              </Label>
               <Input 
                 id="edit-line2" 
                 name="line2" 
                 defaultValue={selectedAddress?.line2 || ''}
+                placeholder="Ej: Piso 3, Depto B"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-city">Ciudad</Label>
+              <Label htmlFor="edit-city" className="text-sm font-medium">
+                Ciudad *
+              </Label>
               <Input 
                 id="edit-city" 
                 name="city" 
                 defaultValue={selectedAddress?.city}
+                placeholder="Ej: Buenos Aires"
                 required 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-state">Provincia</Label>
+              <Label htmlFor="edit-state" className="text-sm font-medium">
+                Provincia *
+              </Label>
               <Input 
                 id="edit-state" 
                 name="state" 
                 defaultValue={selectedAddress?.state}
+                placeholder="Ej: Buenos Aires"
                 required 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-postal_code">Código postal</Label>
+              <Label htmlFor="edit-postal_code" className="text-sm font-medium">
+                Código postal *
+              </Label>
               <Input 
                 id="edit-postal_code" 
                 name="postal_code" 
                 defaultValue={selectedAddress?.postal_code}
+                placeholder="Ej: 1425"
                 required 
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-country">País</Label>
-              <Input 
-                id="edit-country" 
-                name="country" 
-                defaultValue={selectedAddress?.country}
-                required 
-              />
-            </div>
-            <div className="flex items-center space-x-2">
+            <input type="hidden" name="country" value="Argentina" />
+            <div className="flex items-center space-x-2 pt-2">
               <Checkbox 
                 id="edit-is_default" 
                 name="is_default"
                 defaultChecked={selectedAddress?.is_default}
               />
-              <Label htmlFor="edit-is_default">Establecer como dirección predeterminada</Label>
+              <Label htmlFor="edit-is_default" className="text-sm">
+                Establecer como dirección predeterminada
+              </Label>
             </div>
-            <DialogFooter>
+            <DialogFooter className="pt-4">
               <Button 
                 type="button" 
                 variant="outline"
-                onClick={() => {
-                  setIsEditModalOpen(false)
-                  setSelectedAddress(null)
-                }}
-                disabled={isLoading}
+                onClick={handleCloseEditModal}
+                disabled={isPending}
               >
                 Cancelar
               </Button>
               <Button 
                 type="submit"
                 className="bg-[#7B1E1E] hover:bg-[#5E1717] text-white"
-                disabled={isLoading}
+                disabled={isPending}
               >
-                {isLoading ? 'Guardando...' : 'Guardar'}
+                {isPending ? 'Guardando...' : 'Guardar'}
               </Button>
             </DialogFooter>
           </form>

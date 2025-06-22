@@ -17,6 +17,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import Image from 'next/image'
 import { updateProduct } from './actions/products'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
 
 interface AdminProductsTabProps {
   products: Product[]
@@ -40,7 +49,7 @@ export default function AdminProductsTab({ products, t }: AdminProductsTabProps)
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold">PRODUCTOS</h2>
         <Button 
           onClick={() => {
@@ -54,61 +63,71 @@ export default function AdminProductsTab({ products, t }: AdminProductsTabProps)
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {products.map((product) => (
-          <div key={product.id} className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="relative h-48 w-full">
-              <Image
-                src={product.image && product.image.startsWith('http') ? product.image : '/placeholder.svg'}
-                alt={product.name}
-                fill
-                className="object-cover"
-              />
-            </div>
-            <div className="p-4">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <h3 className="font-medium">{product.name}</h3>
-                  <p className="text-sm text-gray-500 line-clamp-2">{product.description}</p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    setSelectedProduct(product)
-                    setIsModalOpen(true)
-                  }}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="space-y-1 text-sm text-gray-500">
-                <p>Precio: ${product.price.toFixed(2)}</p>
-                <p>Stock: {product.stock}</p>
-                <p>Categoría: {product.category}</p>
-                <p>Año: {product.year}</p>
-                <p>Región: {product.region}</p>
-                <p>Varietal: {product.varietal}</p>
-                <div className="flex items-center gap-2">
-                  <span>Visible:</span>
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    product.is_visible ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {product.is_visible ? 'Sí' : 'No'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span>Destacado:</span>
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    product.featured ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {product.featured ? 'Sí' : 'No'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[100px]">Imagen</TableHead>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Categoría</TableHead>
+              <TableHead>Precio</TableHead>
+              <TableHead>Stock</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {products.map((product) => (
+              <TableRow key={product.id}>
+                <TableCell>
+                  <div className="relative w-[80px] h-[80px]">
+                    <Image
+                      src={product.image && product.image.startsWith('http') ? product.image : '/placeholder.svg'}
+                      alt={product.name}
+                      fill
+                      className="object-contain bg-gray-50 rounded-md"
+                      sizes="80px"
+                    />
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div>
+                    <div className="font-medium">{product.name}</div>
+                    <div className="text-sm text-gray-500 line-clamp-1">{product.description}</div>
+                  </div>
+                </TableCell>
+                <TableCell>{product.category}</TableCell>
+                <TableCell>${product.price.toFixed(2)}</TableCell>
+                <TableCell>{product.stock}</TableCell>
+                <TableCell>
+                  <div className="flex flex-col gap-1">
+                    <Badge variant={product.is_visible ? "default" : "secondary"}>
+                      {product.is_visible ? 'Visible' : 'Oculto'}
+                    </Badge>
+                    {product.featured && (
+                      <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                        Destacado
+                      </Badge>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedProduct(product)
+                      setIsModalOpen(true)
+                    }}
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Editar
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
