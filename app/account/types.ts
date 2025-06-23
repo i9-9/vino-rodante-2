@@ -88,17 +88,26 @@ export type SubscriptionFrequency = 'weekly' | 'biweekly' | 'monthly'
 export interface SubscriptionPlan {
   id: string
   name: string
-  description: string | null
-  price_monthly: number
-  price_biweekly: number
-  price_weekly: number
   club: string
-  features: string[]
-  image: string | null
-  is_active: boolean
-  type: 'tinto' | 'blanco' | 'mixto' | 'premium'
+  slug: string | null
+  description: string | null
+  tagline: string | null
+  image: string
+  features: string[] | null
+  price_monthly: number
+  price_quarterly: number
+  discount_percentage: number
+  status: string
+  display_order: number
+  is_visible: boolean
   created_at: string
   updated_at: string
+  banner_image: string | null
+  type: 'tinto' | 'blanco' | 'mixto' | 'premium'
+  price_weekly: number
+  price_biweekly: number
+  wines_per_delivery: number
+  is_active: boolean
 }
 
 export interface UserSubscription {

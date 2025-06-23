@@ -214,24 +214,57 @@ export async function updateSubscriptionPlan(planId: string, data: Partial<Subsc
       return { success: false, error: 'Permisos insuficientes' }
     }
     
+    // Validar URLs de imágenes
+    if (data.image && !isValidUrl(data.image)) {
+      return { success: false, error: 'La URL de la imagen principal no es válida' }
+    }
+    if (data.banner_image && !isValidUrl(data.banner_image)) {
+      return { success: false, error: 'La URL del banner no es válida' }
+    }
+    
+    // Preparar datos para actualización
+    const updateData = {
+      name: data.name,
+      club: data.club,
+      description: data.description,
+      image: data.image,
+      banner_image: data.banner_image,
+      price_monthly: data.price_monthly,
+      price_quarterly: data.price_quarterly,
+      price_weekly: Math.round(data.price_weekly || 0), // Asegurar que sea entero
+      price_biweekly: Math.round(data.price_biweekly || 0), // Asegurar que sea entero
+      is_active: data.is_active,
+      updated_at: new Date().toISOString()
+    }
+    
     // Actualizar plan
     const { data: updatedPlan, error } = await supabase
       .from('subscription_plans')
-      .update({
-        ...data,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', planId)
       .select()
       .single()
     
-    if (error) throw error
+    if (error) {
+      console.error('Error de Supabase:', error)
+      throw new Error(error.message)
+    }
     
     revalidatePath('/account')
     return { success: true, data: updatedPlan }
   } catch (error) {
     console.error('Error updating plan:', error)
     return { success: false, error: error instanceof Error ? error.message : 'Error desconocido' }
+  }
+}
+
+// Función auxiliar para validar URLs
+function isValidUrl(urlString: string): boolean {
+  try {
+    new URL(urlString)
+    return true
+  } catch (err) {
+    return false
   }
 }
 
