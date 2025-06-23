@@ -11,9 +11,10 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import Image from 'next/image'
 import { CreateFakeSubscription } from '@/components/admin/create-fake-subscription'
-import { createSubscriptionPlan, updateSubscriptionPlan, deleteSubscriptionPlan } from './actions/subscriptions'
+import { createSubscriptionPlan, updateSubscriptionPlan, deleteSubscriptionPlan, uploadPlanImage } from './actions/subscriptions'
 import type { SubscriptionPlan, Customer } from './types'
 import type { Translations } from '@/lib/i18n/types'
+import { Switch } from '@/components/ui/switch'
 
 interface AdminPlansTabProps {
   plans: SubscriptionPlan[]
@@ -159,8 +160,13 @@ export function AdminPlansTab({ plans: initialPlans, users, t }: AdminPlansTabPr
 
     try {
       // Validar datos requeridos
-      if (!formData.name || !formData.club) {
-        throw new Error('El nombre y el club son campos requeridos')
+      if (!formData.name || !formData.club || !formData.description) {
+        throw new Error('Por favor completa todos los campos requeridos')
+      }
+
+      // Validar imagen principal
+      if (!formData.image) {
+        throw new Error('La imagen principal es requerida')
       }
 
       // Validar precios
@@ -168,8 +174,19 @@ export function AdminPlansTab({ plans: initialPlans, users, t }: AdminPlansTabPr
         throw new Error('Los precios mensuales y trimestrales deben ser mayores a 0')
       }
 
+      // Solo enviar los campos que han sido modificados
+      const changedData: Partial<SubscriptionPlan> = {}
+      
       if (editingPlan) {
-        const result = await updateSubscriptionPlan(editingPlan.id, formData)
+        // Comparar con el plan original y solo incluir campos modificados
+        Object.entries(formData).forEach(([key, value]) => {
+          const originalValue = editingPlan[key as keyof SubscriptionPlan]
+          if (value !== originalValue) {
+            changedData[key as keyof SubscriptionPlan] = value
+          }
+        })
+
+        const result = await updateSubscriptionPlan(editingPlan.id, changedData)
         if (!result.success) throw new Error(result.error || 'Error al actualizar el plan')
         setPlans(plans.map(p => p.id === editingPlan.id ? result.data : p))
         toast.success('Plan actualizado')
@@ -191,26 +208,28 @@ export function AdminPlansTab({ plans: initialPlans, users, t }: AdminPlansTabPr
 
   const handleEdit = (plan: SubscriptionPlan) => {
     setEditingPlan(plan)
+    // Asegurarnos de copiar todos los campos necesarios
     setFormData({
       name: plan.name,
       club: plan.club,
-      slug: plan.slug,
-      description: plan.description,
-      tagline: plan.tagline,
+      description: plan.description || '',
       image: plan.image,
-      features: plan.features,
+      banner_image: plan.banner_image || '',
       price_monthly: plan.price_monthly,
       price_quarterly: plan.price_quarterly,
+      price_weekly: plan.price_weekly || 0,
+      price_biweekly: plan.price_biweekly || 0,
+      is_active: plan.is_active,
+      // Mantener otros campos que podrían ser necesarios
+      slug: plan.slug,
+      tagline: plan.tagline,
+      features: plan.features,
       discount_percentage: plan.discount_percentage,
       status: plan.status,
       display_order: plan.display_order,
       is_visible: plan.is_visible,
-      banner_image: plan.banner_image,
       type: plan.type,
-      price_weekly: plan.price_weekly,
-      price_biweekly: plan.price_biweekly,
-      wines_per_delivery: plan.wines_per_delivery,
-      is_active: plan.is_active
+      wines_per_delivery: plan.wines_per_delivery
     })
     setShowModal(true)
   }
@@ -226,6 +245,31 @@ export function AdminPlansTab({ plans: initialPlans, users, t }: AdminPlansTabPr
     } catch (error) {
       console.error('Error:', error)
       toast.error(error instanceof Error ? error.message : 'Error al eliminar el plan')
+    }
+  }
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'main' | 'banner') => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      setLoading(true)
+      const result = await uploadPlanImage(file)
+      
+      if (!result.success || !result.url) {
+        throw new Error(result.error || 'Error al subir la imagen')
+      }
+
+      if (type === 'main') {
+        setFormData(prev => ({ ...prev, image: result.url }))
+      } else {
+        setFormData(prev => ({ ...prev, banner_image: result.url }))
+      }
+    } catch (error) {
+      toast.error('Error al subir la imagen')
+      console.error(error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -299,41 +343,66 @@ export function AdminPlansTab({ plans: initialPlans, users, t }: AdminPlansTabPr
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Imagen Principal (URL)</Label>
-                <Input 
-                  value={formData.image}
-                  onChange={(e) => setFormData(prev => ({...prev, image: e.target.value}))}
-                  required
-                  placeholder="https://ejemplo.com/imagen.jpg"
-                />
-                {formData.image && (
-                  <div className="relative w-32 h-32 mt-2">
-                    <Image
-                      src={formData.image}
-                      alt="Vista previa"
-                      fill
-                      className="object-cover rounded-md"
+                <Label>Imagen Principal *</Label>
+                <div className="flex flex-col gap-2">
+                  {formData.image && (
+                    <div className="relative w-full h-40">
+                      <Image
+                        src={formData.image}
+                        alt="Imagen principal"
+                        fill
+                        className="object-cover rounded"
+                      />
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={e => handleImageChange(e, 'main')}
                     />
+                    {formData.image && (
+                      <Button 
+                        type="button" 
+                        variant="destructive"
+                        onClick={() => setFormData(prev => ({ ...prev, image: '' }))}
+                      >
+                        Quitar
+                      </Button>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
               <div>
-                <Label>Imagen Banner (URL, opcional)</Label>
-                <Input 
-                  value={formData.banner_image || ''}
-                  onChange={(e) => setFormData(prev => ({...prev, banner_image: e.target.value}))}
-                  placeholder="https://ejemplo.com/banner.jpg"
-                />
-                {formData.banner_image && (
-                  <div className="relative w-full h-24 mt-2">
-                    <Image
-                      src={formData.banner_image}
-                      alt="Vista previa banner"
-                      fill
-                      className="object-cover rounded-md"
+                <Label>Banner (opcional)</Label>
+                <div className="flex flex-col gap-2">
+                  {formData.banner_image && (
+                    <div className="relative w-full h-40">
+                      <Image
+                        src={formData.banner_image}
+                        alt="Banner"
+                        fill
+                        className="object-cover rounded"
+                      />
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={e => handleImageChange(e, 'banner')}
                     />
+                    {formData.banner_image && (
+                      <Button 
+                        type="button" 
+                        variant="destructive"
+                        onClick={() => setFormData(prev => ({ ...prev, banner_image: '' }))}
+                      >
+                        Quitar
+                      </Button>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
 
@@ -386,11 +455,10 @@ export function AdminPlansTab({ plans: initialPlans, users, t }: AdminPlansTabPr
 
             <div className="flex gap-4">
               <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData(prev => ({...prev, is_active: e.target.checked}))}
+                <Switch
                   id="is_active"
+                  checked={formData.is_active}
+                  onCheckedChange={(checked) => setFormData(prev => ({...prev, is_active: checked}))}
                 />
                 <Label htmlFor="is_active">Activo</Label>
               </div>

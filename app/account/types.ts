@@ -25,6 +25,10 @@ export interface Product {
   varietal?: string
   year?: number
   region?: string
+  category?: string
+  stock: number
+  is_visible: boolean
+  featured: boolean
 }
 
 export interface Address {
@@ -38,7 +42,13 @@ export interface Address {
   is_default: boolean
 }
 
-export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled'
+export type OrderStatus = 
+  | 'pending'
+  | 'in_preparation'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled'
+  | 'refunded'
 
 export type PaymentStatus = 
   | 'pending'    // Pendiente
@@ -52,15 +62,22 @@ export interface Order {
   status: OrderStatus
   total: number
   created_at: string
-  customer?: Customer
+  customer?: Customer | null
   order_items: OrderItem[]
+  shipping_address?: {
+    line1: string
+    line2?: string | null
+    city: string
+    state: string
+    postal_code: string
+    country: string
+  } | null
 }
 
 export interface OrderItem {
   id: string
   order_id: string
   product_id: string
-  product_name?: string
   quantity: number
   price: number
   products?: {
@@ -70,7 +87,7 @@ export interface OrderItem {
     image?: string
     price: number
     varietal?: string
-    year?: number
+    year?: string | number
     region?: string
   }
 }
@@ -88,7 +105,7 @@ export type SubscriptionFrequency = 'weekly' | 'biweekly' | 'monthly'
 export interface SubscriptionPlan {
   id: string
   name: string
-  club: string
+   club: string
   slug: string | null
   description: string | null
   tagline: string | null

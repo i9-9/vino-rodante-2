@@ -14,7 +14,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronDown, ChevronUp, Search } from 'lucide-react'
 import Image from 'next/image'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { OrderStatus } from './types'
+import type { OrderStatus, Order } from './types'
 
 interface Product {
   id: string
@@ -40,24 +40,6 @@ interface Customer {
   id: string
   name: string
   email: string
-}
-
-interface Order {
-  id: string
-  user_id: string
-  status: OrderStatus
-  total: number
-  created_at: string
-  customer: Customer
-  order_items: OrderItem[]
-  shipping_address?: {
-    line1: string
-    line2?: string
-    city: string
-    state: string
-    postal_code: string
-    country: string
-  }
 }
 
 interface AdminOrdersTabProps {
@@ -112,8 +94,8 @@ export default function AdminOrdersTab({ orders, t }: AdminOrdersTabProps) {
   const filteredOrders = orders.filter(order => {
     const matchesSearch = searchTerm === '' || 
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer.email.toLowerCase().includes(searchTerm.toLowerCase())
+      (order.customer?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.customer?.email || '').toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesStatus = !selectedStatus || order.status === selectedStatus
     
@@ -246,8 +228,8 @@ export default function AdminOrdersTab({ orders, t }: AdminOrdersTabProps) {
                         <h4 className="font-medium mb-4">Información del Cliente</h4>
                         <div className="grid sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <p className="font-medium">{order.customer.name}</p>
-                            <p className="text-sm text-muted-foreground">{order.customer.email}</p>
+                            <p className="font-medium">{order.customer?.name || 'Cliente no registrado'}</p>
+                            <p className="text-sm text-muted-foreground">{order.customer?.email || 'Email no disponible'}</p>
                           </div>
                         </div>
                       </div>
@@ -278,7 +260,7 @@ export default function AdminOrdersTab({ orders, t }: AdminOrdersTabProps) {
                         <div className="space-y-4">
                           {order.order_items.map((item) => (
                             <div key={item.id} className="flex items-start gap-4 border-b pb-4">
-                              {item.products.image && (
+                              {item.products?.image && (
                                 <div className="w-20 h-20 relative">
                                   <Image
                                     src={item.products.image}
@@ -289,24 +271,24 @@ export default function AdminOrdersTab({ orders, t }: AdminOrdersTabProps) {
                                 </div>
                               )}
                               <div className="flex-1">
-                                <h5 className="font-medium">{item.products.name}</h5>
-                                {item.products.description && (
+                                <h5 className="font-medium">{item.products?.name || 'Producto sin nombre'}</h5>
+                                {item.products?.description && (
                                   <p className="text-sm text-muted-foreground line-clamp-2">
                                     {item.products.description}
                                   </p>
                                 )}
                                 <div className="mt-1 text-sm">
-                                  {item.products.varietal && (
+                                  {item.products?.varietal && (
                                     <span className="text-muted-foreground">
                                       {item.products.varietal} · 
                                     </span>
                                   )}
-                                  {item.products.year && (
+                                  {item.products?.year && (
                                     <span className="text-muted-foreground">
                                       {" "}{item.products.year} · 
                                     </span>
                                   )}
-                                  {item.products.region && (
+                                  {item.products?.region && (
                                     <span className="text-muted-foreground">
                                       {" "}{item.products.region}
                                     </span>
@@ -349,19 +331,17 @@ export default function AdminOrdersTab({ orders, t }: AdminOrdersTabProps) {
 
 function EmptyOrdersState({ searchTerm, selectedStatus, t }: { searchTerm: string, selectedStatus: OrderStatus | null, t: any }) {
   return (
-    <div className="text-center py-12">
-      <div className="w-16 h-16 mx-auto mb-4 text-muted-foreground">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
-        </svg>
-      </div>
-      <h3 className="text-lg font-semibold mb-2">No se encontraron pedidos</h3>
-      <p className="text-muted-foreground max-w-sm mx-auto">
-        {searchTerm || selectedStatus
-          ? 'No hay pedidos que coincidan con los filtros aplicados.'
-          : t.account.noOrders}
-      </p>
-    </div>
+    <Card>
+      <CardContent className="py-6">
+        <div className="text-center">
+          <p className="text-muted-foreground">
+            {searchTerm || selectedStatus
+              ? 'No se encontraron órdenes que coincidan con los filtros aplicados.'
+              : 'No hay órdenes disponibles.'}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 

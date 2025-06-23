@@ -56,6 +56,18 @@ const nextConfig = {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    domains: ['vino-rodante.s3.sa-east-1.amazonaws.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+      },
+    ],
+  },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '4mb'
+    }
   },
 }
 

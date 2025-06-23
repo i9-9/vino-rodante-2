@@ -7,9 +7,12 @@ import type { Database } from '@/lib/database.types'
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import type { ActionResponse } from '../types'
+import type { Product } from '../types'
+import { z } from 'zod'
+import { ProductSchema, type ProductFormData } from '../types/product'
 
 // Extender el tipo Product para incluir is_visible
-type Product = Database['public']['Tables']['products']['Row'] & {
+type DatabaseProduct = Database['public']['Tables']['products']['Row'] & {
   is_visible: boolean
 }
 
@@ -21,6 +24,8 @@ import {
   extractFormFields,
   hasChanges
 } from '../utils/validation'
+
+type ValidatedProduct = z.infer<typeof ProductSchema>
 
 export async function addProduct(formData: FormData) {
   const supabase = await createClient()
@@ -69,12 +74,95 @@ export async function addProduct(formData: FormData) {
 
 async function verifyAdmin() {
   const supabase = await createClient()
-  
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   if (userError || !user) {
     throw new Error('No autorizado')
   }
 
+  const { data: customerData } = await supabase
+    .from('customers')
+    .select('is_admin')
+    .eq('id', user.id)
+    .single()
+
+  if (!customerData?.is_admin) {
+    throw new Error('No autorizado - Se requiere ser admin')
+  }
+
+  return user.id
+}
+
+async function uploadImage(file: File, slug: string): Promise<string> {
+  const supabase = await createClient()
+
+  // Validar tipo de archivo
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+  if (!allowedTypes.includes(file.type)) {
+    throw new Error('Tipo de archivo no permitido. Use JPG, PNG o WebP.')
+  }
+
+  // Validar tamaño (max 5MB)
+  const maxSize = 5 * 1024 * 1024 // 5MB
+  if (file.size > maxSize) {
+    throw new Error('La imagen es demasiado grande. Máximo 5MB.')
+  }
+
+  const fileExt = file.type.split('/')[1]
+  const fileName = `${slug}-${Date.now()}.${fileExt}`
+  const filePath = `products/${fileName}`
+
+  try {
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('product-images')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      })
+
+    if (uploadError) {
+      throw uploadError
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(filePath)
+
+    return publicUrl
+  } catch (error) {
+    if (error instanceof StorageError) {
+      throw new Error(`Error al subir imagen: ${error.message}`)
+    }
+    throw error
+  }
+}
+
+async function deleteOldImage(url: string) {
+  if (!url || url === '/placeholder.jpg' || !url.includes('product-images')) {
+    return
+  }
+
+  try {
+    const supabase = await createClient()
+    const path = url.split('product-images/')[1]
+    if (!path) return
+
+    await supabase.storage
+      .from('product-images')
+      .remove([path])
+  } catch (error) {
+    console.error('Error deleting old image:', error)
+  }
+}
+
+export async function updateProduct(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    throw new Error('No autorizado')
+  }
+
+  // Verificar si es admin
   const { data: customer } = await supabase
     .from('customers')
     .select('is_admin')
@@ -82,212 +170,163 @@ async function verifyAdmin() {
     .single()
 
   if (!customer?.is_admin) {
-    throw new Error('No autorizado - Se requiere ser admin')
+    throw new Error('No autorizado')
   }
 
-  return user.id
+  const id = formData.get('id') as string
+  const name = formData.get('name') as string
+  const description = formData.get('description') as string
+  const price = parseFloat(formData.get('price') as string)
+  const stock = parseInt(formData.get('stock') as string)
+  const category = formData.get('category') as string
+  const region = formData.get('region') as string
+  const year = formData.get('year') as string
+  const varietal = formData.get('varietal') as string
+  const featured = formData.get('featured') === 'on'
+  const is_visible = formData.get('is_visible') === 'on'
+  const image = formData.get('image') as string
+
+  // Si category o region son 'none', usar string vacío
+  const finalCategory = category === 'none' ? '' : category
+  const finalRegion = region === 'none' ? '' : region
+
+  const { error } = await supabase
+    .from('products')
+    .update({
+      name,
+      description,
+      price,
+      stock,
+      category: finalCategory,
+      region: finalRegion,
+      year: year || '',
+      varietal: varietal || '',
+      featured,
+      is_visible,
+      image: image || null
+    })
+    .eq('id', id)
+
+  if (error) {
+    throw new Error(`Error al actualizar producto: ${error.message}`)
+  }
+
+  revalidatePath('/account')
 }
 
-export async function updateProduct(formData: FormData): Promise<ActionResponse> {
-  try {
-    // 1. Verificar permisos de admin
-    await verifyAdmin()
+async function getProductById(id: string): Promise<DatabaseProduct | null> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('id', id)
+    .single()
 
-    // 2. Extraer y validar campos
-    const productId = formData.get('id')?.toString()
-    if (!productId) {
-      return { success: false, error: 'ID de producto requerido' }
-    }
-
-    // 3. Extraer solo campos con valores válidos
-    const updates: Partial<Product> = {}
-    
-    // Campos de texto
-    const textFields = ['name', 'description', 'category', 'year', 'region', 'varietal'] as const
-    for (const field of textFields) {
-      const value = formData.get(field)?.toString().trim()
-      if (value) {
-        updates[field] = value
-      }
-    }
-    
-    // Campos numéricos
-    const price = formData.get('price')?.toString()
-    if (price && validatePrice(price)) {
-      updates.price = parseFloat(price)
-    }
-    
-    const stock = formData.get('stock')?.toString()
-    if (stock && validateStock(stock)) {
-      updates.stock = parseInt(stock, 10)
-    }
-    
-    // URL de imagen
-    const image = formData.get('image')?.toString().trim()
-    if (image && isValidUrl(image)) {
-      updates.image = image
-    }
-    
-    // Booleanos
-    const featured = formData.get('featured')
-    if (featured !== null) {
-      updates.featured = featured === 'on'
-    }
-    
-    const visible = formData.get('is_visible')
-    if (visible !== null) {
-      updates.is_visible = visible === 'on'
-    }
-
-    // 4. Validar campos
-    const errors = validateProduct(updates)
-    if (Object.keys(errors).length > 0) {
-      return { 
-        success: false, 
-        error: 'Errores de validación', 
-        data: { errors } 
-      }
-    }
-
-    // 5. Verificar que hay cambios
-    if (!hasChanges(updates)) {
-      return { success: false, error: 'No hay cambios para guardar' }
-    }
-
-    // 6. Actualizar solo campos modificados
-    const supabase = await createClient()
-    
-    const { error } = await supabase
-      .from('products')
-      .update(updates)
-      .eq('id', productId)
-
-    if (error) throw error
-
-    // 7. Revalidar solo la ruta necesaria
-    revalidatePath('/account')
-    
-    return { 
-      success: true, 
-      message: 'Producto actualizado correctamente',
-      data: updates
-    }
-
-  } catch (error) {
-    console.error('Error updating product:', error)
-    return { 
-      success: false, 
-      error: 'Error al actualizar producto' 
-    }
+  if (error) {
+    console.error('Error fetching product:', error)
+    return null
   }
+
+  return data as DatabaseProduct
 }
 
 export async function createProduct(formData: FormData): Promise<ActionResponse> {
+  const supabase = await createClient()
+
+  // Validar que el usuario sea admin
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { success: false, error: 'No autorizado' }
+  }
+
   try {
-    // 1. Verificar permisos de admin
-    const userId = await verifyAdmin()
-
-    // 2. Extraer y validar todos los campos requeridos
-    const requiredFields = ['name', 'price', 'stock'] as const
-    const product: Partial<Product> = {
-      created_at: new Date().toISOString(),
-      featured: false,
-      is_visible: true
+    // Extraer y validar datos
+    const rawData = {
+      name: formData.get('name'),
+      description: formData.get('description'),
+      price: Number(formData.get('price')),
+      category: formData.get('category'),
+      region: formData.get('region'),
+      stock: Number(formData.get('stock')),
+      is_visible: formData.get('is_visible') === 'true'
     }
 
-    // Extraer campos del formulario
-    for (const field of requiredFields) {
-      const value = formData.get(field)?.toString().trim()
-      if (!value) {
-        return { 
-          success: false, 
-          error: `El campo ${field} es requerido` 
-        }
-      }
-      if (field === 'name') product.name = value
-      if (field === 'price') product.price = parseFloat(value)
-      if (field === 'stock') product.stock = parseInt(value, 10)
+    // Validar datos con Zod
+    const validatedData = ProductSchema.parse(rawData)
+
+    // Manejar imagen si existe
+    const imageFile = formData.get('image') as File
+    if (imageFile?.size > 0) {
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('products')
+        .upload(`${validatedData.name}-${Date.now()}`, imageFile)
+
+      if (uploadError) throw uploadError
+      validatedData.image = uploadData.path
     }
 
-    // Campos opcionales
-    const optionalFields = ['description', 'category', 'year', 'region', 'varietal', 'image'] as const
-    for (const field of optionalFields) {
-      const value = formData.get(field)?.toString().trim()
-      if (value) {
-        product[field] = value
-      }
-    }
-
-    // Generar slug
-    if (product.name) {
-      const slug = product.name.toLowerCase().replace(/\s+/g, '-')
-      Object.assign(product, { slug })
-    }
-
-    // 3. Validar producto
-    const errors = validateProduct(product)
-    if (Object.keys(errors).length > 0) {
-      return { 
-        success: false, 
-        error: 'Errores de validación', 
-        data: { errors } 
-      }
-    }
-
-    // 4. Crear producto
-    const supabase = await createClient()
-    
-    const { error } = await supabase
+    // Crear producto
+    const { data, error } = await supabase
       .from('products')
-      .insert([product])
+      .insert(validatedData)
+      .select()
+      .single()
 
     if (error) throw error
 
     revalidatePath('/account')
-    
-    return { 
-      success: true, 
-      message: 'Producto creado correctamente',
-      data: product
-    }
+    return { success: true, data }
 
   } catch (error) {
     console.error('Error creating product:', error)
     return { 
       success: false, 
-      error: 'Error al crear producto' 
+      error: error instanceof Error ? error.message : 'Error al crear producto'
     }
   }
 }
 
-export async function deleteProduct(productId: string): Promise<ActionResponse> {
-  try {
-    // 1. Verificar permisos de admin
-    await verifyAdmin()
+export async function deleteProducts(ids: string[]) {
+  const supabase = await createClient()
 
-    // 2. Eliminar producto
-    const supabase = await createClient()
-    
+  // Validar que el usuario sea admin
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    throw new Error('No autorizado')
+  }
+
+  try {
+    // Obtener las imágenes de los productos a eliminar
+    const { data: products } = await supabase
+      .from('products')
+      .select('image')
+      .in('id', ids)
+
+    // Eliminar las imágenes del storage
+    const imagesToDelete = products
+      ?.filter(p => p.image)
+      .map(p => p.image!.split('/').pop()!)
+
+    if (imagesToDelete?.length) {
+      const { error: storageError } = await supabase.storage
+        .from('product-images')
+        .remove(imagesToDelete)
+
+      if (storageError) throw storageError
+    }
+
+    // Eliminar los productos
     const { error } = await supabase
       .from('products')
       .delete()
-      .eq('id', productId)
+      .in('id', ids)
 
     if (error) throw error
 
     revalidatePath('/account')
-    
-    return { 
-      success: true, 
-      message: 'Producto eliminado correctamente' 
-    }
-
+    return { success: true }
   } catch (error) {
-    console.error('Error deleting product:', error)
-    return { 
-      success: false, 
-      error: 'Error al eliminar producto' 
-    }
+    throw error
   }
 }
 
@@ -320,7 +359,7 @@ export async function toggleProductVisibility(
     console.error('Error toggling product visibility:', error)
     return { 
       success: false, 
-      error: 'Error al cambiar visibilidad del producto' 
+      error: error instanceof Error ? error.message : 'Error al cambiar visibilidad del producto' 
     }
   }
 }
@@ -354,7 +393,7 @@ export async function toggleProductFeatured(
     console.error('Error toggling product featured:', error)
     return { 
       success: false, 
-      error: 'Error al cambiar estado destacado del producto' 
+      error: error instanceof Error ? error.message : 'Error al cambiar estado destacado del producto' 
     }
   }
 }

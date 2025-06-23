@@ -1,3 +1,12 @@
+'use client'
+
+import { useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { updateProfile } from '../actions/profile'
+import { toast } from 'sonner'
 import type { User } from '@supabase/supabase-js'
 import type { Profile } from '../types'
 
@@ -8,40 +17,67 @@ interface ProfileTabProps {
 }
 
 export function ProfileTab({ user, profile, t }: ProfileTabProps) {
-  // Función para formatear la fecha de manera consistente
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('es-AR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    })
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleUpdateProfile = async (formData: FormData) => {
+    setIsLoading(true)
+    try {
+      const result = await updateProfile(formData)
+      if (result.error) {
+        toast.error(result.error)
+      } else {
+        toast.success(t.account.profileUpdated)
+      }
+    } catch (error) {
+      toast.error(t.errors.unknown)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">{t.account.profile}</h2>
-      </div>
-
-      <div className="grid gap-4">
-        <div className="p-4 border rounded-lg">
-          <div className="space-y-2">
-            <div>
-              <p className="text-sm font-medium text-gray-500">{t.account.name}</p>
-              <p>{profile.name || t.account.noName}</p>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>{t.account.profileInfo}</CardTitle>
+        <CardDescription>{t.account.updateProfile}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form action={handleUpdateProfile} className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                value={user.email} 
+                disabled 
+                className="bg-muted"
+              />
+              <p className="text-sm text-muted-foreground">
+                {t.account.emailCannotChange}
+              </p>
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500">{t.account.email}</p>
-              <p>{profile.email}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500">{t.account.memberSince}</p>
-              <p>{formatDate(profile.created_at)}</p>
+            <div className="space-y-2">
+              <Label htmlFor="name">{t.account.name}</Label>
+              <Input 
+                id="name" 
+                name="name" 
+                defaultValue={profile?.name || ''} 
+                placeholder={t.account.namePlaceholder}
+              />
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+          
+          <div className="flex justify-end">
+            <Button 
+              type="submit" 
+              disabled={isLoading}
+              className="w-full sm:w-auto"
+            >
+              {isLoading ? t.common.saving : t.common.save}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   )
 } 

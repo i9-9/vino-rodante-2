@@ -5,109 +5,84 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrency } from '@/lib/utils'
-import type { Order } from '../types'
+import type { Order, OrderStatus } from '../types'
 import Image from 'next/image'
 import { Separator } from '@/components/ui/separator'
-import { ChevronDown, ChevronUp, Wine, Package } from 'lucide-react'
+import { ChevronDown, ChevronUp, Package } from 'lucide-react'
 
 interface OrdersTabProps {
   orders: Order[]
   t: any
 }
 
-const STATUS_COLORS = {
+const STATUS_COLORS: Record<OrderStatus, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
-  paid: 'bg-blue-100 text-blue-800',
-  preparing: 'bg-purple-100 text-purple-800',
+  in_preparation: 'bg-blue-100 text-blue-800',
   shipped: 'bg-indigo-100 text-indigo-800',
   delivered: 'bg-green-100 text-green-800',
-  cancelled: 'bg-gray-100 text-gray-800',
-  refunded: 'bg-red-100 text-red-800'
-} as const
+  cancelled: 'bg-red-100 text-red-800',
+  refunded: 'bg-gray-100 text-gray-800'
+}
 
 export function OrdersTab({ orders = [], t }: OrdersTabProps) {
-  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set())
-  const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
+  const [expandedOrders, setExpandedOrders] = useState<string[]>([])
 
-  // Función para formatear la fecha en español
+  const toggleOrderExpansion = (orderId: string) => {
+    setExpandedOrders(prev => 
+      prev.includes(orderId) 
+        ? prev.filter(id => id !== orderId)
+        : [...prev, orderId]
+    )
+  }
+
   const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), "d 'de' MMMM yyyy", { locale: es })
-    } catch (error) {
-      console.error('Error formatting date:', error)
-      return dateString
-    }
+    return format(new Date(dateString), "dd 'de' MMMM 'de' yyyy", { locale: es })
   }
 
-  const toggleOrderExpanded = (orderId: string) => {
-    setExpandedOrders(prev => {
-      const next = new Set(prev)
-      if (next.has(orderId)) {
-        next.delete(orderId)
-      } else {
-        next.add(orderId)
-      }
-      return next
-    })
+  const getStatusColor = (status: OrderStatus) => {
+    return STATUS_COLORS[status] || STATUS_COLORS.pending
   }
 
-  const filteredOrders = selectedStatus
-    ? orders.filter(order => order.status === selectedStatus)
-    : orders
-
-  // Manejo de estado vacío
-  if (!Array.isArray(orders) || orders.length === 0) {
+  if (orders.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <Wine className="h-16 w-16 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-semibold mb-2">{t?.account?.noOrders || 'No hay pedidos'}</h3>
-        <p className="text-muted-foreground mb-6">
-          ¡Es momento de descubrir nuestros increíbles vinos!
-        </p>
-        <Button asChild>
-          <a href="/products">Explorar Productos</a>
-        </Button>
-      </div>
+      <Card>
+        <CardContent className="py-8">
+          <div className="text-center">
+            <Package className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-semibold">{t.account.noOrders}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {t.account.startShopping}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Filtros */}
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant={selectedStatus === null ? "secondary" : "outline"}
-          onClick={() => setSelectedStatus(null)}
-        >
-          Todos
-        </Button>
-        {["pending", "shipped", "delivered"].map((status) => (
-          <Button
-            key={status}
-            variant={selectedStatus === status ? "secondary" : "outline"}
-            onClick={() => setSelectedStatus(status)}
-          >
-            {t?.orders?.[status] || status}
-          </Button>
-        ))}
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <CardTitle>{t.account.orderHistory}</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          {orders.length} {orders.length === 1 ? t.common.order : t.common.orders}
+        </p>
       </div>
 
-      {/* Lista de Pedidos */}
-      <div className="space-y-4">
-        {filteredOrders.map((order) => (
-          <Card key={order.id}>
+      <div className="grid gap-4">
+        {orders.map((order) => (
+          <Card key={order.id} className="overflow-hidden">
             <CardHeader className="bg-muted/50">
               <div className="flex flex-col sm:flex-row justify-between gap-4">
                 {/* Información básica */}
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <h3 className="text-lg font-semibold">
-                      #{(order.id || '').slice(-8).toUpperCase()}
+                      #{order.id.slice(-8).toUpperCase()}
                     </h3>
-                    <Badge className={STATUS_COLORS[order.status as keyof typeof STATUS_COLORS] || STATUS_COLORS.pending}>
-                      {t?.orders?.[order.status] || order.status}
+                    <Badge className={getStatusColor(order.status)}>
+                      {t.orders[order.status]}
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -118,17 +93,17 @@ export function OrdersTab({ orders = [], t }: OrdersTabProps) {
                 {/* Resumen y Acciones */}
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <p className="font-semibold">{formatCurrency(order.total || 0)}</p>
+                    <p className="font-semibold">{formatCurrency(order.total)}</p>
                     <p className="text-sm text-muted-foreground">
-                      {(order.order_items || []).reduce((acc, item) => acc + (item.quantity || 0), 0)} productos
+                      {order.order_items.reduce((acc, item) => acc + item.quantity, 0)} {t.common.products}
                     </p>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => toggleOrderExpanded(order.id)}
+                    onClick={() => toggleOrderExpansion(order.id)}
                   >
-                    {expandedOrders.has(order.id) ? (
+                    {expandedOrders.includes(order.id) ? (
                       <ChevronUp className="h-4 w-4" />
                     ) : (
                       <ChevronDown className="h-4 w-4" />
@@ -136,63 +111,49 @@ export function OrdersTab({ orders = [], t }: OrdersTabProps) {
                   </Button>
                 </div>
               </div>
-
-              {/* Resumen de productos (siempre visible) */}
-              <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-                <Package className="h-4 w-4" />
-                {(order.order_items || []).map((item, index, array) => (
-                  <span key={item.id}>
-                    {item.product?.name || 'Producto sin nombre'}
-                    {index < array.length - 1 ? ', ' : ''}
-                  </span>
-                ))}
-              </div>
             </CardHeader>
 
-            {/* Detalles expandibles */}
-            {expandedOrders.has(order.id) && (
+            {expandedOrders.includes(order.id) && (
               <CardContent className="pt-6">
                 <div className="space-y-6">
-                  {/* Productos */}
+                  {/* Lista de productos */}
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-sm text-muted-foreground">DETALLE DE PRODUCTOS</h3>
-                    {(order.order_items || []).map((item) => (
-                      <div key={item.id} className="flex items-center gap-4">
-                        {item.product?.image && (
-                          <div className="relative w-16 h-16 rounded-md overflow-hidden">
+                    {order.order_items.map((item) => (
+                      <div key={item.id} className="flex items-start gap-4">
+                        {item.products?.image && (
+                          <div className="relative w-20 h-20 rounded-md overflow-hidden flex-shrink-0">
                             <Image
-                              src={item.product.image}
-                              alt={item.product.name || 'Producto'}
+                              src={item.products.image}
+                              alt={item.products.name || ''}
                               fill
                               className="object-cover"
                             />
                           </div>
                         )}
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
                             <div>
-                              <p className="font-medium">{item.product?.name || 'Producto sin nombre'}</p>
-                              {item.product?.varietal && item.product?.year && (
+                              <h4 className="font-medium truncate">
+                                {item.products?.name || t.common.unavailableProduct}
+                              </h4>
+                              {item.products?.varietal && (
                                 <p className="text-sm text-muted-foreground">
-                                  {item.product.varietal} {item.product.year}
-                                </p>
-                              )}
-                              {item.product?.region && (
-                                <p className="text-sm text-muted-foreground">
-                                  {item.product.region}
+                                  {item.products.varietal}
+                                  {item.products.year && ` · ${item.products.year}`}
+                                  {item.products.region && ` · ${item.products.region}`}
                                 </p>
                               )}
                             </div>
-                            <div className="text-right">
-                              <p className="font-medium">
-                                {formatCurrency(item.price || 0)}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                Cantidad: {item.quantity || 0}
-                              </p>
-                              <p className="text-sm font-medium">
-                                Subtotal: {formatCurrency((item.price || 0) * (item.quantity || 0))}
-                              </p>
+                            <div className="flex items-center gap-4 sm:text-right">
+                              <div className="text-sm">
+                                <span className="font-medium">
+                                  {formatCurrency(item.price)}
+                                </span>
+                                {" "}x {item.quantity}
+                              </div>
+                              <div className="font-medium">
+                                {formatCurrency(item.price * item.quantity)}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -202,37 +163,11 @@ export function OrdersTab({ orders = [], t }: OrdersTabProps) {
 
                   <Separator />
 
-                  {/* Información de envío */}
-                  {order.customer && (order.customer.address || order.customer.city) && (
-                    <>
-                      <div className="space-y-2">
-                        <h3 className="font-semibold text-sm text-muted-foreground">INFORMACIÓN DE ENVÍO</h3>
-                        <div>
-                          {order.customer.address && (
-                            <p className="text-sm">{order.customer.address}</p>
-                          )}
-                          {order.customer.city && order.customer.state && (
-                            <p className="text-sm">
-                              {order.customer.city}, {order.customer.state}
-                            </p>
-                          )}
-                          {order.customer.postal_code && (
-                            <p className="text-sm">{order.customer.postal_code}</p>
-                          )}
-                          {order.customer.country && (
-                            <p className="text-sm">{order.customer.country}</p>
-                          )}
-                        </div>
-                      </div>
-                      <Separator />
-                    </>
-                  )}
-
                   {/* Total */}
                   <div className="flex justify-between items-center">
-                    <span className="font-semibold text-lg">Total del Pedido</span>
+                    <span className="font-semibold">{t.common.total}</span>
                     <span className="font-semibold text-lg">
-                      {formatCurrency(order.total || 0)}
+                      {formatCurrency(order.total)}
                     </span>
                   </div>
                 </div>

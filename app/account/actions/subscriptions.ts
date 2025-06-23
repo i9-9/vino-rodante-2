@@ -197,6 +197,48 @@ export async function getAllSubscriptionPlans() {
   }
 }
 
+export async function uploadPlanImage(file: File) {
+  try {
+    const supabase = await createClient()
+    
+    // Verificar admin
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false, error: 'No autorizado' }
+    
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+    
+    if (!customer?.is_admin) {
+      return { success: false, error: 'Permisos insuficientes' }
+    }
+
+    // Generar un nombre único para el archivo
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
+    const filePath = `subscription-plans/${fileName}`
+
+    // Subir el archivo
+    const { data, error } = await supabase.storage
+      .from('public')
+      .upload(filePath, file)
+
+    if (error) throw error
+
+    // Obtener la URL pública
+    const { data: { publicUrl } } = supabase.storage
+      .from('public')
+      .getPublicUrl(filePath)
+
+    return { success: true, url: publicUrl }
+  } catch (error) {
+    console.error('Error uploading image:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Error al subir la imagen' }
+  }
+}
+
 export async function updateSubscriptionPlan(planId: string, data: Partial<SubscriptionPlan>) {
   try {
     const supabase = await createClient()
@@ -213,28 +255,42 @@ export async function updateSubscriptionPlan(planId: string, data: Partial<Subsc
     if (!customer?.is_admin) {
       return { success: false, error: 'Permisos insuficientes' }
     }
-    
-    // Validar URLs de imágenes
-    if (data.image && !isValidUrl(data.image)) {
-      return { success: false, error: 'La URL de la imagen principal no es válida' }
+
+    // Obtener el plan actual para no perder datos
+    const { data: currentPlan, error: fetchError } = await supabase
+      .from('subscription_plans')
+      .select('*')
+      .eq('id', planId)
+      .single()
+
+    if (fetchError) {
+      console.error('Error al obtener el plan actual:', fetchError)
+      throw new Error('Error al obtener el plan actual')
     }
-    if (data.banner_image && !isValidUrl(data.banner_image)) {
-      return { success: false, error: 'La URL del banner no es válida' }
-    }
-    
-    // Preparar datos para actualización
+
+    // Preparar datos para actualización, manteniendo valores existentes si no se proporcionan nuevos
     const updateData = {
-      name: data.name,
-      club: data.club,
-      description: data.description,
-      image: data.image,
-      banner_image: data.banner_image,
-      price_monthly: data.price_monthly,
-      price_quarterly: data.price_quarterly,
-      price_weekly: Math.round(data.price_weekly || 0), // Asegurar que sea entero
-      price_biweekly: Math.round(data.price_biweekly || 0), // Asegurar que sea entero
-      is_active: data.is_active,
-      updated_at: new Date().toISOString()
+      name: data.name || currentPlan.name,
+      club: data.club || currentPlan.club,
+      description: data.description ?? currentPlan.description,
+      image: data.image || currentPlan.image, // Mantener imagen existente si no se proporciona una nueva
+      banner_image: data.banner_image === '' ? null : (data.banner_image || currentPlan.banner_image), // Permitir eliminar el banner
+      price_monthly: data.price_monthly ?? currentPlan.price_monthly,
+      price_quarterly: data.price_quarterly ?? currentPlan.price_quarterly,
+      price_weekly: data.price_weekly ?? currentPlan.price_weekly,
+      price_biweekly: data.price_biweekly ?? currentPlan.price_biweekly,
+      is_active: typeof data.is_active === 'boolean' ? data.is_active : currentPlan.is_active,
+      updated_at: new Date().toISOString(),
+      // Mantener otros campos que no deberían cambiar
+      slug: currentPlan.slug,
+      tagline: currentPlan.tagline,
+      features: currentPlan.features,
+      discount_percentage: currentPlan.discount_percentage,
+      status: currentPlan.status,
+      display_order: currentPlan.display_order,
+      is_visible: currentPlan.is_visible,
+      type: currentPlan.type,
+      wines_per_delivery: currentPlan.wines_per_delivery
     }
     
     // Actualizar plan
