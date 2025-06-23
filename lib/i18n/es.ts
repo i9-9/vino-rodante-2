@@ -276,7 +276,7 @@ export const es = {
   },
   account: {
     title: "Mi Cuenta",
-    subtitle: "Gestiona tu perfil, pedidos y direcciones",
+    subtitle: "Gestiona tu perfil, pedidos y suscripciones",
     profile: "Perfil",
     orders: "Pedidos",
     addresses: "Direcciones",
@@ -284,68 +284,22 @@ export const es = {
     adminOrders: "Pedidos (Admin)",
     adminProducts: "Productos (Admin)",
     adminSubscriptions: "Suscripciones (Admin)",
+    adminPlans: "Clubes/Planes (Admin)",
     name: "Nombre",
     email: "Email",
-    memberSince: "Miembro desde",
-    noName: "Sin nombre",
-    noOrders: "No tienes pedidos",
-    noAddresses: "No tienes direcciones guardadas",
-    noSubscriptions: "No tienes suscripciones activas",
-    addAddress: "Agregar dirección",
-    defaultAddress: "Dirección predeterminada",
-    setAsDefault: "Establecer como predeterminada",
-    deleteAddress: "¿Estás seguro de que quieres eliminar esta dirección?",
-    addressAdded: "Dirección agregada correctamente",
-    addressDeleted: "Dirección eliminada correctamente",
-    addressUpdated: "Dirección actualizada correctamente",
-    profileUpdated: "Perfil actualizado correctamente",
-    profileInfo: "Información del perfil",
-    updateProfile: "Actualizar perfil",
-    emailCannotChange: "El email no se puede cambiar",
-    enterName: "Ingresa tu nombre",
-    lastSignIn: "Último inicio de sesión",
-    addNewAddress: "Agregar dirección",
-    editAddress: "Editar dirección",
-    addressSetAsDefault: "Dirección establecida como predeterminada",
-    confirmDeleteAddress: "¿Estás seguro de que quieres eliminar esta dirección?",
-    addFirstAddress: "Agrega tu primera dirección",
+    phone: "Teléfono",
+    address: "Dirección",
+    city: "Ciudad",
+    state: "Provincia",
+    postalCode: "Código Postal",
+    country: "País",
     errors: {
-      noChanges: "No se han realizado cambios",
-      unauthorized: "No estás autorizado para realizar esta acción",
-      validationErrors: "Por favor corrige los errores en el formulario",
-      cannotDeleteOnlyAddress: "No puedes eliminar tu única dirección",
-      cannotDeleteDefaultAddress: "No puedes eliminar la dirección predeterminada"
-    },
-    activeSubscriptions: "Tus Suscripciones Activas",
-    availablePlans: "Planes Disponibles",
-    subscriptionDetails: "Detalles de la Suscripción",
-    frequency: "Frecuencia",
-    nextDelivery: "Próxima Entrega",
-    price: "Precio",
-    winesPerDelivery: "Vinos por Entrega",
-    included: "Incluye",
-    pauseSubscription: "Pausar Suscripción",
-    cancelSubscription: "Cancelar Suscripción",
-    resumeSubscription: "Reanudar Suscripción",
-    subscriptionStatus: {
-      active: "Activa",
-      paused: "Pausada",
-      cancelled: "Cancelada",
-      expired: "Expirada"
-    },
-    subscriptionFrequency: {
-      weekly: "Semanal",
-      biweekly: "Quincenal",
-      monthly: "Mensual"
-    },
-    subscriptionPaused: "Suscripción pausada exitosamente",
-    subscriptionCancelled: "Suscripción cancelada exitosamente",
-    subscriptionCreated: "¡Te has suscrito exitosamente!",
-    subscribe: "Suscribirse",
-    weekly: "Semanal",
-    biweekly: "Quincenal",
-    monthly: "Mensual",
-    pricing: "Precios"
+      updateError: "Error al actualizar",
+      createError: "Error al crear",
+      saveError: "Error al guardar",
+      unknownError: "Error desconocido",
+      signOutError: "Error al cerrar sesión"
+    }
   },
   newsletter: {
     title: "Suscribite a nuestro boletín",
@@ -518,7 +472,35 @@ export const es = {
     tinto: "Club del Tinto",
     blanco: "Club del Blanco",
     mixto: "Club Mixto",
-    naranjo: "Club del Naranjo"
+    naranjo: "Club del Naranjo",
+    status: {
+      active: 'Activa',
+      paused: 'Pausada',
+      cancelled: 'Cancelada',
+      expired: 'Expirada'
+    },
+    frequency: {
+      weekly: 'Semanal',
+      biweekly: 'Quincenal',
+      monthly: 'Mensual'
+    },
+    actions: {
+      pause: 'Pausar',
+      reactivate: 'Reactivar',
+      cancel: 'Cancelar',
+      changeFrequency: 'Cambiar Frecuencia'
+    },
+    actionSuccess: {
+      pause: 'Suscripción pausada exitosamente',
+      reactivate: 'Suscripción reactivada exitosamente',
+      cancel: 'Suscripción cancelada exitosamente',
+      'change-plan': 'Plan actualizado exitosamente'
+    },
+    nextDelivery: 'Próxima entrega',
+    noDeliveryScheduled: 'Sin entregas programadas',
+    month: 'mes',
+    noSubscriptions: 'No tienes suscripciones activas',
+    exploreAvailable: 'Explora nuestros planes disponibles'
   },
   orders: {
     title: "Pedidos",
@@ -585,8 +567,10 @@ export const es = {
     monthly: "Mensual"
   },
   errors: {
-    updateError: "Error al actualizar la suscripción",
-    createError: "Error al crear la suscripción",
-    saveError: "Error al guardar los cambios"
+    updateError: "Error al actualizar",
+    createError: "Error al crear",
+    saveError: "Error al guardar",
+    unknownError: "Error desconocido",
+    signOutError: "Error al cerrar sesión"
   }
-}
+} as const

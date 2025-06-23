@@ -10,7 +10,7 @@ import { getAllProducts } from './actions/products'
 import { getUserSubscriptions, getAllSubscriptionPlans, getAvailablePlans } from './actions/subscriptions'
 import type { Profile } from '@/lib/types'
 import type { Database } from '@/lib/database.types'
-import type { Order, OrderStatus, Product, Subscription, Address } from './types'
+import type { Order, OrderStatus, Product, Subscription, Address, Customer, SubscriptionPlan } from './types'
 
 type DbOrder = Database['public']['Tables']['orders']['Row'] & {
   customer?: {
@@ -98,20 +98,22 @@ export default async function AccountPage() {
   // Get subscription plans
   const { data: availablePlans } = await supabase
     .from('subscription_plans')
-    .select('*, features(*)')
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
+    .select('*')
+    .order('display_order', { ascending: true })
 
-  // Ensure features is never null
-  const plansWithFeatures = (availablePlans || []).map(plan => ({
-    ...plan,
-    features: plan.features || []
-  }))
+  // Ensure features is never null and filter active plans for non-admin users
+  const plansWithFeatures = (availablePlans || [])
+    .filter(plan => isAdmin || plan.is_active)
+    .map(plan => ({
+      ...plan,
+      features: plan.features || []
+    }))
 
   // Admin data
-  let adminOrders = []
-  let adminProducts = []
-  let adminSubscriptions = []
+  let adminOrders: Order[] = []
+  let adminProducts: Product[] = []
+  let adminSubscriptions: UserSubscription[] = []
+  let adminUsers: Customer[] = []
 
   if (isAdmin) {
     // Get all orders for admin
@@ -138,13 +140,25 @@ export default async function AccountPage() {
 
     // Get all subscriptions for admin
     const { data: allSubscriptions } = await supabase
-      .from('subscription_plans')
-      .select('*, features(*)')
+      .from('user_subscriptions')
+      .select(`
+        *,
+        subscription_plan:subscription_plans(*),
+        customer:customers(
+          id,
+          name,
+          email
+        )
+      `)
       .order('created_at', { ascending: false })
-    adminSubscriptions = (allSubscriptions || []).map(plan => ({
-      ...plan,
-      features: plan.features || []
-    }))
+    adminSubscriptions = allSubscriptions || []
+
+    // Get all users for admin
+    const { data: allUsers } = await supabase
+      .from('customers')
+      .select('id, name, email, is_admin, created_at')
+      .order('name', { ascending: true })
+    adminUsers = allUsers || []
   }
 
   return (
@@ -160,6 +174,7 @@ export default async function AccountPage() {
       adminOrders={adminOrders}
       adminProducts={adminProducts}
       adminSubscriptions={adminSubscriptions}
+      adminUsers={adminUsers}
     />
   )
 }

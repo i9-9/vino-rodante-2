@@ -33,8 +33,20 @@ import {
   updateSubscriptionPlan,
   deleteSubscriptionPlan
 } from './actions/subscriptions'
-import type { SubscriptionPlan, WineType } from './types'
+import type { SubscriptionPlan, WineType, UserSubscription } from './types'
 import type { Translations } from '@/lib/i18n/types'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { MoreVertical, Pause, Play, X, RefreshCw } from 'lucide-react'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { formatCurrency } from '@/lib/utils'
+import { SubscriptionActionModal } from '@/components/ui/subscription-action-modal'
+import {
+  pauseSubscription,
+  reactivateSubscription,
+  cancelSubscription,
+  changeSubscriptionPlan
+} from './actions/subscriptions'
 
 const subscriptionPlanSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
@@ -347,159 +359,159 @@ function SubscriptionPlanForm({ plan, onSubmit, onCancel, t }: SubscriptionPlanF
 }
 
 interface AdminSubscriptionsTabProps {
-  plans: SubscriptionPlan[]
+  subscriptions: UserSubscription[]
+  availablePlans: SubscriptionPlan[]
   t: Translations
 }
 
-export default function AdminSubscriptionsTab({ plans, t }: AdminSubscriptionsTabProps) {
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null)
+const ACTION_SUCCESS_MESSAGES = {
+  pause: 'Suscripción pausada exitosamente',
+  cancel: 'Suscripción cancelada exitosamente',
+  reactivate: 'Suscripción reactivada exitosamente',
+  'change-plan': 'Plan actualizado exitosamente'
+} as const
 
-  const handleCreatePlan = async (data: SubscriptionPlanFormData) => {
-    const formData = new FormData()
-    Object.entries(data).forEach(([key, value]) => {
-      if (key === 'features') {
-        formData.append(key, JSON.stringify(value))
-      } else {
-        formData.append(key, String(value))
+export function AdminSubscriptionsTab({ subscriptions, availablePlans, t }: AdminSubscriptionsTabProps) {
+  const [selectedSubscription, setSelectedSubscription] = useState<UserSubscription | null>(null)
+  const [modalAction, setModalAction] = useState<'pause' | 'cancel' | 'reactivate' | 'change-plan' | null>(null)
+
+  const handleAction = async (reason?: string, newPlan?: string) => {
+    if (!selectedSubscription || !modalAction) return
+
+    try {
+      let result
+      switch (modalAction) {
+        case 'pause':
+          result = await pauseSubscription(selectedSubscription.id)
+          break
+        case 'reactivate':
+          result = await reactivateSubscription(selectedSubscription.id)
+          break
+        case 'cancel':
+          result = await cancelSubscription(selectedSubscription.id)
+          break
+        case 'change-plan':
+          if (newPlan) {
+            result = await changeSubscriptionPlan(selectedSubscription.id, newPlan)
+          }
+          break
       }
-    })
 
-    const result = await createSubscriptionPlan(formData)
-    if (result.error) {
-      throw new Error(result.error)
-    }
-    toast.success(t.admin.planCreated)
-  }
-
-  const handleUpdatePlan = async (data: SubscriptionPlanFormData) => {
-    if (!editingPlan) return
-
-    const formData = new FormData()
-    Object.entries(data).forEach(([key, value]) => {
-      if (key === 'features') {
-        formData.append(key, JSON.stringify(value))
-      } else {
-        formData.append(key, String(value))
+      if (result?.error) {
+        throw new Error(result.error)
       }
-    })
 
-    const result = await updateSubscriptionPlan(editingPlan.id, formData)
-    if (result.error) {
-      throw new Error(result.error)
+      toast.success(ACTION_SUCCESS_MESSAGES[modalAction])
+    } catch (error) {
+      console.error('Error:', error)
+      toast.error(error instanceof Error ? error.message : t.errors.unknownError)
     }
-    toast.success(t.admin.planUpdated)
   }
 
-  const handleDeletePlan = async (planId: string) => {
-    if (!confirm(t.admin.confirmDelete)) return
-
-    const result = await deleteSubscriptionPlan(planId)
-    if (result.error) {
-      toast.error(result.error)
-      return
-    }
-    toast.success(t.admin.planDeleted)
-  }
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('es-CL', {
-      style: 'currency',
-      currency: 'CLP'
-    }).format(price / 100)
+  const openModal = (action: typeof modalAction, subscription: UserSubscription) => {
+    setSelectedSubscription(subscription)
+    setModalAction(action)
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">{t.admin.subscriptionPlans}</h2>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
-          {t.admin.createPlan}
-        </Button>
+    <>
+      <div className="rounded-md border">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b bg-muted/50">
+              <th className="p-4 text-left font-medium">Usuario</th>
+              <th className="p-4 text-left font-medium">Plan</th>
+              <th className="p-4 text-left font-medium">Estado</th>
+              <th className="p-4 text-left font-medium">Frecuencia</th>
+              <th className="p-4 text-left font-medium">Próxima entrega</th>
+              <th className="p-4 text-left font-medium">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {subscriptions.map((subscription) => (
+              <tr key={subscription.id} className="border-b">
+                <td className="p-4">
+                  <div>
+                    <p className="font-medium">{subscription.customer.name}</p>
+                    <p className="text-sm text-muted-foreground">{subscription.customer.email}</p>
+                  </div>
+                </td>
+                <td className="p-4">
+                  <div>
+                    <p className="font-medium">{subscription.subscription_plan.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatCurrency(subscription.subscription_plan.price_monthly)} / mes
+                    </p>
+                  </div>
+                </td>
+                <td className="p-4">
+                  <div className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold">
+                    {t.subscriptions.status[subscription.status]}
+                  </div>
+                </td>
+                <td className="p-4">
+                  {t.subscriptions.frequency[subscription.frequency]}
+                </td>
+                <td className="p-4">
+                  {subscription.next_delivery_date
+                    ? format(new Date(subscription.next_delivery_date), "dd 'de' MMMM", { locale: es })
+                    : '-'}
+                </td>
+                <td className="p-4">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {subscription.status === 'active' && (
+                        <>
+                          <DropdownMenuItem onClick={() => openModal('pause', subscription)}>
+                            <Pause className="h-4 w-4 mr-2" />
+                            Pausar suscripción
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openModal('change-plan', subscription)}>
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Cambiar plan
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      {subscription.status === 'paused' && (
+                        <DropdownMenuItem onClick={() => openModal('reactivate', subscription)}>
+                          <Play className="h-4 w-4 mr-2" />
+                          Reactivar suscripción
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem 
+                        onClick={() => openModal('cancel', subscription)}
+                        className="text-red-600"
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Cancelar suscripción
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {plans.map(plan => (
-          <Card key={plan.id} className="p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="font-semibold">{plan.name}</h3>
-                <p className="text-sm text-muted-foreground">{plan.description}</p>
-              </div>
-              <Badge variant={plan.is_active ? 'default' : 'secondary'}>
-                {plan.is_active ? t.admin.active : t.admin.inactive}
-              </Badge>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm font-medium">{t.admin.pricing}</p>
-                <div className="mt-1 space-y-1">
-                  <p className="text-sm">{t.admin.weekly}: {formatPrice(plan.price_weekly)}</p>
-                  <p className="text-sm">{t.admin.biweekly}: {formatPrice(plan.price_biweekly)}</p>
-                  <p className="text-sm">{t.admin.monthly}: {formatPrice(plan.price_monthly)}</p>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium">{t.admin.details}</p>
-                <div className="mt-1 space-y-1">
-                  <p className="text-sm">{t.admin.type}: {t.admin.wineTypes[plan.type as WineType]}</p>
-                  <p className="text-sm">{t.admin.winesPerDelivery}: {plan.wines_per_delivery}</p>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setEditingPlan(plan)}
-                >
-                  {t.common.edit}
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleDeletePlan(plan.id)}
-                >
-                  {t.common.delete}
-                </Button>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      <Dialog
-        open={isCreateModalOpen || !!editingPlan}
-        onOpenChange={(open) => {
-          if (!open) {
-            setIsCreateModalOpen(false)
-            setEditingPlan(null)
-          }
-        }}
-      >
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {editingPlan ? t.admin.editPlan : t.admin.createPlan}
-            </DialogTitle>
-            <DialogDescription>
-              {editingPlan ? t.admin.editPlanDesc : t.admin.createPlanDesc}
-            </DialogDescription>
-          </DialogHeader>
-
-          <SubscriptionPlanForm
-            plan={editingPlan || undefined}
-            onSubmit={editingPlan ? handleUpdatePlan : handleCreatePlan}
-            onCancel={() => {
-              setIsCreateModalOpen(false)
-              setEditingPlan(null)
-            }}
-            t={t}
-          />
-        </DialogContent>
-      </Dialog>
-    </div>
+      {selectedSubscription && modalAction && (
+        <SubscriptionActionModal
+          isOpen={true}
+          onClose={() => {
+            setSelectedSubscription(null)
+            setModalAction(null)
+          }}
+          action={modalAction}
+          subscription={selectedSubscription}
+          availablePlans={availablePlans}
+          onConfirm={handleAction}
+        />
+      )}
+    </>
   )
 } 

@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import Spinner from '@/components/ui/Spinner'
 import type { Profile } from '@/lib/types'
-import type { Product, Subscription, Order, Address } from './types'
+import type { Product, Subscription, Order, Address, UserSubscription, SubscriptionPlan } from './types'
 import type { Translations } from '@/lib/i18n/types'
 
 // Import tab components
@@ -21,21 +21,23 @@ import { AddressesTab } from './components/AddressesTab'
 import { SubscriptionsTab } from './components/SubscriptionsTab'
 import AdminOrdersTab from './admin-orders-tab'
 import AdminProductsTab from './admin-products-tab'
-import AdminSubscriptionsTab from './admin-subscriptions-tab'
+import { AdminSubscriptionsTab } from './admin-subscriptions-tab'
+import { AdminPlansTab } from './admin-plans-tab'
 
 interface AccountClientProps {
   user: User
   profile: Profile
   orders: Order[]
   addresses: Address[]
-  userSubscriptions: any[]
-  availablePlans: any[]
+  userSubscriptions: UserSubscription[]
+  availablePlans: SubscriptionPlan[]
   userRole: 'admin' | 'user'
   t: Translations
   // Admin data
   adminOrders?: Order[]
-  adminSubscriptions?: Subscription[]
+  adminSubscriptions?: UserSubscription[]
   adminProducts?: Product[]
+  adminUsers?: Customer[]
 }
 
 export default function AccountClientNew({
@@ -51,6 +53,7 @@ export default function AccountClientNew({
   adminOrders = [],
   adminSubscriptions = [],
   adminProducts = [],
+  adminUsers = []
 }: AccountClientProps) {
   const router = useRouter()
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false)
@@ -63,7 +66,7 @@ export default function AccountClientNew({
   const handleSignOut = async () => {
     const result = await signOut()
     if (result?.error) {
-      toast.error(t.errors.signOutError(result.error))
+      toast.error(t.errors.signOutError)
     }
   }
 
@@ -99,6 +102,7 @@ export default function AccountClientNew({
                   <TabsTrigger value="admin-orders">{t.account.adminOrders}</TabsTrigger>
                   <TabsTrigger value="admin-products">{t.account.adminProducts}</TabsTrigger>
                   <TabsTrigger value="admin-subscriptions">{t.account.adminSubscriptions}</TabsTrigger>
+                  <TabsTrigger value="admin-plans">{t.account.adminPlans}</TabsTrigger>
                 </>
               )}
             </TabsList>
@@ -151,11 +155,18 @@ export default function AccountClientNew({
                 <TabsContent value="admin-subscriptions" className="space-y-4">
                   <div className="grid gap-4">
                     <AdminSubscriptionsTab 
-                      plans={adminSubscriptions} 
-                      onEdit={(subscription: Subscription) => {
-                        setSelectedSubscription(subscription)
-                        setIsSubscriptionModalOpen(true)
-                      }}
+                      subscriptions={adminSubscriptions} 
+                      availablePlans={availablePlans}
+                      t={t} 
+                    />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="admin-plans" className="space-y-4">
+                  <div className="grid gap-4">
+                    <AdminPlansTab 
+                      plans={availablePlans} 
+                      users={adminUsers}
                       t={t} 
                     />
                   </div>

@@ -10,6 +10,7 @@ import type {
   SubscriptionFrequency,
   WineType 
 } from '../types'
+import { redirect } from 'next/navigation'
 
 const subscriptionPlanSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
@@ -196,104 +197,112 @@ export async function getAllSubscriptionPlans() {
   }
 }
 
-export async function createSubscriptionPlan(formData: FormData) {
+export async function updateSubscriptionPlan(planId: string, data: Partial<SubscriptionPlan>) {
   try {
-    await verifyAdmin()
-
-    const planData = {
-      name: formData.get('name'),
-      slug: formData.get('slug'),
-      description: formData.get('description'),
-      tagline: formData.get('tagline'),
-      type: formData.get('type'),
-      image: formData.get('image'),
-      banner_image: formData.get('banner_image'),
-      features: JSON.parse(formData.get('features') as string),
-      price_weekly: parseInt(formData.get('price_weekly') as string),
-      price_biweekly: parseInt(formData.get('price_biweekly') as string),
-      price_monthly: parseInt(formData.get('price_monthly') as string),
-      discount_percentage: parseInt(formData.get('discount_percentage') as string),
-      wines_per_delivery: parseInt(formData.get('wines_per_delivery') as string),
-      display_order: parseInt(formData.get('display_order') as string),
-      is_visible: formData.get('is_visible') === 'true',
-      is_active: formData.get('is_active') === 'true'
-    }
-
-    const validatedData = subscriptionPlanSchema.parse(planData)
-    
     const supabase = await createClient()
-    const { error } = await supabase
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false, error: 'No autorizado' }
+    
+    // Verificar admin
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+    
+    if (!customer?.is_admin) {
+      return { success: false, error: 'Permisos insuficientes' }
+    }
+    
+    // Actualizar plan
+    const { data: updatedPlan, error } = await supabase
       .from('subscription_plans')
-      .insert(validatedData)
-
+      .update({
+        ...data,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', planId)
+      .select()
+      .single()
+    
     if (error) throw error
-
+    
     revalidatePath('/account')
-    return { success: true }
+    return { success: true, data: updatedPlan }
   } catch (error) {
-    console.error('Error al crear plan:', error)
-    return { error: error instanceof Error ? error.message : 'Error desconocido' }
+    console.error('Error updating plan:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Error desconocido' }
   }
 }
 
-export async function updateSubscriptionPlan(planId: string, formData: FormData) {
+export async function createSubscriptionPlan(data: Omit<SubscriptionPlan, 'id' | 'created_at' | 'updated_at'>) {
   try {
-    await verifyAdmin()
-
-    const planData = {
-      name: formData.get('name'),
-      slug: formData.get('slug'),
-      description: formData.get('description'),
-      tagline: formData.get('tagline'),
-      type: formData.get('type'),
-      image: formData.get('image'),
-      banner_image: formData.get('banner_image'),
-      features: JSON.parse(formData.get('features') as string),
-      price_weekly: parseInt(formData.get('price_weekly') as string),
-      price_biweekly: parseInt(formData.get('price_biweekly') as string),
-      price_monthly: parseInt(formData.get('price_monthly') as string),
-      discount_percentage: parseInt(formData.get('discount_percentage') as string),
-      wines_per_delivery: parseInt(formData.get('wines_per_delivery') as string),
-      display_order: parseInt(formData.get('display_order') as string),
-      is_visible: formData.get('is_visible') === 'true',
-      is_active: formData.get('is_active') === 'true'
-    }
-
-    const validatedData = subscriptionPlanSchema.parse(planData)
-    
     const supabase = await createClient()
-    const { error } = await supabase
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false, error: 'No autorizado' }
+    
+    // Verificar admin
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+    
+    if (!customer?.is_admin) {
+      return { success: false, error: 'Permisos insuficientes' }
+    }
+    
+    // Crear plan
+    const { data: newPlan, error } = await supabase
       .from('subscription_plans')
-      .update(validatedData)
-      .eq('id', planId)
-
+      .insert({
+        ...data,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single()
+    
     if (error) throw error
-
+    
     revalidatePath('/account')
-    return { success: true }
+    return { success: true, data: newPlan }
   } catch (error) {
-    console.error('Error al actualizar plan:', error)
-    return { error: error instanceof Error ? error.message : 'Error desconocido' }
+    console.error('Error creating plan:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Error desconocido' }
   }
 }
 
 export async function deleteSubscriptionPlan(planId: string) {
   try {
-    await verifyAdmin()
-    
     const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false, error: 'No autorizado' }
+    
+    // Verificar admin
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+    
+    if (!customer?.is_admin) {
+      return { success: false, error: 'Permisos insuficientes' }
+    }
+    
+    // Eliminar plan
     const { error } = await supabase
       .from('subscription_plans')
       .delete()
       .eq('id', planId)
-
+    
     if (error) throw error
-
+    
     revalidatePath('/account')
     return { success: true }
   } catch (error) {
-    console.error('Error al eliminar plan:', error)
-    return { error: error instanceof Error ? error.message : 'Error desconocido' }
+    console.error('Error deleting plan:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Error desconocido' }
   }
 }
 
@@ -367,5 +376,403 @@ export async function getSubscriptionPlans() {
   } catch (error) {
     console.error('Error al obtener planes:', error)
     return { error: error instanceof Error ? error.message : 'Error desconocido' }
+  }
+}
+
+// Helper function to verify permissions
+async function verifySubscriptionAccess(subscriptionId: string) {
+  const supabase = await createClient()
+  
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError || !user) {
+    throw new Error('No autorizado')
+  }
+
+  // Get subscription and check ownership
+  const { data: subscription, error: subError } = await supabase
+    .from('user_subscriptions')
+    .select('user_id')
+    .eq('id', subscriptionId)
+    .single()
+
+  if (subError || !subscription) {
+    throw new Error('Suscripción no encontrada')
+  }
+
+  // Check if user is owner or admin
+  const { data: customer } = await supabase
+    .from('customers')
+    .select('is_admin')
+    .eq('id', user.id)
+    .single()
+
+  if (subscription.user_id !== user.id && !customer?.is_admin) {
+    throw new Error('No tienes permiso para modificar esta suscripción')
+  }
+
+  return { userId: user.id, isAdmin: customer?.is_admin }
+}
+
+// Helper function to calculate next delivery date
+function calculateNextDeliveryDate(
+  frequency: SubscriptionFrequency,
+  fromDate: Date = new Date()
+): Date {
+  const date = new Date(fromDate)
+  
+  switch (frequency) {
+    case 'weekly':
+      date.setDate(date.getDate() + 7)
+      break
+    case 'biweekly':
+      date.setDate(date.getDate() + 14)
+      break
+    case 'monthly':
+      date.setMonth(date.getMonth() + 1)
+      break
+    default:
+      throw new Error('Frecuencia inválida')
+  }
+
+  // Avoid weekends
+  if (date.getDay() === 0) { // Sunday
+    date.setDate(date.getDate() + 1)
+  } else if (date.getDay() === 6) { // Saturday
+    date.setDate(date.getDate() + 2)
+  }
+
+  return date
+}
+
+export async function pauseSubscription(subscriptionId: string) {
+  try {
+    await verifySubscriptionAccess(subscriptionId)
+    const supabase = await createClient()
+
+    // Verify subscription is active
+    const { data: subscription } = await supabase
+      .from('user_subscriptions')
+      .select('status')
+      .eq('id', subscriptionId)
+      .single()
+
+    if (!subscription || subscription.status !== 'active') {
+      throw new Error('Solo se pueden pausar suscripciones activas')
+    }
+
+    // Update subscription status
+    const { error } = await supabase
+      .from('user_subscriptions')
+      .update({ 
+        status: 'paused',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', subscriptionId)
+
+    if (error) throw error
+
+    revalidatePath('/account')
+    return { success: true }
+  } catch (error) {
+    console.error('Error al pausar suscripción:', error)
+    return { error: error instanceof Error ? error.message : 'Error desconocido' }
+  }
+}
+
+export async function reactivateSubscription(subscriptionId: string) {
+  try {
+    await verifySubscriptionAccess(subscriptionId)
+    const supabase = await createClient()
+
+    // Verify subscription is paused
+    const { data: subscription } = await supabase
+      .from('user_subscriptions')
+      .select('status, frequency')
+      .eq('id', subscriptionId)
+      .single()
+
+    if (!subscription || subscription.status !== 'paused') {
+      throw new Error('Solo se pueden reactivar suscripciones pausadas')
+    }
+
+    // Calculate new delivery date
+    const nextDeliveryDate = calculateNextDeliveryDate(
+      subscription.frequency as SubscriptionFrequency
+    )
+
+    // Update subscription status
+    const { error } = await supabase
+      .from('user_subscriptions')
+      .update({ 
+        status: 'active',
+        current_period_end: nextDeliveryDate.toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', subscriptionId)
+
+    if (error) throw error
+
+    revalidatePath('/account')
+    return { success: true }
+  } catch (error) {
+    console.error('Error al reactivar suscripción:', error)
+    return { error: error instanceof Error ? error.message : 'Error desconocido' }
+  }
+}
+
+export async function cancelSubscription(subscriptionId: string) {
+  try {
+    await verifySubscriptionAccess(subscriptionId)
+    const supabase = await createClient()
+
+    // Verify subscription is not already cancelled
+    const { data: subscription } = await supabase
+      .from('user_subscriptions')
+      .select('status')
+      .eq('id', subscriptionId)
+      .single()
+
+    if (!subscription || subscription.status === 'cancelled') {
+      throw new Error('Esta suscripción ya está cancelada')
+    }
+
+    // Update subscription status
+    const { error } = await supabase
+      .from('user_subscriptions')
+      .update({ 
+        status: 'cancelled',
+        end_date: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', subscriptionId)
+
+    if (error) throw error
+
+    revalidatePath('/account')
+    return { success: true }
+  } catch (error) {
+    console.error('Error al cancelar suscripción:', error)
+    return { error: error instanceof Error ? error.message : 'Error desconocido' }
+  }
+}
+
+export async function changeSubscriptionPlan(
+  subscriptionId: string, 
+  newPlanId: string,
+  newFrequency?: SubscriptionFrequency
+) {
+  try {
+    const { isAdmin } = await verifySubscriptionAccess(subscriptionId)
+    const supabase = await createClient()
+
+    // Verify new plan exists and is active
+    const { data: newPlan } = await supabase
+      .from('subscription_plans')
+      .select('id, is_active')
+      .eq('id', newPlanId)
+      .single()
+
+    if (!newPlan || !newPlan.is_active) {
+      throw new Error('Plan no encontrado o inactivo')
+    }
+
+    // Get current subscription
+    const { data: subscription } = await supabase
+      .from('user_subscriptions')
+      .select('status, frequency')
+      .eq('id', subscriptionId)
+      .single()
+
+    if (!subscription || subscription.status === 'cancelled') {
+      throw new Error('No se puede cambiar el plan de una suscripción cancelada')
+    }
+
+    // Calculate new delivery date if frequency changes
+    const frequency = newFrequency || subscription.frequency
+    const nextDeliveryDate = calculateNextDeliveryDate(
+      frequency as SubscriptionFrequency
+    )
+
+    // Update subscription
+    const { error } = await supabase
+      .from('user_subscriptions')
+      .update({ 
+        plan_id: newPlanId,
+        frequency: newFrequency || subscription.frequency,
+        current_period_end: nextDeliveryDate.toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', subscriptionId)
+
+    if (error) throw error
+
+    revalidatePath('/account')
+    return { success: true }
+  } catch (error) {
+    console.error('Error al cambiar plan:', error)
+    return { error: error instanceof Error ? error.message : 'Error desconocido' }
+  }
+}
+
+export async function getSubscriptionHistory(subscriptionId: string) {
+  try {
+    await verifySubscriptionAccess(subscriptionId)
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('user_subscriptions')
+      .select(`
+        id,
+        status,
+        updated_at,
+        plan_id,
+        subscription_plans (
+          name
+        )
+      `)
+      .eq('id', subscriptionId)
+      .order('updated_at', { ascending: false })
+
+    if (error) throw error
+
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error al obtener historial:', error)
+    return { data: null, error: error instanceof Error ? error.message : 'Error desconocido' }
+  }
+}
+
+// Para testing - crear suscripción sin pago
+export async function createFakeSubscription(data: {
+  planId: string
+  frequency: 'weekly' | 'biweekly' | 'monthly'
+  userId?: string // Admin puede crear para cualquier usuario
+}) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) redirect('/auth/sign-in')
+    
+    // Verificar que el plan existe
+    const { data: plan } = await supabase
+      .from('subscription_plans')
+      .select('*')
+      .eq('id', data.planId)
+      .single()
+    
+    if (!plan) return { error: 'Plan no encontrado' }
+    
+    // Usar userId proporcionado (admin) o usuario actual
+    const targetUserId = data.userId || user.id
+    
+    // Calcular fechas
+    const startDate = new Date()
+    const nextDelivery = calculateNextDeliveryDate(data.frequency, startDate)
+    const periodEnd = new Date(nextDelivery)
+    
+    // Crear suscripción fake
+    const { data: subscription, error } = await supabase
+      .from('user_subscriptions')
+      .insert({
+        user_id: targetUserId,
+        plan_id: data.planId,
+        frequency: data.frequency,
+        status: 'active',
+        start_date: startDate.toISOString(),
+        next_delivery_date: nextDelivery.toISOString(),
+        current_period_end: periodEnd.toISOString(),
+        total_paid: 0, // Fake - sin pago real
+        mercadopago_subscription_id: `fake_${Date.now()}` // ID fake
+      })
+      .select()
+      .single()
+    
+    if (error) throw error
+    
+    revalidatePath('/account')
+    return { success: true, subscription }
+  } catch (error) {
+    if (error instanceof Error) {
+      return { error: error.message }
+    }
+    return { error: 'Error desconocido' }
+  }
+}
+
+export async function changeSubscriptionFrequency(
+  subscriptionId: string, 
+  newFrequency: 'weekly' | 'biweekly' | 'monthly'
+) {
+  try {
+    const supabase = await createClient()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (userError || !user) {
+      return { success: false, error: 'No autorizado' }
+    }
+
+    // Verificar que la suscripción existe y pertenece al usuario
+    const { data: subscription, error: findError } = await supabase
+      .from('user_subscriptions')
+      .select(`
+        *,
+        subscription_plan:subscription_plans(*)
+      `)
+      .eq('id', subscriptionId)
+      .single()
+
+    if (findError || !subscription) {
+      return { success: false, error: 'Suscripción no encontrada' }
+    }
+
+    // Verificar permisos
+    const isOwner = subscription.user_id === user.id
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+
+    if (!isOwner && !customer?.is_admin) {
+      return { success: false, error: 'Sin permisos' }
+    }
+
+    // Verificar que está activa
+    if (subscription.status !== 'active') {
+      return { success: false, error: 'Solo se puede cambiar la frecuencia de suscripciones activas' }
+    }
+
+    // Verificar que la nueva frecuencia es diferente
+    if (subscription.frequency === newFrequency) {
+      return { success: false, error: 'La frecuencia seleccionada es la misma actual' }
+    }
+
+    // Calcular nueva fecha de próxima entrega basada en la nueva frecuencia
+    const now = new Date()
+    const nextDeliveryDate = calculateNextDeliveryDate(newFrequency, now)
+
+    // Actualizar suscripción
+    const { data: updated, error: updateError } = await supabase
+      .from('user_subscriptions')
+      .update({
+        frequency: newFrequency,
+        next_delivery_date: nextDeliveryDate.toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', subscriptionId)
+      .select(`
+        *,
+        subscription_plan:subscription_plans(*)
+      `)
+      .single()
+
+    if (updateError) throw updateError
+
+    revalidatePath('/account')
+    return { success: true, data: updated }
+
+  } catch (error) {
+    console.error('Error changing frequency:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Error desconocido' }
   }
 } 

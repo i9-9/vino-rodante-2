@@ -3,7 +3,7 @@ description:
 globs: 
 alwaysApply: true
 ---
- Vino Rodante - Database Schema
+# Vino Rodante - Database Schema
 
 ## Tablas principales
 
@@ -11,72 +11,37 @@ alwaysApply: true
 ```sql
 - id (uuid, PK)
 - club (text)
-- name (text) 
+- name (text)
 - slug (text)
 - description (text)
 - tagline (text)
 - image (text)
 - features (jsonb)
 - price_monthly (numeric)
-- price_quarterly (numeric) 
+- price_quarterly (numeric)
 - discount_percentage (int4)
 - status (text)
 - display_order (int4)
 - is_visible (bool)
+- created_at (timestamptz)
+- updated_at (timestamptz)
 - banner_image (text)
-- type (text) # 'tinto', 'blanco', 'mixto', 'premium'
-- price_weekly (int4) # centavos
-- price_biweekly (int4) # centavos  
+- type (text)
+- price_weekly (int4)
+- price_biweekly (int4)
 - wines_per_delivery (int4)
 - is_active (bool)
+- product_id (uuid)
+- quantity (int4)
+- price (numeric)
+```
+
+### products
+```sql
+- id (uuid, PK)
+- stock (int4)
+- featured (bool)
 - created_at (timestamptz)
-- updated_at (timestamptz)
-user_subscriptions
-sql- id (uuid, PK)
-- user_id (uuid, FK → customers.id)
-- plan_id (uuid, FK → subscription_plans.id)
-- frequency (text) # 'weekly', 'biweekly', 'monthly'
-- status (text) # 'active', 'paused', 'cancelled', 'expired'
-- start_date (timestamptz)
-- end_date (timestamptz)
-- current_period_end (timestamptz)
-- next_delivery_date (timestamptz)
-- mercadopago_subscription_id (text)
-- payment_method_id (text)
-- total_paid (numeric)
-- is_gift (bool)
-- created_at (timestamptz)
-- updated_at (timestamptz)
-subscription_deliveries
-sql- id (uuid, PK)
-- subscription_id (uuid, FK → user_subscriptions.id)
-- delivery_date (timestamptz)
-- status (text) # 'scheduled', 'shipped', 'delivered', 'failed'
-- tracking_number (text)
-- products (jsonb)
-- total_amount (numeric)
-- notes (text)
-- created_at (timestamptz)
-- updated_at (timestamptz)
-customers
-sql- id (uuid, PK)
-- name (text)
-- email (text)
-- is_admin (bool)
-- created_at (timestamptz)
-addresses
-sql- id (uuid, PK)
-- customer_id (uuid, FK → customers.id)
-- line1 (text)
-- line2 (text)
-- city (text)
-- state (text)
-- postal_code (text)
-- country (text)
-- is_default (bool)
-- created_at (timestamptz)
-products
-sql- id (uuid, PK)
 - name (text)
 - slug (text)
 - description (text)
@@ -86,21 +51,73 @@ sql- id (uuid, PK)
 - year (text)
 - region (text)
 - varietal (text)
-- stock (int4)
-- featured (bool)
 - is_visible (bool)
-- created_at (timestamptz)
-orders
-sql- id (uuid, PK)
-- user_id (uuid, FK → customers.id)
-- status (text)
-- total (numeric)
-- created_at (timestamptz)
-RLS Policies Configuradas
+```
 
-Usuarios ven solo sus datos
-Admins verificados con customers.is_admin = true
-Planes públicos para lectura
+### user_subscriptions
+```sql
+- user_id (uuid, FK → customers.id)
+- plan_id (uuid, FK → subscription_plans.id)
+- end_date (timestamptz)
+- current_period_end (timestamptz)
+- id (uuid, PK)
+- start_date (timestamptz)
+- status (text)
+- is_gift (bool)
+- created_at (timestamptz)
+- updated_at (timestamptz)
+- frequency (text)
+- next_delivery_date (timestamptz)
+- mercadopago_subscription_id (text)
+- payment_method_id (text)
+- total_paid (numeric)
+```
+
+### addresses
+```sql
+- customer_id (uuid, FK → customers.id)
+- line1 (text)
+- line2 (text)
+- city (text)
+- state (text)
+- postal_code (text)
+- country (text)
+- id (uuid, PK)
+- is_default (bool)
+- created_at (timestamptz)
+```
+
+### orders
+```sql
+- user_id (uuid, FK → customers.id)
+- total (numeric)
+- id (uuid, PK)
+- status (text)
+- created_at (timestamptz)
+```
+
+### customers
+```sql
+- name (text)
+- email (text)
+- id (uuid, PK)
+- created_at (timestamptz)
+- is_admin (bool)
+```
+
+### newsletter_subscribers
+```sql
+- email (text)
+- id (uuid, PK)
+- status (text)
+- created_at (timestamptz)
+```
+
+## RLS Policies Configuradas
+
+- Usuarios ven solo sus datos
+- Admins verificados con customers.is_admin = true
+- Planes públicos para lectura
 
 
 ## 🎯 **Opción 2: Types centralizados**

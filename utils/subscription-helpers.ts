@@ -5,6 +5,7 @@ import type {
   SubscriptionPlan,
   SubscriptionPricing 
 } from '@/types/subscription';
+import { SubscriptionFrequency as AccountSubscriptionFrequency } from '@/app/account/types'
 
 export function formatPrice(cents: number): string {
   return new Intl.NumberFormat('es-AR', {
@@ -20,18 +21,32 @@ export function formatDate(date: string | Date, formatStr: string = 'PPP'): stri
 
 export function calculateNextDeliveryDate(
   frequency: SubscriptionFrequency,
-  startDate: Date = new Date()
+  fromDate: Date = new Date()
 ): Date {
+  const nextDate = new Date(fromDate)
+  
   switch (frequency) {
     case 'weekly':
-      return addWeeks(startDate, 1);
+      nextDate.setDate(nextDate.getDate() + 7)
+      break
     case 'biweekly':
-      return addWeeks(startDate, 2);
+      nextDate.setDate(nextDate.getDate() + 14)
+      break
     case 'monthly':
-      return addMonths(startDate, 1);
-    default:
-      return startDate;
+      nextDate.setMonth(nextDate.getMonth() + 1)
+      break
   }
+  
+  return nextDate
+}
+
+export const formatFrequency = (frequency: string): string => {
+  const frequencies = {
+    weekly: 'Semanal',
+    biweekly: 'Quincenal',
+    monthly: 'Mensual'
+  }
+  return frequencies[frequency as keyof typeof frequencies] || frequency
 }
 
 export function getFrequencyLabel(frequency: SubscriptionFrequency): string {

@@ -1,3 +1,5 @@
+import type { SubscriptionFrequency, SubscriptionStatus, SubscriptionAction } from '@/app/account/types'
+
 export interface Translations {
   common: {
     search: string
@@ -39,6 +41,7 @@ export interface Translations {
     adminOrders: string
     adminProducts: string
     adminSubscriptions: string
+    adminPlans: string
     name: string
     email: string
     phone: string
@@ -80,12 +83,11 @@ export interface Translations {
     monthly: string
     pricing: string
     errors: {
-      noChanges: string
-      unauthorized: string
-      validationErrors: string
-      cannotDeleteOnlyAddress: string
-      cannotDeleteDefaultAddress: string
-      [key: string]: string
+      updateError: string
+      createError: string
+      saveError: string
+      unknownError: string
+      signOutError: string
     }
     [key: string]: string | { [key: string]: string }
   }
@@ -146,10 +148,29 @@ export interface Translations {
     orderShipping: string
     [key: string]: string
   }
+  subscriptions: {
+    status: Record<SubscriptionStatus, string>
+    frequency: Record<SubscriptionFrequency, string>
+    actions: {
+      pause: string
+      reactivate: string
+      cancel: string
+      changePlan: string
+    }
+    actionSuccess: Record<SubscriptionAction, string>
+    nextDelivery: string
+    noDeliveryScheduled: string
+    price: string
+    month: string
+    noSubscriptions: string
+    exploreAvailable: string
+  }
   errors: {
     updateError: string
     createError: string
     saveError: string
+    unknownError: string
+    signOutError: string
     [key: string]: string
   }
   [key: string]: any

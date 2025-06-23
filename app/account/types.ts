@@ -11,12 +11,8 @@ export interface Customer {
   id: string
   name: string
   email: string
-  phone?: string
-  address?: string
-  city?: string
-  state?: string
-  postal_code?: string
-  country?: string
+  is_admin: boolean
+  created_at: string
 }
 
 export interface Product {
@@ -32,9 +28,9 @@ export interface Product {
 
 export interface Address {
   id: string
-  user_id: string
+  customer_id: string
   line1: string
-  line2?: string | null
+  line2?: string
   city: string
   state: string
   postal_code: string
@@ -43,13 +39,7 @@ export interface Address {
   created_at: string
 }
 
-export type OrderStatus = 
-  | 'pending'           // Pendiente de pago
-  | 'in_preparation'    // En preparación
-  | 'shipped'          // Enviado
-  | 'delivered'        // Entregado
-  | 'cancelled'        // Cancelado
-  | 'refunded'         // Reembolsado
+export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled'
 
 export type PaymentStatus = 
   | 'pending'    // Pendiente
@@ -65,23 +55,25 @@ export interface Order {
   created_at: string
   customer?: Customer
   order_items: OrderItem[]
-  shipping_address?: {
-    line1: string
-    line2?: string | null
-    city: string
-    state: string
-    postal_code: string
-    country: string
-  }
 }
 
 export interface OrderItem {
   id: string
   order_id: string
   product_id: string
+  product_name?: string
   quantity: number
   price: number
-  product: Product
+  products?: {
+    id: string
+    name: string
+    description?: string
+    image?: string
+    price: number
+    varietal?: string
+    year?: number
+    region?: string
+  }
 }
 
 export interface Subscription {
@@ -111,28 +103,40 @@ export type DeliveryStatus = 'scheduled' | 'shipped' | 'delivered' | 'failed'
 export interface SubscriptionPlan {
   id: string
   name: string
-  description: string
-  slug: string
-  type: 'tinto' | 'blanco' | 'mixto' | 'premium'
-  price_weekly: number
-  price_biweekly: number
+  description: string | null
   price_monthly: number
-  wines_per_delivery: number
+  price_biweekly: number
+  price_weekly: number
+  club: string | null
   features: string[]
+  image: string | null
   is_active: boolean
-  is_visible: boolean
   created_at: string
+  updated_at: string
+  type: 'tinto' | 'blanco' | 'mixto' | 'premium'
+  tagline: string | null
+  banner_image: string | null
+  display_order: number | null
+  is_visible: boolean
+  wines_per_delivery: number
 }
 
 export interface UserSubscription {
   id: string
   user_id: string
-  subscription_plan_id: string
-  subscription_plan: SubscriptionPlan
-  frequency: 'weekly' | 'biweekly' | 'monthly'
-  status: 'active' | 'paused' | 'cancelled' | 'expired'
-  next_delivery_date: string
+  plan_id: string
+  status: SubscriptionStatus
+  frequency: SubscriptionFrequency
+  start_date: string
+  end_date: string | null
+  current_period_end: string | null
+  next_delivery_date: string | null
+  mercadopago_subscription_id: string | null
+  payment_method_id: string | null
+  total_paid: number | null
   created_at: string
+  updated_at: string
+  subscription_plan: SubscriptionPlan
 }
 
 export interface SubscriptionDelivery {
@@ -172,4 +176,35 @@ export interface FormState {
   message?: string
   success?: boolean
   loading?: boolean
+}
+
+export type SubscriptionAction = 'pause' | 'cancel' | 'reactivate' | 'change-frequency'
+
+export interface SubscriptionActionModalProps {
+  isOpen: boolean
+  onClose: () => void
+  action: SubscriptionAction
+  subscription: UserSubscription
+  availablePlans?: SubscriptionPlan[]
+  onConfirm: (reason?: string, newPlan?: string) => Promise<void>
+}
+
+export interface SubscriptionPlanFormData {
+  name: string
+  description: string
+  tagline?: string
+  image?: string
+  features: string[]
+  price_monthly: number
+  price_quarterly: number
+  discount_percentage?: number
+  status: string
+  display_order?: number
+  is_visible: boolean
+  banner_image?: string
+  type: 'tinto' | 'blanco' | 'mixto' | 'premium'
+  price_weekly: number
+  price_biweekly: number
+  wines_per_delivery: number
+  is_active: boolean
 } 
