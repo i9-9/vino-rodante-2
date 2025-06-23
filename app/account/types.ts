@@ -13,6 +13,7 @@ export interface Customer {
   email: string
   is_admin: boolean
   created_at: string
+  addresses: Address[]
 }
 
 export interface Product {
@@ -28,15 +29,13 @@ export interface Product {
 
 export interface Address {
   id: string
-  customer_id: string
   line1: string
-  line2?: string
+  line2: string | null
   city: string
   state: string
   postal_code: string
   country: string
   is_default: boolean
-  created_at: string
 }
 
 export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled'
@@ -76,29 +75,15 @@ export interface OrderItem {
   }
 }
 
-export interface Subscription {
+export interface SubscriptionCustomer {
   id: string
   name: string
-  description: string
-  club: 'tinto' | 'blanco' | 'mixto' | 'naranjo'
-  price_monthly: number
-  price_bimonthly: number
-  price_quarterly: number
-  banner_image?: string
-  image?: string
-  tagline?: string
-  features?: any
-  is_visible: boolean
-  created_at: string
+  email: string
+  addresses: Address[]
 }
 
-export type WineType = 'tinto' | 'blanco' | 'mixto' | 'premium'
-
+export type SubscriptionStatus = 'active' | 'paused' | 'cancelled' | 'pending'
 export type SubscriptionFrequency = 'weekly' | 'biweekly' | 'monthly'
-
-export type SubscriptionStatus = 'active' | 'paused' | 'cancelled' | 'expired'
-
-export type DeliveryStatus = 'scheduled' | 'shipped' | 'delivered' | 'failed'
 
 export interface SubscriptionPlan {
   id: string
@@ -107,37 +92,73 @@ export interface SubscriptionPlan {
   price_monthly: number
   price_biweekly: number
   price_weekly: number
-  club: string | null
+  club: string
   features: string[]
   image: string | null
   is_active: boolean
+  type: 'tinto' | 'blanco' | 'mixto' | 'premium'
   created_at: string
   updated_at: string
-  type: 'tinto' | 'blanco' | 'mixto' | 'premium'
-  tagline: string | null
-  banner_image: string | null
-  display_order: number | null
-  is_visible: boolean
-  wines_per_delivery: number
 }
 
 export interface UserSubscription {
   id: string
-  user_id: string
+  customer_id: string
   plan_id: string
-  status: SubscriptionStatus
-  frequency: SubscriptionFrequency
   start_date: string
   end_date: string | null
   current_period_end: string | null
+  status: SubscriptionStatus
+  is_gift: boolean
+  frequency: SubscriptionFrequency
   next_delivery_date: string | null
   mercadopago_subscription_id: string | null
   payment_method_id: string | null
   total_paid: number | null
+  subscription_plan?: SubscriptionPlan
+  customer?: SubscriptionCustomer
+}
+
+export interface SubscriptionDetails {
+  subscription_id: string
+  customer_id: string
+  plan_id: string
+  start_date: string
+  end_date: string | null
+  current_period_end: string | null
+  status: SubscriptionStatus
+  is_gift: boolean
+  frequency: SubscriptionFrequency
+  next_delivery_date: string | null
+  mercadopago_subscription_id: string | null
+  payment_method_id: string | null
+  total_paid: number | null
+  // Plan fields
+  name: string
+  description: string | null
+  price_monthly: number
+  price_biweekly: number
+  price_weekly: number
+  club: string
+  features: string[]
+  image: string | null
+  is_active: boolean
+  type: 'tinto' | 'blanco' | 'mixto' | 'premium'
   created_at: string
   updated_at: string
-  subscription_plan: SubscriptionPlan
+  // User fields
+  user_email: string | null
+  user_name: string | null
 }
+
+export interface SubscriptionAddresses {
+  subscription_id: string
+  addresses: Address[]
+}
+
+export type WineType = 'tinto' | 'blanco' | 'mixto' | 'premium'
+
+export type DeliveryStatus = 'scheduled' | 'shipped' | 'delivered' | 'failed'
 
 export interface SubscriptionDelivery {
   id: string
@@ -207,4 +228,12 @@ export interface SubscriptionPlanFormData {
   price_biweekly: number
   wines_per_delivery: number
   is_active: boolean
+}
+
+export interface AuthUser {
+  id: string
+  email: string
+  raw_user_meta_data: {
+    full_name: string | null
+  }
 } 

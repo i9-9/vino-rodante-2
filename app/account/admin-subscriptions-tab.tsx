@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -10,485 +10,215 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogFooter,
 } from '@/components/ui/dialog'
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Switch } from '@/components/ui/switch'
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { toast } from 'sonner'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import {
-  createSubscriptionPlan,
-  updateSubscriptionPlan,
-  deleteSubscriptionPlan
-} from './actions/subscriptions'
-import type { SubscriptionPlan, WineType, UserSubscription } from './types'
+import { createClient } from '@/utils/supabase/client'
+import type { SubscriptionPlan, UserSubscription, Customer, Address } from './types'
 import type { Translations } from '@/lib/i18n/types'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { MoreVertical, Pause, Play, X, RefreshCw } from 'lucide-react'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
+import { MoreHorizontal } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
-import { SubscriptionActionModal } from '@/components/ui/subscription-action-modal'
-import {
-  pauseSubscription,
-  reactivateSubscription,
-  cancelSubscription,
-  changeSubscriptionPlan
-} from './actions/subscriptions'
-
-const subscriptionPlanSchema = z.object({
-  name: z.string().min(1, 'El nombre es requerido'),
-  slug: z.string().min(1, 'El slug es requerido'),
-  description: z.string().min(1, 'La descripción es requerida'),
-  tagline: z.string().optional(),
-  type: z.enum(['tinto', 'blanco', 'mixto', 'premium'] as const),
-  image: z.string().nullable(),
-  banner_image: z.string().nullable(),
-  features: z.array(z.string()),
-  price_weekly: z.number().int().min(0),
-  price_biweekly: z.number().int().min(0),
-  price_monthly: z.number().int().min(0),
-  discount_percentage: z.number().min(0).max(100).optional(),
-  wines_per_delivery: z.number().int().min(1),
-  display_order: z.number().int().min(0),
-  is_visible: z.boolean().default(true),
-  is_active: z.boolean().default(true)
-})
-
-type SubscriptionPlanFormData = z.infer<typeof subscriptionPlanSchema>
-
-interface SubscriptionPlanFormProps {
-  plan?: SubscriptionPlan
-  onSubmit: (data: SubscriptionPlanFormData) => Promise<void>
-  onCancel: () => void
-  t: Translations
-}
-
-function SubscriptionPlanForm({ plan, onSubmit, onCancel, t }: SubscriptionPlanFormProps) {
-  const form = useForm<SubscriptionPlanFormData>({
-    resolver: zodResolver(subscriptionPlanSchema),
-    defaultValues: plan || {
-      name: '',
-      slug: '',
-      description: '',
-      tagline: '',
-      type: 'tinto',
-      image: null,
-      banner_image: null,
-      features: [],
-      price_weekly: 0,
-      price_biweekly: 0,
-      price_monthly: 0,
-      discount_percentage: 0,
-      wines_per_delivery: 1,
-      display_order: 0,
-      is_visible: true,
-      is_active: true
-    }
-  })
-
-  const [isLoading, setIsLoading] = useState(false)
-  const [features, setFeatures] = useState<string[]>(plan?.features || [])
-  const [newFeature, setNewFeature] = useState('')
-
-  const handleAddFeature = () => {
-    if (newFeature.trim()) {
-      setFeatures([...features, newFeature.trim()])
-      setNewFeature('')
-      form.setValue('features', [...features, newFeature.trim()])
-    }
-  }
-
-  const handleRemoveFeature = (index: number) => {
-    const newFeatures = features.filter((_, i) => i !== index)
-    setFeatures(newFeatures)
-    form.setValue('features', newFeatures)
-  }
-
-  const handleSubmit = async (data: SubscriptionPlanFormData) => {
-    setIsLoading(true)
-    try {
-      await onSubmit(data)
-      onCancel()
-    } catch (error) {
-      console.error('Error al guardar plan:', error)
-      toast.error(t.errors.saveError)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t.admin.planName}</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="slug"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t.admin.planSlug}</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t.admin.planDescription}</FormLabel>
-              <FormControl>
-                <Textarea {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="type"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t.admin.planType}</FormLabel>
-              <FormControl>
-                <select
-                  {...field}
-                  className="w-full p-2 border rounded"
-                >
-                  <option value="tinto">{t.admin.wineTypes.tinto}</option>
-                  <option value="blanco">{t.admin.wineTypes.blanco}</option>
-                  <option value="mixto">{t.admin.wineTypes.mixto}</option>
-                  <option value="premium">{t.admin.wineTypes.premium}</option>
-                </select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-3 gap-4">
-          <FormField
-            control={form.control}
-            name="price_weekly"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t.admin.priceWeekly}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    {...field}
-                    onChange={e => field.onChange(parseInt(e.target.value))}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="price_biweekly"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t.admin.priceBiweekly}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    {...field}
-                    onChange={e => field.onChange(parseInt(e.target.value))}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="price_monthly"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t.admin.priceMonthly}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    {...field}
-                    onChange={e => field.onChange(parseInt(e.target.value))}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="wines_per_delivery"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t.admin.winesPerDelivery}</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  {...field}
-                  onChange={e => field.onChange(parseInt(e.target.value))}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div>
-          <FormLabel>{t.admin.features}</FormLabel>
-          <div className="space-y-2">
-            {features.map((feature, index) => (
-              <div key={index} className="flex items-center space-x-2">
-                <span>{feature}</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleRemoveFeature(index)}
-                >
-                  ×
-                </Button>
-              </div>
-            ))}
-            <div className="flex items-center space-x-2">
-              <Input
-                value={newFeature}
-                onChange={e => setNewFeature(e.target.value)}
-                placeholder={t.admin.newFeature}
-              />
-              <Button
-                type="button"
-                onClick={handleAddFeature}
-              >
-                {t.admin.addFeature}
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <FormField
-            control={form.control}
-            name="is_visible"
-            render={({ field }) => (
-              <FormItem className="flex items-center space-x-2">
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-                <FormLabel className="!mt-0">{t.admin.isVisible}</FormLabel>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="is_active"
-            render={({ field }) => (
-              <FormItem className="flex items-center space-x-2">
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-                <FormLabel className="!mt-0">{t.admin.isActive}</FormLabel>
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="flex justify-end space-x-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            disabled={isLoading}
-          >
-            {t.common.cancel}
-          </Button>
-          <Button
-            type="submit"
-            disabled={isLoading}
-          >
-            {plan ? t.common.save : t.common.create}
-          </Button>
-        </div>
-      </form>
-    </Form>
-  )
-}
+import { pauseSubscription, reactivateSubscription, cancelSubscription, updateSubscriptionFrequency } from './actions/subscriptions'
 
 interface AdminSubscriptionsTabProps {
-  subscriptions: UserSubscription[]
-  availablePlans: SubscriptionPlan[]
   t: Translations
 }
 
-const ACTION_SUCCESS_MESSAGES = {
-  pause: 'Suscripción pausada exitosamente',
-  cancel: 'Suscripción cancelada exitosamente',
-  reactivate: 'Suscripción reactivada exitosamente',
-  'change-plan': 'Plan actualizado exitosamente'
-} as const
+const formatFrequency = (frequency: 'weekly' | 'biweekly' | 'monthly' | 'quarterly') => {
+  const map = {
+    weekly: 'Semanal',
+    biweekly: 'Quincenal',
+    monthly: 'Mensual',
+    quarterly: 'Trimestral'
+  } as const
+  return map[frequency] || frequency
+}
 
-export function AdminSubscriptionsTab({ subscriptions, availablePlans, t }: AdminSubscriptionsTabProps) {
+const getStatusBadge = (status: string) => {
+  const variants = {
+    active: <Badge>Activa</Badge>,
+    paused: <Badge>Pausada</Badge>,
+    cancelled: <Badge variant="destructive">Cancelada</Badge>,
+    pending: <Badge variant="secondary">Pendiente</Badge>
+  }
+  return variants[status as keyof typeof variants] || <Badge>{status}</Badge>
+}
+
+export function AdminSubscriptionsTab({ t }: AdminSubscriptionsTabProps) {
+  const [loading, setLoading] = useState(true)
+  const [subscriptions, setSubscriptions] = useState<UserSubscription[]>([])
+  const [addressFilter, setAddressFilter] = useState('all')
+  const [showAddressModal, setShowAddressModal] = useState(false)
+  const [showChangeAddressModal, setShowChangeAddressModal] = useState(false)
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [selectedSubscription, setSelectedSubscription] = useState<UserSubscription | null>(null)
-  const [modalAction, setModalAction] = useState<'pause' | 'cancel' | 'reactivate' | 'change-plan' | null>(null)
+  const [showFrequencyModal, setShowFrequencyModal] = useState(false)
+  const [selectedFrequency, setSelectedFrequency] = useState<'weekly' | 'biweekly' | 'monthly' | 'quarterly'>('weekly')
 
-  const handleAction = async (reason?: string, newPlan?: string) => {
-    if (!selectedSubscription || !modalAction) return
-
-    try {
-      let result
-      switch (modalAction) {
-        case 'pause':
-          result = await pauseSubscription(selectedSubscription.id)
-          break
-        case 'reactivate':
-          result = await reactivateSubscription(selectedSubscription.id)
-          break
-        case 'cancel':
-          result = await cancelSubscription(selectedSubscription.id)
-          break
-        case 'change-plan':
-          if (newPlan) {
-            result = await changeSubscriptionPlan(selectedSubscription.id, newPlan)
+  useEffect(() => {
+    const loadSubscriptions = async () => {
+      try {
+        setLoading(true)
+        const supabase = createClient()
+        
+        console.log('🔍 Testing basic query...')
+        
+        // Test 1: Solo suscripciones
+        const { data: subs, error: subError } = await supabase
+          .from('user_subscriptions')
+          .select('*')
+          .limit(5)
+        
+        console.log('Test 1 - Suscripciones:', subs)
+        console.log('Test 1 - Error:', subError)
+        
+        if (subError) throw subError
+        
+        // Test 2: Con planes y customers
+        const { data: withPlans, error: plansError } = await supabase
+          .from('user_subscriptions')
+          .select(`
+            *,
+            subscription_plan:subscription_plans(*),
+            customer:customers!user_id(
+              id,
+              name,
+              email
+            )
+          `)
+          .limit(5)
+        
+        console.log('Test 2 - Con planes y customers:', withPlans)
+        console.log('Test 2 - Error:', plansError)
+        
+        if (plansError) throw plansError
+        
+        // Usar los datos reales del customer
+        setSubscriptions(withPlans?.map(sub => ({
+          ...sub,
+          customer: sub.customer || {
+            id: sub.user_id,
+            name: `Usuario ${sub.user_id?.slice(0, 8)}`,
+            email: 'temp@example.com',
+            addresses: []
           }
-          break
+        })) || [])
+        
+        console.log('✅ Datos cargados con customers')
+        
+      } catch (error) {
+        console.error('🚨 Error completo:', error)
+        toast.error('Error: ' + (error as Error).message)
+      } finally {
+        setLoading(false)
       }
+    }
 
-      if (result?.error) {
-        throw new Error(result.error)
-      }
+    loadSubscriptions()
+  }, [])
 
-      toast.success(ACTION_SUCCESS_MESSAGES[modalAction])
-    } catch (error) {
-      console.error('Error:', error)
-      toast.error(error instanceof Error ? error.message : t.errors.unknownError)
+  const handleFrequencyChange = async () => {
+    if (!selectedSubscription) return
+
+    const result = await updateSubscriptionFrequency(selectedSubscription.id, selectedFrequency)
+    
+    if (result.error) {
+      toast.error('Error al actualizar frecuencia: ' + result.error)
+    } else {
+      toast.success('Frecuencia actualizada correctamente')
+      setShowFrequencyModal(false)
+      // Recargar suscripciones
+      window.location.reload()
     }
   }
 
-  const openModal = (action: typeof modalAction, subscription: UserSubscription) => {
-    setSelectedSubscription(subscription)
-    setModalAction(action)
+  // Filtrado básico sin direcciones por ahora
+  const filteredSubscriptions = subscriptions
+
+  if (loading) {
+    return <div className="text-center py-8">Cargando suscripciones...</div>
   }
 
   return (
-    <>
+    <div className="space-y-6">
       <div className="rounded-md border">
-        <table className="w-full text-sm">
+        <table className="w-full">
           <thead>
             <tr className="border-b bg-muted/50">
-              <th className="p-4 text-left font-medium">Usuario</th>
-              <th className="p-4 text-left font-medium">Plan</th>
-              <th className="p-4 text-left font-medium">Estado</th>
-              <th className="p-4 text-left font-medium">Frecuencia</th>
-              <th className="p-4 text-left font-medium">Próxima entrega</th>
-              <th className="p-4 text-left font-medium">Acciones</th>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Usuario</th>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Plan</th>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Frecuencia</th>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Estado</th>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Próxima Entrega</th>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Total Pagado</th>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {subscriptions.map((subscription) => (
+            {filteredSubscriptions.map((subscription) => (
               <tr key={subscription.id} className="border-b">
                 <td className="p-4">
                   <div>
-                    <p className="font-medium">{subscription.customer.name}</p>
-                    <p className="text-sm text-muted-foreground">{subscription.customer.email}</p>
+                    <div className="font-medium">{subscription.customer?.name}</div>
+                    <div className="text-sm text-gray-500">{subscription.customer?.email}</div>
                   </div>
                 </td>
                 <td className="p-4">
                   <div>
-                    <p className="font-medium">{subscription.subscription_plan.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatCurrency(subscription.subscription_plan.price_monthly)} / mes
-                    </p>
+                    <div className="font-medium">{subscription.subscription_plan?.name}</div>
+                    <Badge variant="outline">{subscription.subscription_plan?.type}</Badge>
                   </div>
                 </td>
+                <td className="p-4">{formatFrequency(subscription.frequency)}</td>
+                <td className="p-4">{getStatusBadge(subscription.status)}</td>
                 <td className="p-4">
-                  <div className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold">
-                    {t.subscriptions.status[subscription.status]}
-                  </div>
+                  {subscription.next_delivery_date 
+                    ? new Date(subscription.next_delivery_date).toLocaleDateString('es-AR')
+                    : '-'
+                  }
                 </td>
-                <td className="p-4">
-                  {t.subscriptions.frequency[subscription.frequency]}
-                </td>
-                <td className="p-4">
-                  {subscription.next_delivery_date
-                    ? format(new Date(subscription.next_delivery_date), "dd 'de' MMMM", { locale: es })
-                    : '-'}
-                </td>
+                <td className="p-4">{formatCurrency(subscription.total_paid || 0)}</td>
                 <td className="p-4">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
+                        <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          setSelectedSubscription(subscription)
+                          setSelectedFrequency(subscription.frequency)
+                          setShowFrequencyModal(true)
+                        }}
+                      >
+                        🔄 Cambiar Frecuencia
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       {subscription.status === 'active' && (
-                        <>
-                          <DropdownMenuItem onClick={() => openModal('pause', subscription)}>
-                            <Pause className="h-4 w-4 mr-2" />
-                            Pausar suscripción
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openModal('change-plan', subscription)}>
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            Cambiar plan
-                          </DropdownMenuItem>
-                        </>
+                        <DropdownMenuItem onClick={() => pauseSubscription(subscription.id)}>
+                          ⏸️ Pausar
+                        </DropdownMenuItem>
                       )}
                       {subscription.status === 'paused' && (
-                        <DropdownMenuItem onClick={() => openModal('reactivate', subscription)}>
-                          <Play className="h-4 w-4 mr-2" />
-                          Reactivar suscripción
+                        <DropdownMenuItem onClick={() => reactivateSubscription(subscription.id)}>
+                          ▶️ Reactivar
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuItem 
-                        onClick={() => openModal('cancel', subscription)}
+                        onClick={() => cancelSubscription(subscription.id)}
                         className="text-red-600"
                       >
-                        <X className="h-4 w-4 mr-2" />
-                        Cancelar suscripción
+                        ❌ Cancelar
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -499,19 +229,43 @@ export function AdminSubscriptionsTab({ subscriptions, availablePlans, t }: Admi
         </table>
       </div>
 
-      {selectedSubscription && modalAction && (
-        <SubscriptionActionModal
-          isOpen={true}
-          onClose={() => {
-            setSelectedSubscription(null)
-            setModalAction(null)
-          }}
-          action={modalAction}
-          subscription={selectedSubscription}
-          availablePlans={availablePlans}
-          onConfirm={handleAction}
-        />
-      )}
-    </>
+      {/* Modal de Cambio de Frecuencia */}
+      <Dialog open={showFrequencyModal} onOpenChange={setShowFrequencyModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cambiar Frecuencia de Entrega</DialogTitle>
+            <DialogDescription>
+              Selecciona la nueva frecuencia de entrega para esta suscripción.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Select
+              value={selectedFrequency}
+              onValueChange={(value: 'weekly' | 'biweekly' | 'monthly' | 'quarterly') => setSelectedFrequency(value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona la frecuencia" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="weekly">Semanal</SelectItem>
+                <SelectItem value="biweekly">Quincenal</SelectItem>
+                <SelectItem value="monthly">Mensual</SelectItem>
+                <SelectItem value="quarterly">Trimestral</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowFrequencyModal(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleFrequencyChange}>
+              Actualizar Frecuencia
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   )
 } 

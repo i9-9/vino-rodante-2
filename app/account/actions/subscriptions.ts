@@ -775,4 +775,65 @@ export async function changeSubscriptionFrequency(
     console.error('Error changing frequency:', error)
     return { success: false, error: error instanceof Error ? error.message : 'Error desconocido' }
   }
+}
+
+export async function updateSubscriptionFrequency(subscriptionId: string, frequency: 'weekly' | 'biweekly' | 'monthly' | 'quarterly') {
+  try {
+    const supabase = await createClient()
+
+    // Obtener la suscripción actual y su plan
+    const { data: subscription, error: subError } = await supabase
+      .from('user_subscriptions')
+      .select(`
+        *,
+        subscription_plan:subscription_plans(*)
+      `)
+      .eq('id', subscriptionId)
+      .single()
+
+    if (subError) throw subError
+    if (!subscription) throw new Error('Suscripción no encontrada')
+
+    // Determinar el nuevo precio basado en la frecuencia
+    let newPrice = 0
+    switch (frequency) {
+      case 'weekly':
+        newPrice = subscription.subscription_plan.price_weekly
+        break
+      case 'biweekly':
+        newPrice = subscription.subscription_plan.price_biweekly
+        break
+      case 'monthly':
+        newPrice = subscription.subscription_plan.price_monthly
+        break
+      case 'quarterly':
+        newPrice = subscription.subscription_plan.price_quarterly
+        break
+    }
+
+    // Calcular la próxima fecha de entrega basada en la nueva frecuencia
+    const { data: nextDate } = await supabase
+      .rpc('calculate_next_delivery_date', {
+        base_date: new Date().toISOString(),
+        frequency: frequency
+      })
+
+    // Actualizar la suscripción
+    const { error: updateError } = await supabase
+      .from('user_subscriptions')
+      .update({
+        frequency: frequency,
+        next_delivery_date: nextDate,
+        // Otros campos que podrían necesitar actualización
+      })
+      .eq('id', subscriptionId)
+
+    if (updateError) throw updateError
+
+    revalidatePath('/account')
+    return { success: true }
+  } catch (error) {
+    console.error('Error updating subscription frequency:', error)
+    return { error: (error as Error).message }
+  }
 } 
