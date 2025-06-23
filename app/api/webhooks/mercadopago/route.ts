@@ -26,10 +26,13 @@ export async function POST(request: NextRequest) {
 
     switch (paymentData.status) {
       case "approved":
-        orderStatus = "processing"
+        orderStatus = "in_preparation"
         break
       case "rejected":
         orderStatus = "cancelled"
+        break
+      case "refunded":
+        orderStatus = "refunded"
         break
       case "in_process":
       case "pending":
@@ -40,7 +43,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Update order in database
-    const { error } = await supabase.from("orders").update({ status: orderStatus }).eq("id", orderId)
+    const { error } = await supabase
+      .from("orders")
+      .update({ 
+        status: orderStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", orderId)
 
     if (error) {
       console.error("Error updating order status:", error)

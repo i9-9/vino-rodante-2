@@ -29,6 +29,7 @@ interface AccountClientProps {
   orders: Order[]
   addresses: Address[]
   userSubscriptions: any[]
+  availablePlans: any[]
   userRole: 'admin' | 'user'
   t: Translations
   // Admin data
@@ -43,6 +44,7 @@ export default function AccountClientNew({
   orders,
   addresses,
   userSubscriptions,
+  availablePlans,
   userRole,
   t,
   // Admin data
@@ -121,7 +123,11 @@ export default function AccountClientNew({
 
             <TabsContent value="subscriptions" className="space-y-4">
               <div className="grid gap-4">
-                <SubscriptionsTab subscriptions={userSubscriptions} t={t} />
+                <SubscriptionsTab 
+                  subscriptions={userSubscriptions} 
+                  availablePlans={availablePlans}
+                  t={t} 
+                />
               </div>
             </TabsContent>
 
@@ -145,7 +151,7 @@ export default function AccountClientNew({
                 <TabsContent value="admin-subscriptions" className="space-y-4">
                   <div className="grid gap-4">
                     <AdminSubscriptionsTab 
-                      subscriptions={adminSubscriptions} 
+                      plans={adminSubscriptions} 
                       onEdit={(subscription: Subscription) => {
                         setSelectedSubscription(subscription)
                         setIsSubscriptionModalOpen(true)

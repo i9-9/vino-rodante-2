@@ -1,168 +1,278 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+'use client'
+
+import { useState } from 'react'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { formatCurrency } from '@/lib/utils'
-import Image from 'next/image'
-import { format } from 'date-fns'
+import { toast } from 'sonner'
+import { updateSubscriptionStatus } from '../actions/subscriptions'
+import type { UserSubscription, SubscriptionPlan } from '../types'
 import type { Translations } from '@/lib/i18n/types'
 
-interface SubscriptionPlan {
-  id: string
-  name: string
-  description: string
-  price_monthly: number
-  price_bimonthly: number
-  price_quarterly: number
-  club: string
-  features: Record<string, any>
-  image: string | null
-  is_active: boolean
+interface SubscriptionCardProps {
+  subscription: UserSubscription
+  onStatusChange: (id: string, status: 'paused' | 'cancelled') => Promise<void>
+  t: Translations
 }
 
-interface UserSubscription {
-  id: string
-  customer_id: string
-  plan_id: string
-  start_date: string
-  end_date: string | null
-  current_period_end: string
-  status: 'active' | 'paused' | 'cancelled' | 'expired'
-  is_gift: boolean
-  created_at: string
-  updated_at: string
-  subscription_plan: SubscriptionPlan | null
+function SubscriptionCard({ subscription, onStatusChange, t }: SubscriptionCardProps) {
+  const [isLoading, setIsLoading] = useState(false)
+  
+  const statusColors = {
+    active: 'bg-green-100 text-green-800',
+    paused: 'bg-yellow-100 text-yellow-800',
+    cancelled: 'bg-red-100 text-red-800',
+    expired: 'bg-gray-100 text-gray-800'
+  }
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('es-CL', {
+      style: 'currency',
+      currency: 'CLP'
+    }).format(price / 100)
+  }
+
+  const handleStatusChange = async (status: 'paused' | 'cancelled') => {
+    setIsLoading(true)
+    try {
+      await onStatusChange(subscription.id, status)
+      toast.success(status === 'paused' 
+        ? t.account.subscriptionPaused 
+        : t.account.subscriptionCancelled
+      )
+    } catch (error) {
+      toast.error(t.errors.updateError)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle>{subscription.subscription_plan.name}</CardTitle>
+            <CardDescription>{subscription.subscription_plan.description}</CardDescription>
+          </div>
+          <Badge className={statusColors[subscription.status]}>
+            {t.account.subscriptionStatus[subscription.status]}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div>
+            <h4 className="font-medium">{t.account.subscriptionDetails}</h4>
+            <div className="mt-2 space-y-2">
+              <p>{t.account.frequency}: {t.account.subscriptionFrequency[subscription.frequency]}</p>
+              <p>{t.account.nextDelivery}: {new Date(subscription.next_delivery_date).toLocaleDateString()}</p>
+              <p>{t.account.price}: {formatPrice(subscription.subscription_plan[`price_${subscription.frequency}`])}</p>
+              <p>{t.account.winesPerDelivery}: {subscription.subscription_plan.wines_per_delivery}</p>
+            </div>
+          </div>
+          
+          <div>
+            <h4 className="font-medium">{t.account.included}</h4>
+            <ul className="mt-2 space-y-1">
+              {subscription.subscription_plan.features.map((feature, index) => (
+                <li key={index} className="text-sm">• {feature}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter className="flex justify-end space-x-2">
+        {subscription.status === 'active' && (
+          <>
+            <Button
+              variant="outline"
+              onClick={() => handleStatusChange('paused')}
+              disabled={isLoading}
+            >
+              {t.account.pauseSubscription}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => handleStatusChange('cancelled')}
+              disabled={isLoading}
+            >
+              {t.account.cancelSubscription}
+            </Button>
+          </>
+        )}
+        {subscription.status === 'paused' && (
+          <Button
+            variant="default"
+            onClick={() => handleStatusChange('active')}
+            disabled={isLoading}
+          >
+            {t.account.resumeSubscription}
+          </Button>
+        )}
+      </CardFooter>
+    </Card>
+  )
+}
+
+interface AvailablePlanCardProps {
+  plan: SubscriptionPlan
+  onSubscribe: (planId: string, frequency: 'weekly' | 'biweekly' | 'monthly') => Promise<void>
+  t: Translations
+}
+
+function AvailablePlanCard({ plan, onSubscribe, t }: AvailablePlanCardProps) {
+  const [isLoading, setIsLoading] = useState(false)
+  const [selectedFrequency, setSelectedFrequency] = useState<'weekly' | 'biweekly' | 'monthly'>('monthly')
+
+  const handleSubscribe = async () => {
+    setIsLoading(true)
+    try {
+      await onSubscribe(plan.id, selectedFrequency)
+      toast.success(t.account.subscriptionCreated)
+    } catch (error) {
+      toast.error(t.errors.createError)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('es-CL', {
+      style: 'currency',
+      currency: 'CLP'
+    }).format(price / 100)
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{plan.name}</CardTitle>
+        <CardDescription>{plan.description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div>
+            <h4 className="font-medium">{t.account.pricing}</h4>
+            <div className="mt-2 space-y-2">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id={`weekly-${plan.id}`}
+                  name={`frequency-${plan.id}`}
+                  value="weekly"
+                  checked={selectedFrequency === 'weekly'}
+                  onChange={(e) => setSelectedFrequency(e.target.value as 'weekly')}
+                />
+                <label htmlFor={`weekly-${plan.id}`}>
+                  {t.account.weekly}: {formatPrice(plan.price_weekly)}
+                </label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id={`biweekly-${plan.id}`}
+                  name={`frequency-${plan.id}`}
+                  value="biweekly"
+                  checked={selectedFrequency === 'biweekly'}
+                  onChange={(e) => setSelectedFrequency(e.target.value as 'biweekly')}
+                />
+                <label htmlFor={`biweekly-${plan.id}`}>
+                  {t.account.biweekly}: {formatPrice(plan.price_biweekly)}
+                </label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id={`monthly-${plan.id}`}
+                  name={`frequency-${plan.id}`}
+                  value="monthly"
+                  checked={selectedFrequency === 'monthly'}
+                  onChange={(e) => setSelectedFrequency(e.target.value as 'monthly')}
+                />
+                <label htmlFor={`monthly-${plan.id}`}>
+                  {t.account.monthly}: {formatPrice(plan.price_monthly)}
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-medium">{t.account.included}</h4>
+            <ul className="mt-2 space-y-1">
+              {(plan.features || []).map((feature, index) => (
+                <li key={index} className="text-sm">• {feature}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter>
+        <Button
+          className="w-full"
+          onClick={handleSubscribe}
+          disabled={isLoading}
+        >
+          {t.account.subscribe}
+        </Button>
+      </CardFooter>
+    </Card>
+  )
 }
 
 interface SubscriptionsTabProps {
   subscriptions: UserSubscription[]
-  t: Translations & {
-    account: {
-      subscriptions: string
-      noSubscriptions: string
-    }
-    subscriptions: {
-      active: string
-      paused: string
-      cancelled: string
-      expired: string
-    }
-  }
+  availablePlans: SubscriptionPlan[]
+  t: Translations
 }
 
-export function SubscriptionsTab({ subscriptions, t }: SubscriptionsTabProps) {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return format(date, 'dd/MM/yyyy')
+export function SubscriptionsTab({ subscriptions, availablePlans, t }: SubscriptionsTabProps) {
+  const handleStatusChange = async (id: string, status: 'paused' | 'cancelled') => {
+    const result = await updateSubscriptionStatus(id, status)
+    if (result.error) {
+      throw new Error(result.error)
+    }
+  }
+
+  const handleSubscribe = async (planId: string, frequency: 'weekly' | 'biweekly' | 'monthly') => {
+    const result = await createSubscription(planId, frequency)
+    if (result.error) {
+      throw new Error(result.error)
+    }
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">{t.account.subscriptions}</h2>
-      </div>
+    <div className="space-y-8">
+      {subscriptions.length > 0 && (
+        <div>
+          <h3 className="text-lg font-medium mb-4">{t.account.activeSubscriptions}</h3>
+          <div className="grid gap-6 md:grid-cols-2">
+            {subscriptions.map(subscription => (
+              <SubscriptionCard
+                key={subscription.id}
+                subscription={subscription}
+                onStatusChange={handleStatusChange}
+                t={t}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
-      <div className="grid gap-4">
-        {subscriptions.length === 0 ? (
-          <p className="text-muted-foreground">{t.account.noSubscriptions}</p>
-        ) : (
-          subscriptions.map((subscription) => (
-            <Card key={subscription.id} className="overflow-hidden">
-              <CardHeader className="bg-muted/50">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle>{subscription.subscription_plan?.name}</CardTitle>
-                    <CardDescription>
-                      {formatDate(subscription.created_at)}
-                    </CardDescription>
-                  </div>
-                  <Badge variant={
-                    subscription.status === 'active' ? 'default' :
-                    subscription.status === 'paused' ? 'secondary' :
-                    subscription.status === 'cancelled' ? 'destructive' :
-                    'outline'
-                  }>
-                    {t.subscriptions[subscription.status]}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-6">
-                  {/* Detalles del Plan */}
-                  {subscription.subscription_plan && (
-                    <div className="space-y-4">
-                      {subscription.subscription_plan.image && (
-                        <div className="relative w-full h-48 rounded-lg overflow-hidden">
-                          <Image
-                            src={subscription.subscription_plan.image}
-                            alt={subscription.subscription_plan.name}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                      )}
-                      <div>
-                        <h3 className="font-semibold text-lg">
-                          {subscription.subscription_plan.name}
-                        </h3>
-                        <p className="text-muted-foreground">
-                          {subscription.subscription_plan.description}
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="font-medium">Club</p>
-                          <p className="text-muted-foreground">
-                            {subscription.subscription_plan.club}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="font-medium">Precios</p>
-                          <ul className="text-sm text-muted-foreground">
-                            <li>Mensual: {formatCurrency(subscription.subscription_plan.price_monthly)}</li>
-                            <li>Bimestral: {formatCurrency(subscription.subscription_plan.price_bimonthly)}</li>
-                            <li>Trimestral: {formatCurrency(subscription.subscription_plan.price_quarterly)}</li>
-                          </ul>
-                        </div>
-                      </div>
-                      {subscription.subscription_plan.features && (
-                        <div>
-                          <p className="font-medium mb-2">Características</p>
-                          <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                            {Object.entries(subscription.subscription_plan.features).map(([key, value]) => (
-                              <li key={key}>{value as string}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Detalles de la Suscripción */}
-                  <div className="pt-4 border-t">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="font-medium">Fecha de inicio</p>
-                        <p className="text-muted-foreground">
-                          {formatDate(subscription.start_date)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="font-medium">Próxima renovación</p>
-                        <p className="text-muted-foreground">
-                          {formatDate(subscription.current_period_end)}
-                        </p>
-                      </div>
-                    </div>
-                    {subscription.is_gift && (
-                      <div className="mt-2">
-                        <Badge variant="secondary">Regalo</Badge>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
+      <div>
+        <h3 className="text-lg font-medium mb-4">{t.account.availablePlans}</h3>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {availablePlans
+            .filter(plan => plan.is_active && plan.is_visible)
+            .map(plan => (
+              <AvailablePlanCard
+                key={plan.id}
+                plan={plan}
+                onSubscribe={handleSubscribe}
+                t={t}
+              />
+            ))}
+        </div>
       </div>
     </div>
   )

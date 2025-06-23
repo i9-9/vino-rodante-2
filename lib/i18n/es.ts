@@ -47,6 +47,8 @@ export const es = {
     invalidEmail: "Email inválido",
     passwordsDontMatch: "Las contraseñas no coinciden",
     passwordTooShort: "La contraseña debe tener al menos 6 caracteres",
+    create: "Crear",
+    delete: "Eliminar",
   },
   navigation: {
     home: "Inicio",
@@ -313,7 +315,37 @@ export const es = {
       validationErrors: "Por favor corrige los errores en el formulario",
       cannotDeleteOnlyAddress: "No puedes eliminar tu única dirección",
       cannotDeleteDefaultAddress: "No puedes eliminar la dirección predeterminada"
-    }
+    },
+    activeSubscriptions: "Tus Suscripciones Activas",
+    availablePlans: "Planes Disponibles",
+    subscriptionDetails: "Detalles de la Suscripción",
+    frequency: "Frecuencia",
+    nextDelivery: "Próxima Entrega",
+    price: "Precio",
+    winesPerDelivery: "Vinos por Entrega",
+    included: "Incluye",
+    pauseSubscription: "Pausar Suscripción",
+    cancelSubscription: "Cancelar Suscripción",
+    resumeSubscription: "Reanudar Suscripción",
+    subscriptionStatus: {
+      active: "Activa",
+      paused: "Pausada",
+      cancelled: "Cancelada",
+      expired: "Expirada"
+    },
+    subscriptionFrequency: {
+      weekly: "Semanal",
+      biweekly: "Quincenal",
+      monthly: "Mensual"
+    },
+    subscriptionPaused: "Suscripción pausada exitosamente",
+    subscriptionCancelled: "Suscripción cancelada exitosamente",
+    subscriptionCreated: "¡Te has suscrito exitosamente!",
+    subscribe: "Suscribirse",
+    weekly: "Semanal",
+    biweekly: "Quincenal",
+    monthly: "Mensual",
+    pricing: "Precios"
   },
   newsletter: {
     title: "Suscribite a nuestro boletín",
@@ -491,9 +523,9 @@ export const es = {
   orders: {
     title: "Pedidos",
     noOrders: "No tienes pedidos",
-    pending: "Pendiente",
+    pending: 'Pendiente de pago',
     paid: "Pagado",
-    preparing: "En preparación",
+    in_preparation: 'En preparación',
     shipped: "Enviado",
     delivered: "Entregado",
     cancelled: "Cancelado",
@@ -514,4 +546,47 @@ export const es = {
     tax: "Impuestos",
     shipping: "Envío"
   },
+  admin: {
+    subscriptionPlans: "Planes de Suscripción",
+    createPlan: "Crear Nuevo Plan",
+    editPlan: "Editar Plan",
+    createPlanDesc: "Crea un nuevo plan de suscripción",
+    editPlanDesc: "Modifica los detalles del plan",
+    planName: "Nombre del Plan",
+    planSlug: "Slug del Plan",
+    planDescription: "Descripción",
+    planType: "Tipo de Vino",
+    priceWeekly: "Precio Semanal",
+    priceBiweekly: "Precio Quincenal",
+    priceMonthly: "Precio Mensual",
+    winesPerDelivery: "Vinos por Entrega",
+    features: "Características",
+    newFeature: "Nueva Característica",
+    addFeature: "Agregar Característica",
+    isVisible: "Visible",
+    isActive: "Activo",
+    active: "Activo",
+    inactive: "Inactivo",
+    confirmDelete: "¿Estás seguro de que quieres eliminar este plan?",
+    planCreated: "Plan creado exitosamente",
+    planUpdated: "Plan actualizado exitosamente",
+    planDeleted: "Plan eliminado exitosamente",
+    wineTypes: {
+      tinto: "Tinto",
+      blanco: "Blanco",
+      mixto: "Mixto",
+      premium: "Premium"
+    },
+    pricing: "Precios",
+    details: "Detalles",
+    type: "Tipo",
+    weekly: "Semanal",
+    biweekly: "Quincenal",
+    monthly: "Mensual"
+  },
+  errors: {
+    updateError: "Error al actualizar la suscripción",
+    createError: "Error al crear la suscripción",
+    saveError: "Error al guardar los cambios"
+  }
 }

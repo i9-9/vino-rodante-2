@@ -98,7 +98,7 @@ function OrderDetails({ order, onStatusChange }: OrderDetailsProps) {
         </div>
       )}
 
-      <div>
+    <div>
         <h4 className="font-medium">Productos</h4>
         <ul className="space-y-2">
           {order.order_items.map((item) => (
@@ -231,7 +231,7 @@ export default function AdminOrdersTable({ orders }: { orders: Order[] }) {
                   </Dialog>
                 </TableCell>
               </TableRow>
-            ))}
+          ))}
           </TableBody>
         </Table>
       </div>

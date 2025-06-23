@@ -12,6 +12,7 @@ La implementación actual viola varios principios del patrón oficial de Supabas
    - Client components verifican auth
 
 2. **Competencia de Redirects**:
+
    - Server redirect en middleware
    - Client redirect en SupabaseGuard
    - Client redirect en AuthProvider

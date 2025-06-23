@@ -167,33 +167,86 @@ export interface Database {
           customer_id?: string | null
         }
       }
-      subscriptions: {
+      subscription_plans: {
         Row: {
           id: string
           name: string
-          description: string
-          price: number
-          interval: string
-          active: boolean
+          description: string | null
+          price_monthly: number | null
+          price_bimonthly: number | null
+          price_quarterly: number | null
+          club: string | null
+          features: Json | null
+          image: string | null
+          is_active: boolean
           created_at: string
+          updated_at: string
         }
         Insert: {
           id?: string
           name: string
-          description: string
-          price: number
-          interval?: string
-          active?: boolean
+          description?: string | null
+          price_monthly?: number | null
+          price_bimonthly?: number | null
+          price_quarterly?: number | null
+          club?: string | null
+          features?: Json | null
+          image?: string | null
+          is_active?: boolean
           created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
           name?: string
-          description?: string
-          price?: number
-          interval?: string
-          active?: boolean
+          description?: string | null
+          price_monthly?: number | null
+          price_bimonthly?: number | null
+          price_quarterly?: number | null
+          club?: string | null
+          features?: Json | null
+          image?: string | null
+          is_active?: boolean
           created_at?: string
+          updated_at?: string
+        }
+      }
+      user_subscriptions: {
+        Row: {
+          id: string
+          customer_id: string
+          plan_id: string
+          start_date: string
+          end_date: string | null
+          current_period_end: string
+          status: 'active' | 'paused' | 'cancelled' | 'expired'
+          is_gift: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          customer_id: string
+          plan_id: string
+          start_date: string
+          end_date?: string | null
+          current_period_end: string
+          status?: 'active' | 'paused' | 'cancelled' | 'expired'
+          is_gift?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          customer_id?: string
+          plan_id?: string
+          start_date?: string
+          end_date?: string | null
+          current_period_end?: string
+          status?: 'active' | 'paused' | 'cancelled' | 'expired'
+          is_gift?: boolean
+          created_at?: string
+          updated_at?: string
         }
       }
     }

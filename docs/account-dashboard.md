@@ -57,6 +57,7 @@ El dashboard de cuenta está organizado en la siguiente estructura de archivos:
     - Nombre
     - Varietal y año
     - Región
+    
     - Precio y cantidad
   - Total del pedido
 

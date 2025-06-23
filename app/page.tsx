@@ -17,7 +17,7 @@ async function ProductSection() {
     console.error('Error loading featured products:', error)
     return null // O un componente de error
   }
-
+  
   // Si no hay suficientes productos destacados, mostrar mensaje de error
   if (!products || products.length === 0) {
     console.warn('No featured products found')

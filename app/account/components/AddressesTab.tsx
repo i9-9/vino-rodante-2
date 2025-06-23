@@ -70,22 +70,14 @@ export function AddressesTab({ addresses, userId, t }: AddressesTabProps) {
     if (!selectedAddress) return
 
     setError(null)
-    const form = event.currentTarget
-    const formData = new FormData(form)
+    const formData = new FormData(event.currentTarget)
     
-    // Debug log del FormData antes de enviar
-    console.log('EditAddress - FormData to send:', {
-      id: selectedAddress.id,
-      line1: formData.get('line1'),
-      line2: formData.get('line2'),
-      city: formData.get('city'),
-      state: formData.get('state'),
-      postal_code: formData.get('postal_code'),
-      is_default: formData.get('is_default')
-    })
-
     // Asegurar que el ID esté en el FormData
     formData.set('id', selectedAddress.id)
+    
+    // Manejar explícitamente el checkbox is_default
+    const isDefault = event.currentTarget.querySelector<HTMLInputElement>('input[name="is_default"]')?.checked
+    formData.set('is_default', isDefault ? 'true' : 'false')
 
     startTransition(async () => {
       try {

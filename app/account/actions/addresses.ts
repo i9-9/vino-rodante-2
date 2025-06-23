@@ -53,15 +53,15 @@ const validateField = (field: AddressField, value: any): { success: boolean; val
 }
 
 export async function createAddress(formData: FormData): Promise<ActionResponse> {
-  const supabase = createClient()
-  
-  // 1. Obtener usuario actual
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  if (userError || !user) {
-    redirect('/auth/sign-in')
-  }
-
   try {
+    const supabase = await createClient()
+    
+    // 1. Obtener usuario actual
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      redirect('/auth/sign-in')
+    }
+
     const rawData = {
       line1: formData.get('line1')?.toString().trim(),
       line2: formData.get('line2')?.toString().trim() || '',
@@ -69,7 +69,7 @@ export async function createAddress(formData: FormData): Promise<ActionResponse>
       state: formData.get('state')?.toString().trim(),
       postal_code: formData.get('postal_code')?.toString().trim(),
       country: 'Argentina',
-      is_default: formData.get('is_default') === 'on'
+      is_default: formData.get('is_default') === 'true'
     }
 
     const validatedData = addressSchema.parse(rawData)
@@ -91,26 +91,26 @@ export async function createAddress(formData: FormData): Promise<ActionResponse>
     return { success: true }
   } catch (error) {
     console.error('Error creating address:', error)
-    return { success: false, error: 'Error al crear la dirección' }
+    return { success: false, error: error instanceof Error ? error.message : 'Error al crear la dirección' }
   }
 }
 
 export async function updateAddress(formData: FormData): Promise<ActionResponse> {
-  const supabase = createClient()
-  
-  // 1. Autenticación
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  if (userError || !user) redirect('/auth/sign-in')
-
-  const addressId = formData.get('id')?.toString()
-  if (!addressId) return { success: false, error: 'ID de dirección no proporcionado' }
-
-  // Debug logs
-  console.log('UpdateAddress - FormData received:', Object.fromEntries(formData))
-  console.log('UpdateAddress - Address ID:', addressId)
-  console.log('UpdateAddress - User ID:', user.id)
-
   try {
+    const supabase = await createClient()
+    
+    // 1. Autenticación
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) redirect('/auth/sign-in')
+
+    const addressId = formData.get('id')?.toString()
+    if (!addressId) return { success: false, error: 'ID de dirección no proporcionado' }
+
+    // Debug logs
+    console.log('UpdateAddress - FormData received:', Object.fromEntries(formData))
+    console.log('UpdateAddress - Address ID:', addressId)
+    console.log('UpdateAddress - User ID:', user.id)
+
     // 2. Verificar propiedad y obtener dirección existente
     const { data: existingAddress, error: fetchError } = await supabase
       .from('addresses')
@@ -142,7 +142,7 @@ export async function updateAddress(formData: FormData): Promise<ActionResponse>
 
         // Manejo especial para is_default
         if (field === 'is_default') {
-          valueToValidate = formValue === 'on' || formValue === 'true'
+          valueToValidate = formValue === 'true'
         } 
         // Manejo especial para line2
         else if (field === 'line2') {
@@ -203,37 +203,34 @@ export async function updateAddress(formData: FormData): Promise<ActionResponse>
 }
 
 async function setOtherAddressesAsNonDefault(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   excludeId: string | null
 ) {
-  const { error } = await supabase
+  const query = supabase
     .from('addresses')
     .update({ is_default: false })
     .eq('customer_id', userId)
-    .neq('id', excludeId || '')
 
-  if (error) {
-    console.error('Error updating other addresses:', error)
-    throw error
+  if (excludeId) {
+    query.neq('id', excludeId)
   }
+
+  await query
 }
 
 export async function deleteAddress(formData: FormData): Promise<ActionResponse> {
-  const supabase = createClient()
-  
-  // 1. Obtener usuario actual
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  if (userError || !user) {
-    redirect('/auth/sign-in')
-  }
-
-  const addressId = formData.get('id')?.toString()
-  if (!addressId) {
-    return { success: false, error: 'ID de dirección no proporcionado' }
-  }
-
   try {
+    const supabase = await createClient()
+
+    // 1. Autenticación
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) redirect('/auth/sign-in')
+
+    const addressId = formData.get('id')?.toString()
+    if (!addressId) return { success: false, error: 'ID de dirección no proporcionado' }
+
+    // 2. Eliminar dirección
     const { error: deleteError } = await supabase
       .from('addresses')
       .delete()
@@ -242,31 +239,27 @@ export async function deleteAddress(formData: FormData): Promise<ActionResponse>
 
     if (deleteError) throw deleteError
 
+    // 3. Revalidar y retornar
     revalidatePath('/account')
     return { success: true }
   } catch (error) {
     console.error('Error deleting address:', error)
-    return { success: false, error: 'Error al eliminar la dirección' }
+    return { success: false, error: error instanceof Error ? error.message : 'Error al eliminar la dirección' }
   }
 }
 
 export async function setDefaultAddress(formData: FormData): Promise<ActionResponse> {
-  const supabase = createClient()
-  
-  // 1. Obtener usuario actual
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  if (userError || !user) {
-    redirect('/auth/sign-in')
-  }
-
-  const addressId = formData.get('id')?.toString()
-  if (!addressId) {
-    return { success: false, error: 'ID de dirección no proporcionado' }
-  }
-
   try {
-    await setOtherAddressesAsNonDefault(supabase, user.id, addressId)
+    const supabase = await createClient()
 
+    // 1. Autenticación
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) redirect('/auth/sign-in')
+
+    const addressId = formData.get('id')?.toString()
+    if (!addressId) return { success: false, error: 'ID de dirección no proporcionado' }
+
+    // 2. Actualizar dirección como predeterminada
     const { error: updateError } = await supabase
       .from('addresses')
       .update({ is_default: true })
@@ -275,10 +268,14 @@ export async function setDefaultAddress(formData: FormData): Promise<ActionRespo
 
     if (updateError) throw updateError
 
+    // 3. Actualizar otras direcciones como no predeterminadas
+    await setOtherAddressesAsNonDefault(supabase, user.id, addressId)
+
+    // 4. Revalidar y retornar
     revalidatePath('/account')
     return { success: true }
   } catch (error) {
     console.error('Error setting default address:', error)
-    return { success: false, error: 'Error al establecer la dirección predeterminada' }
+    return { success: false, error: error instanceof Error ? error.message : 'Error al establecer dirección predeterminada' }
   }
 } 

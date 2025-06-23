@@ -17,6 +17,7 @@ export interface Translations {
     edit: string
     add: string
     remove: string
+    create: string
     [key: string]: string
   }
   navigation: {
@@ -46,6 +47,38 @@ export interface Translations {
     state: string
     postalCode: string
     country: string
+    activeSubscriptions: string
+    availablePlans: string
+    subscriptionDetails: string
+    frequency: string
+    nextDelivery: string
+    price: string
+    winesPerDelivery: string
+    included: string
+    pauseSubscription: string
+    cancelSubscription: string
+    resumeSubscription: string
+    subscriptionStatus: {
+      active: string
+      paused: string
+      cancelled: string
+      expired: string
+      [key: string]: string
+    }
+    subscriptionFrequency: {
+      weekly: string
+      biweekly: string
+      monthly: string
+      [key: string]: string
+    }
+    subscriptionPaused: string
+    subscriptionCancelled: string
+    subscriptionCreated: string
+    subscribe: string
+    weekly: string
+    biweekly: string
+    monthly: string
+    pricing: string
     errors: {
       noChanges: string
       unauthorized: string
@@ -54,6 +87,49 @@ export interface Translations {
       cannotDeleteDefaultAddress: string
       [key: string]: string
     }
+    [key: string]: string | { [key: string]: string }
+  }
+  admin: {
+    subscriptionPlans: string
+    createPlan: string
+    editPlan: string
+    createPlanDesc: string
+    editPlanDesc: string
+    planName: string
+    planSlug: string
+    planDescription: string
+    planType: string
+    priceWeekly: string
+    priceBiweekly: string
+    priceMonthly: string
+    winesPerDelivery: string
+    features: string
+    newFeature: string
+    addFeature: string
+    isVisible: string
+    isActive: string
+    active: string
+    inactive: string
+    confirmDelete: string
+    planCreated: string
+    planUpdated: string
+    planDeleted: string
+    wineTypes: {
+      tinto: string
+      blanco: string
+      mixto: string
+      premium: string
+      [key: string]: string
+    }
+    pricing: string
+    details: string
+    type: string
+    weekly: string
+    biweekly: string
+    monthly: string
+    orders: string
+    products: string
+    subscriptions: string
     [key: string]: string | { [key: string]: string }
   }
   orders: {
@@ -70,11 +146,10 @@ export interface Translations {
     orderShipping: string
     [key: string]: string
   }
-  subscriptions: {
-    active: string
-    paused: string
-    cancelled: string
-    expired: string
+  errors: {
+    updateError: string
+    createError: string
+    saveError: string
     [key: string]: string
   }
   [key: string]: any

@@ -1,0 +1,203 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+ Vino Rodante - Database Schema
+
+## Tablas principales
+
+### subscription_plans
+```sql
+- id (uuid, PK)
+- club (text)
+- name (text) 
+- slug (text)
+- description (text)
+- tagline (text)
+- image (text)
+- features (jsonb)
+- price_monthly (numeric)
+- price_quarterly (numeric) 
+- discount_percentage (int4)
+- status (text)
+- display_order (int4)
+- is_visible (bool)
+- banner_image (text)
+- type (text) # 'tinto', 'blanco', 'mixto', 'premium'
+- price_weekly (int4) # centavos
+- price_biweekly (int4) # centavos  
+- wines_per_delivery (int4)
+- is_active (bool)
+- created_at (timestamptz)
+- updated_at (timestamptz)
+user_subscriptions
+sql- id (uuid, PK)
+- user_id (uuid, FK → customers.id)
+- plan_id (uuid, FK → subscription_plans.id)
+- frequency (text) # 'weekly', 'biweekly', 'monthly'
+- status (text) # 'active', 'paused', 'cancelled', 'expired'
+- start_date (timestamptz)
+- end_date (timestamptz)
+- current_period_end (timestamptz)
+- next_delivery_date (timestamptz)
+- mercadopago_subscription_id (text)
+- payment_method_id (text)
+- total_paid (numeric)
+- is_gift (bool)
+- created_at (timestamptz)
+- updated_at (timestamptz)
+subscription_deliveries
+sql- id (uuid, PK)
+- subscription_id (uuid, FK → user_subscriptions.id)
+- delivery_date (timestamptz)
+- status (text) # 'scheduled', 'shipped', 'delivered', 'failed'
+- tracking_number (text)
+- products (jsonb)
+- total_amount (numeric)
+- notes (text)
+- created_at (timestamptz)
+- updated_at (timestamptz)
+customers
+sql- id (uuid, PK)
+- name (text)
+- email (text)
+- is_admin (bool)
+- created_at (timestamptz)
+addresses
+sql- id (uuid, PK)
+- customer_id (uuid, FK → customers.id)
+- line1 (text)
+- line2 (text)
+- city (text)
+- state (text)
+- postal_code (text)
+- country (text)
+- is_default (bool)
+- created_at (timestamptz)
+products
+sql- id (uuid, PK)
+- name (text)
+- slug (text)
+- description (text)
+- price (numeric)
+- image (text)
+- category (text)
+- year (text)
+- region (text)
+- varietal (text)
+- stock (int4)
+- featured (bool)
+- is_visible (bool)
+- created_at (timestamptz)
+orders
+sql- id (uuid, PK)
+- user_id (uuid, FK → customers.id)
+- status (text)
+- total (numeric)
+- created_at (timestamptz)
+RLS Policies Configuradas
+
+Usuarios ven solo sus datos
+Admins verificados con customers.is_admin = true
+Planes públicos para lectura
+
+
+## 🎯 **Opción 2: Types centralizados**
+
+Crea `/types/database.ts`:
+
+```typescript
+// types/database.ts
+export interface Database {
+  public: {
+    Tables: {
+      subscription_plans: {
+        Row: SubscriptionPlan
+        Insert: SubscriptionPlanInsert
+        Update: SubscriptionPlanUpdate
+      }
+      user_subscriptions: {
+        Row: UserSubscription
+        Insert: UserSubscriptionInsert
+        Update: UserSubscriptionUpdate
+      }
+      // ... resto de tablas
+    }
+  }
+}
+
+export interface SubscriptionPlan {
+  id: string
+  club: string
+  name: string
+  slug: string
+  description: string
+  tagline: string | null
+  image: string | null
+  features: string[]
+  price_monthly: number
+  price_quarterly: number
+  discount_percentage: number | null
+  status: string
+  display_order: number | null
+  is_visible: boolean
+  banner_image: string | null
+  type: 'tinto' | 'blanco' | 'mixto' | 'premium'
+  price_weekly: number
+  price_biweekly: number
+  wines_per_delivery: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+// ... más interfaces
+🤖 Opción 3: Prompt template en Cursor
+Crea /docs/cursor-context.md:
+markdown# Context for Cursor AI
+
+## Project: Vino Rodante E-commerce
+
+### Tech Stack
+- Next.js 15 + App Router + TypeScript
+- Supabase (PostgreSQL + Auth + RLS)
+- shadcn/ui + Tailwind CSS
+- MercadoPago payments
+
+### Architecture Pattern
+- Server Components + Client Islands
+- Server Actions for mutations
+- revalidatePath after changes
+- Admin verification: customers.is_admin = true
+
+### Database Schema
+[Include schema here - copy from above]
+
+### Common Patterns
+```typescript
+// Server Actions pattern
+export async function actionName() {
+  try {
+    const supabase = await createClient()  // Always await
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) redirect('/auth/sign-in')
+    
+    // ... logic
+    revalidatePath('/account')
+    return { success: true }
+  } catch (error) {
+    return { error: error.message }
+  }
+}
+Always reference this file for context.
+
+## 📝 **Prompt para que Cursor lo use:**
+Antes de cualquier implementación, siempre consulta /docs/database-schema.md para el schema actual de la base de datos. No me preguntes por el schema - ya está documentado ahí.
+Úsalo como referencia para:
+
+Nombres exactos de tablas y campos
+Tipos de datos correctos
+Relaciones FK
+Políticas RLS configuradas
+Patrones del proyecto

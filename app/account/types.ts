@@ -17,32 +17,24 @@ export interface Customer {
   state?: string
   postal_code?: string
   country?: string
-  created_at: string
-  is_admin: boolean
 }
 
 export interface Product {
   id: string
   name: string
-  description: string | null
+  description?: string
+  image?: string
   price: number
-  image: string | null
-  category: string | null
-  year: string | null
-  region: string | null
-  varietal: string | null
-  stock: number
-  featured: boolean
-  is_visible: boolean
-  created_at: string
-  customer_id: string | null
+  varietal?: string
+  year?: number
+  region?: string
 }
 
 export interface Address {
   id: string
-  customer_id: string
+  user_id: string
   line1: string
-  line2: string | null
+  line2?: string | null
   city: string
   state: string
   postal_code: string
@@ -52,13 +44,12 @@ export interface Address {
 }
 
 export type OrderStatus = 
-  | 'pending'    // Pendiente
-  | 'paid'       // Pagado
-  | 'preparing'  // En preparación
-  | 'shipped'    // Enviado
-  | 'delivered'  // Entregado
-  | 'cancelled'  // Cancelado
-  | 'refunded'   // Reembolsado
+  | 'pending'           // Pendiente de pago
+  | 'in_preparation'    // En preparación
+  | 'shipped'          // Enviado
+  | 'delivered'        // Entregado
+  | 'cancelled'        // Cancelado
+  | 'refunded'         // Reembolsado
 
 export type PaymentStatus = 
   | 'pending'    // Pendiente
@@ -72,18 +63,16 @@ export interface Order {
   status: OrderStatus
   total: number
   created_at: string
-  customer?: {
-    id: string
-    name: string
-    email: string
-    phone?: string
-    address?: string
-    city?: string
-    state?: string
-    postal_code?: string
-    country?: string
-  }
+  customer?: Customer
   order_items: OrderItem[]
+  shipping_address?: {
+    line1: string
+    line2?: string | null
+    city: string
+    state: string
+    postal_code: string
+    country: string
+  }
 }
 
 export interface OrderItem {
@@ -92,16 +81,7 @@ export interface OrderItem {
   product_id: string
   quantity: number
   price: number
-  product: {
-    id: string
-    name: string
-    description?: string
-    image?: string
-    price: number
-    varietal?: string
-    year?: string
-    region?: string
-  }
+  product: Product
 }
 
 export interface Subscription {
@@ -120,29 +100,55 @@ export interface Subscription {
   created_at: string
 }
 
+export type WineType = 'tinto' | 'blanco' | 'mixto' | 'premium'
+
+export type SubscriptionFrequency = 'weekly' | 'biweekly' | 'monthly'
+
+export type SubscriptionStatus = 'active' | 'paused' | 'cancelled' | 'expired'
+
+export type DeliveryStatus = 'scheduled' | 'shipped' | 'delivered' | 'failed'
+
 export interface SubscriptionPlan {
   id: string
-  club: string
   name: string
-  price_bimonthly: number
-  price_monthly: number
-  price_quarterly: number
   description: string
-  features: Record<string, any>
-  image: string
   slug: string
-  created_at: string
+  type: 'tinto' | 'blanco' | 'mixto' | 'premium'
+  price_weekly: number
+  price_biweekly: number
+  price_monthly: number
+  wines_per_delivery: number
+  features: string[]
   is_active: boolean
+  is_visible: boolean
+  created_at: string
 }
 
 export interface UserSubscription {
-  customer_id: string
-  plan_id: string
-  start_date: string
-  end_date: string | null
-  current_period_end: string
+  id: string
+  user_id: string
+  subscription_plan_id: string
+  subscription_plan: SubscriptionPlan
+  frequency: 'weekly' | 'biweekly' | 'monthly'
   status: 'active' | 'paused' | 'cancelled' | 'expired'
-  is_gift: boolean
+  next_delivery_date: string
+  created_at: string
+}
+
+export interface SubscriptionDelivery {
+  id: string
+  subscription_id: string
+  delivery_date: string
+  status: DeliveryStatus
+  tracking_number: string | null
+  products: {
+    id: string
+    name: string
+    quantity: number
+    price: number
+  }[]
+  total_amount: number
+  notes: string | null
   created_at: string
   updated_at: string
 }

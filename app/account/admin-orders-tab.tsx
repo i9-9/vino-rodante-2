@@ -16,33 +16,30 @@ import Image from 'next/image'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { OrderStatus } from './types'
 
+interface Product {
+  id: string
+  name: string
+  description: string | null
+  image: string | null
+  price: number
+  year: string | null
+  region: string | null
+  varietal: string | null
+}
+
 interface OrderItem {
   id: string
   order_id: string
   product_id: string
-  product: {
-    id: string
-    name: string
-    image: string | null
-    price: number
-    year: string | null
-    region: string | null
-    varietal: string | null
-  }
-  price: number
   quantity: number
+  price: number
+  products: Product
 }
 
 interface Customer {
   id: string
   name: string
   email: string
-  phone?: string
-  address?: string
-  city?: string
-  state?: string
-  postal_code?: string
-  country?: string
 }
 
 interface Order {
@@ -53,6 +50,14 @@ interface Order {
   created_at: string
   customer: Customer
   order_items: OrderItem[]
+  shipping_address?: {
+    line1: string
+    line2?: string
+    city: string
+    state: string
+    postal_code: string
+    country: string
+  }
 }
 
 interface AdminOrdersTabProps {
@@ -62,8 +67,7 @@ interface AdminOrdersTabProps {
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200',
-  paid: 'bg-blue-100 text-blue-800 hover:bg-blue-200',
-  preparing: 'bg-purple-100 text-purple-800 hover:bg-purple-200',
+  in_preparation: 'bg-purple-100 text-purple-800 hover:bg-purple-200',
   shipped: 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200',
   delivered: 'bg-green-100 text-green-800 hover:bg-green-200',
   cancelled: 'bg-gray-100 text-gray-800 hover:bg-gray-200',
@@ -167,11 +171,12 @@ export default function AdminOrdersTab({ orders, t }: AdminOrdersTabProps) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los estados</SelectItem>
-            {Object.keys(STATUS_COLORS).map((status) => (
-              <SelectItem key={status} value={status}>
-                {t.orders[status]}
-              </SelectItem>
-            ))}
+            <SelectItem value="pending">Pendiente de pago</SelectItem>
+            <SelectItem value="in_preparation">En preparación</SelectItem>
+            <SelectItem value="shipped">Enviado</SelectItem>
+            <SelectItem value="delivered">Entregado</SelectItem>
+            <SelectItem value="cancelled">Cancelado</SelectItem>
+            <SelectItem value="refunded">Reembolsado</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -243,83 +248,91 @@ export default function AdminOrdersTab({ orders, t }: AdminOrdersTabProps) {
                           <div className="space-y-2">
                             <p className="font-medium">{order.customer.name}</p>
                             <p className="text-sm text-muted-foreground">{order.customer.email}</p>
-                            {order.customer.phone && (
-                              <p className="text-sm text-muted-foreground">{order.customer.phone}</p>
-                            )}
                           </div>
-                          {(order.customer.address || order.customer.city) && (
-                            <div className="space-y-2">
-                              <p className="font-medium">Dirección de envío</p>
-                              {order.customer.address && (
-                                <p className="text-sm text-muted-foreground">{order.customer.address}</p>
-                              )}
-                              {order.customer.city && order.customer.state && (
-                                <p className="text-sm text-muted-foreground">
-                                  {order.customer.city}, {order.customer.state}
-                                </p>
-                              )}
-                              {order.customer.postal_code && (
-                                <p className="text-sm text-muted-foreground">{order.customer.postal_code}</p>
-                              )}
-                              {order.customer.country && (
-                                <p className="text-sm text-muted-foreground">{order.customer.country}</p>
-                              )}
-                            </div>
-                          )}
                         </div>
+                      </div>
+
+                      {/* Shipping Address */}
+                      <div className="mt-4">
+                        <h4 className="font-medium mb-2">Dirección de envío</h4>
+                        {order.shipping_address ? (
+                          <div className="text-sm text-muted-foreground">
+                            <p>{order.shipping_address.line1}</p>
+                            {order.shipping_address.line2 && (
+                              <p>{order.shipping_address.line2}</p>
+                            )}
+                            <p>
+                              {order.shipping_address.city}, {order.shipping_address.state}
+                            </p>
+                            <p>{order.shipping_address.postal_code}</p>
+                            <p>{order.shipping_address.country}</p>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Sin dirección de envío</p>
+                        )}
                       </div>
 
                       {/* Products */}
-                      <div className="space-y-4">
-                        {order.order_items.map((item) => (
-                          <div key={item.id} className="flex flex-col sm:flex-row gap-4 p-4 bg-muted/30 rounded-lg">
-                            <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-md overflow-hidden flex-shrink-0">
-                              <Image
-                                src={item.product.image || '/placeholder.svg'}
-                                alt={item.product.name}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                            
-                            <div className="flex-1 space-y-2">
-                              <div className="flex flex-col sm:flex-row justify-between gap-2">
-                                <div className="space-y-1">
-                                  <h3 className="font-semibold text-lg">{item.product.name}</h3>
-                                  <div className="space-y-1 text-sm text-muted-foreground">
-                                    {item.product.year && item.product.region && (
-                                      <p>{item.product.year} · {item.product.region}</p>
-                                    )}
-                                    {item.product.varietal && (
-                                      <p className="font-medium text-foreground">{item.product.varietal}</p>
-                                    )}
-                                  </div>
+                      <div className="mt-4">
+                        <h4 className="font-medium mb-2">Productos</h4>
+                        <div className="space-y-4">
+                          {order.order_items.map((item) => (
+                            <div key={item.id} className="flex items-start gap-4 border-b pb-4">
+                              {item.products.image && (
+                                <div className="w-20 h-20 relative">
+                                  <Image
+                                    src={item.products.image}
+                                    alt={item.products.name}
+                                    fill
+                                    className="object-cover rounded-md"
+                                  />
                                 </div>
-                                <div className="text-right space-y-1">
-                                  <p className="font-medium">{formatCurrency(item.price)} c/u</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    Cantidad: {item.quantity}
+                              )}
+                              <div className="flex-1">
+                                <h5 className="font-medium">{item.products.name}</h5>
+                                {item.products.description && (
+                                  <p className="text-sm text-muted-foreground line-clamp-2">
+                                    {item.products.description}
                                   </p>
-                                  <p className="font-semibold">
-                                    Subtotal: {formatCurrency(item.price * item.quantity)}
-                                  </p>
+                                )}
+                                <div className="mt-1 text-sm">
+                                  {item.products.varietal && (
+                                    <span className="text-muted-foreground">
+                                      {item.products.varietal} · 
+                                    </span>
+                                  )}
+                                  {item.products.year && (
+                                    <span className="text-muted-foreground">
+                                      {" "}{item.products.year} · 
+                                    </span>
+                                  )}
+                                  {item.products.region && (
+                                    <span className="text-muted-foreground">
+                                      {" "}{item.products.region}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="mt-2 flex items-center justify-between">
+                                  <div className="text-sm">
+                                    <span className="font-medium">
+                                      {formatCurrency(item.price)}
+                                    </span>
+                                    {" "}x {item.quantity}
+                                  </div>
+                                  <div className="font-medium">
+                                    {formatCurrency(item.price * item.quantity)}
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Order Total */}
-                      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-2 border-t">
-                        <div className="text-sm text-muted-foreground">
-                          Total de productos: {order.order_items.reduce((acc, item) => acc + item.quantity, 0)}
+                          ))}
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm text-muted-foreground">Total del pedido</p>
-                          <p className="text-2xl font-bold">
-                            {formatCurrency(order.total)}
-                          </p>
+                        <div className="mt-4 text-right">
+                          <div className="text-sm text-muted-foreground">
+                            Total: <span className="font-medium text-foreground">
+                              {formatCurrency(order.total)}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>

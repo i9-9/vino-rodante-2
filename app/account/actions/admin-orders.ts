@@ -6,33 +6,41 @@ import type { OrderStatus } from '../types'
 
 interface DbOrderItem {
   id: string
-  order_id: string
   product_id: string
   quantity: number
   price: number
-  products?: {
+  products: {
+    id: string
     name: string
-  }
+    description: string | null
+    image: string | null
+    price: number
+    varietal: string | null
+    year: string | null
+    region: string | null
+  } | null
 }
 
-interface DbOrder {
+interface RawOrderResponse {
   id: string
   user_id: string
   status: OrderStatus
   total: number
   created_at: string
-  order_items: DbOrderItem[]
-  customer?: {
-    name: string
-    email: string
-  }
-  shipping_address?: {
+  shipping_address: {
     line1: string
-    line2?: string
+    line2: string | null
     city: string
     state: string
     postal_code: string
-  }
+    country: string
+  } | null
+  customer: {
+    id: string
+    name: string
+    email: string
+  } | null
+  order_items: DbOrderItem[]
 }
 
 async function verifyAdmin() {
@@ -91,7 +99,16 @@ export async function getAllOrders() {
       status,
       total,
       created_at,
-      customer:user_id (
+      shipping_address:addresses!shipping_address_id (
+        line1,
+        line2,
+        city,
+        state,
+        postal_code,
+        country
+      ),
+      customer:customers!user_id (
+        id,
         name,
         email
       ),
@@ -101,7 +118,14 @@ export async function getAllOrders() {
         quantity,
         price,
         products (
-          name
+          id,
+          name,
+          description,
+          image,
+          price,
+          varietal,
+          year,
+          region
         )
       )
     `)
@@ -115,20 +139,29 @@ export async function getAllOrders() {
   }
 
   // Transformar los datos para que coincidan con la interfaz Order
-  const transformedOrders = data.map((order) => ({
+  const transformedOrders = (data as unknown as RawOrderResponse[]).map((order) => ({
     id: order.id,
     user_id: order.user_id,
     status: order.status,
     total: order.total,
     created_at: order.created_at,
-    customer: order.customer,
+    shipping_address: order.shipping_address,
+    customer: order.customer || { 
+      id: order.user_id,
+      name: 'Cliente no encontrado',
+      email: 'No disponible'
+    },
     order_items: order.order_items.map((item) => ({
       id: item.id,
       order_id: order.id,
       product_id: item.product_id,
-      product_name: item.products?.name,
       quantity: item.quantity,
-      price: item.price
+      price: item.price,
+      product: item.products || {
+        id: item.product_id,
+        name: 'Producto no encontrado',
+        price: item.price
+      }
     }))
   }))
 
@@ -185,17 +218,23 @@ export async function getOrderById(orderId: string) {
     const { data, error } = await supabase
       .from('orders')
       .select(`
-        *,
-        customer:user_id (
-          name,
-          email
-        ),
-        shipping_address:shipping_address_id (
+        id,
+        user_id,
+        status,
+        total,
+        created_at,
+        shipping_address:addresses!shipping_address_id (
           line1,
           line2,
           city,
           state,
-          postal_code
+          postal_code,
+          country
+        ),
+        customer:customers!user_id (
+          id,
+          name,
+          email
         ),
         order_items (
           id,
@@ -203,7 +242,14 @@ export async function getOrderById(orderId: string) {
           quantity,
           price,
           products (
-            name
+            id,
+            name,
+            description,
+            image,
+            price,
+            varietal,
+            year,
+            region
           )
         )
       `)
@@ -217,28 +263,17 @@ export async function getOrderById(orderId: string) {
       return { data: null, error: new Error('No autorizado para ver este pedido') }
     }
 
-    // 5. Transformar los datos
-    const transformedOrder = {
-      ...data,
-      order_items: data.order_items.map((item: DbOrderItem) => ({
-        ...item,
-        product_name: item.products?.name
-      }))
-    }
-
-    return { data: transformedOrder, error: null }
+    return { data, error: null }
   } catch (error) {
-    console.error('Error getting order details:', error)
+    console.error('Error fetching order:', error)
     return { data: null, error }
   }
 }
 
 export async function deleteOrder(orderId: string) {
   try {
-    // 1. Verificar permisos de admin
     await verifyAdmin()
-
-    // 2. Eliminar orden
+    
     const supabase = await createClient()
     
     const { error } = await supabase
@@ -259,10 +294,8 @@ export async function deleteOrder(orderId: string) {
 
 export async function addOrderNotes(orderId: string, notes: string) {
   try {
-    // 1. Verificar permisos de admin
     await verifyAdmin()
-
-    // 2. Actualizar notas de la orden
+    
     const supabase = await createClient()
     
     const { error } = await supabase
@@ -279,7 +312,7 @@ export async function addOrderNotes(orderId: string, notes: string) {
     
     return { success: true }
   } catch (error) {
-    console.error('Error updating order notes:', error)
+    console.error('Error adding order notes:', error)
     throw error
   }
 } 
