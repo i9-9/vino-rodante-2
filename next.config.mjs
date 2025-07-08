@@ -56,7 +56,7 @@ const nextConfig = {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    domains: ['vino-rodante.s3.sa-east-1.amazonaws.com'],
+    domains: ['vino-rodante.s3.sa-east-1.amazonaws.com', 'drive.google.com'],
     remotePatterns: [
       {
         protocol: 'https',

@@ -260,6 +260,18 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
       );
     }
 
+    // Detectar si es un enlace de Google Drive
+    const isGoogleDriveLink = imagePreview.includes('drive.google.com');
+    if (isGoogleDriveLink) {
+      return (
+        <div className="relative w-20 h-20 flex items-center justify-center bg-gray-100 rounded-md">
+          <div className="text-xs text-center p-1">
+            Google Drive<br/>Link
+          </div>
+        </div>
+      );
+    }
+
     // Si es una URL normal
     try {
       new URL(imagePreview);
@@ -472,6 +484,7 @@ export default function AdminProductsTab({ products, t }: AdminProductsTabProps)
   const [sorting, setSorting] = useState<SortingState>([])
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const { toast } = useToast()
 
   const filteredProducts = useMemo(() => 
     products.filter(product => {
@@ -491,17 +504,36 @@ export default function AdminProductsTab({ products, t }: AdminProductsTabProps)
     {
       id: 'image',
       header: 'Imagen',
-      cell: ({ row }) => (
-        <div className="relative w-[80px] h-[80px]">
-          <Image
-            src={row.original.image && row.original.image.startsWith('http') ? row.original.image : '/placeholder.svg'}
-            alt={row.original.name}
-            fill
-            className="object-contain bg-gray-50 rounded-md"
-            sizes="80px"
-          />
-        </div>
-      ),
+      cell: ({ row }) => {
+        // Check if it's a Google Drive link
+        const isGoogleDriveLink = row.original.image && 
+          typeof row.original.image === 'string' && 
+          row.original.image.includes('drive.google.com');
+        
+        // Use placeholder for Google Drive links or invalid URLs
+        const imgSrc = row.original.image && 
+          row.original.image.startsWith('http') && 
+          !isGoogleDriveLink ? 
+          row.original.image : 
+          '/placeholder.svg';
+          
+        return (
+          <div className="relative w-[80px] h-[80px]">
+            <Image
+              src={imgSrc}
+              alt={row.original.name}
+              fill
+              className="object-contain bg-gray-50 rounded-md"
+              sizes="80px"
+            />
+            {isGoogleDriveLink && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100/80 text-xs text-center p-1">
+                Google Drive<br/>Link
+              </div>
+            )}
+          </div>
+        );
+      },
       enableSorting: false
     },
     {
@@ -651,6 +683,17 @@ export default function AdminProductsTab({ products, t }: AdminProductsTabProps)
 
   const handleEditProduct = async (formData: FormData) => {
     try {
+      // Check if the image is a Google Drive link
+      const imageUrl = formData.get('image') as string;
+      if (imageUrl && imageUrl.includes('drive.google.com')) {
+        // If using toast, show a warning
+        toast({
+          title: "Advertencia sobre imagen",
+          description: "Los enlaces de Google Drive no se mostrarán correctamente. Por favor, sube la imagen directamente o usa una URL de imagen pública.",
+          variant: "destructive",
+        });
+      }
+      
       if (selectedImage) {
         formData.append('image_file', selectedImage)
       }
