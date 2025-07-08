@@ -98,9 +98,15 @@ export const es = {
     tagline: "Apasionados por el vino argentino, dedicados a la calidad, comprometidos a compartir los mejores vinos de nuestra tierra.",
     journey: {
       title: "Nuestro Viaje",
-      paragraph1: "Vino Rodante nace de la pasión por los vinos excepcionales y el deseo de compartirlos. Comenzamos en los viñedos de Argentina, donde descubrimos productores que son fieles a su tradición y también algunos que quieren jugar con fuerte apoyo en la cultura familiar enológica que recibieron.",
-      paragraph2: "Reconocemos escuelas de producción, enologías antiguas, tradicionales, curiosas e innovadoras. Valoramos la diversidad en este hermoso mundo de producción, placer y disfrute.",
-      paragraph3: "Hoy, y siempre, continuamos buscando sorprendernos de las regiones vitivinícolas de Argentina y del mundo en busca de vinos únicos con carácter e historia. Cada botella en nuestra colección representa un recorrido, una tradición y el intercambio natural de las personas apasionadas detrás de él. Amamos el vino, el trabajo que genera, la vinculación que propone y la música de cada descorche."
+      paragraph1: `Vino Rodante nace de la pasión por los vinos excepcionales y el deseo de compartirlos. Comenzamos en los viñedos de Argentina, donde descubrimos productores que son fieles a su tradición y también algunos que quieren jugar, con fuerte apoyo en la cultura familiar enológica que recibieron.`,
+      paragraph2: `Reconocemos escuelas de producción, enologías antiguas, tradicionales, curiosas e innovadoras.
+
+Valoramos la diversidad en este hermoso mundo de producción, placer y disfrute.`,
+      paragraph3: `Hoy, y siempre, continuamos buscando sorprendernos de las regiones vitivinícolas de Argentina y del mundo en busca de vinos únicos con carácter e historia.
+
+Cada botella en nuestra colección representa un recorrido, una tradición y el intercambio natural de las personas apasionadas detrás de él.
+
+Amamos el vino, el trabajo que genera, la vinculación que propone y la música de cada descorche.`
     },
     values: {
       title: "Nuestros Valores",
@@ -469,10 +475,10 @@ export const es = {
     cancelled: "Cancelada",
     expired: "Expirada",
     bimonthly: "Bimestral",
-    tinto: "Club del Tinto",
-    blanco: "Club del Blanco",
+    tinto: "Club Tinto",
+    blanco: "Club Blanco",
     mixto: "Club Mixto",
-    naranjo: "Club del Naranjo",
+    naranjo: "Club Naranjo",
     status: {
       active: 'Activa',
       paused: 'Pausada',

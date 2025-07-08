@@ -34,6 +34,7 @@ interface SubscriptionSelectorProps {
 }
 
 export default function SubscriptionSelector({ plans }: SubscriptionSelectorProps) {
+  console.log('PLANS ENVIADOS AL SELECTOR:', plans)
   const [selectedOption, setSelectedOption] = useState<string>("")
 
   // Crear opciones basadas en los planes disponibles

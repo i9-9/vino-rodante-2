@@ -5,19 +5,19 @@ import { Button } from './ui/button'
 const clubs = [
   {
     id: 'tinto',
-    name: 'Club del Tinto',
+    name: 'Club Tinto',
     description: 'Descubre los mejores vinos tintos de Argentina',
     image: '/images/club/tinto.jpg',
   },
   {
     id: 'blanco',
-    name: 'Club del Blanco',
+    name: 'Club Blanco',
     description: 'Explora la frescura de nuestros vinos blancos',
     image: '/images/club/blanco.jpg',
   },
   {
     id: 'naranjo',
-    name: 'Club del Naranjo',
+    name: 'Club Naranjo',
     description: 'Sumérgete en el mundo de los vinos naranjos',
     image: '/images/club/naranjo.jpg',
   },

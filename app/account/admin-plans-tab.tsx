@@ -499,6 +499,14 @@ return (
               />
               <Label htmlFor="is_active">Activo</Label>
             </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="is_visible"
+                checked={formData.is_visible}
+                onCheckedChange={(checked) => setFormData(prev => ({...prev, is_visible: checked}))}
+              />
+              <Label htmlFor="is_visible">Visible</Label>
+            </div>
           </div>
 
           <div className="flex justify-end gap-2">

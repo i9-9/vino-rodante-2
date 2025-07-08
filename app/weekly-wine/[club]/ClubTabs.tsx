@@ -153,11 +153,11 @@ export default function ClubTabs({ plan, products, clubInfo }: ClubTabsProps) {
                     </div>
                   )}
                   {plan.price_monthly > 0 && (
-                    <div className="text-center p-3 bg-background rounded border">
-                      <div className="font-medium">Cada mes</div>
-                      <div className="text-lg font-bold text-primary">{formatCurrency(plan.price_monthly)}</div>
-                      <div className="text-xs text-muted-foreground">cada mes</div>
-                    </div>
+                  <div className="text-center p-3 bg-background rounded border">
+                    <div className="font-medium">Cada mes</div>
+                    <div className="text-lg font-bold text-primary">{formatCurrency(plan.price_monthly)}</div>
+                    <div className="text-xs text-muted-foreground">cada mes</div>
+                  </div>
                   )}
                 </div>
               </div>

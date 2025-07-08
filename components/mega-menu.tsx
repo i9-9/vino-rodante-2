@@ -10,6 +10,7 @@ import type { WineType, WineVarietal, WineRegion, WineTypeData, WineRegionData, 
 import { getProducts } from '@/lib/products-client'
 import type { Product } from '@/lib/types'
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 
 const RED_VARIETALS: WineVarietal[] = [
   WINE_VARIETALS.MALBEC,
@@ -139,6 +140,38 @@ export default function MegaMenu() {
     }
   }, [hasInitialLoad, isLoadingProducts])
 
+  // Clubes para el menú
+  const clubs = [
+    {
+      name: "Club Tinto",
+      slug: "tinto",
+      image: "/images/club/tinto.jpg",
+      description: "Descubrí una selección cuidadosamente elegida de vinos tintos de las mejores bodegas de Argentina.",
+      href: "/weekly-wine/tinto",
+    },
+    {
+      name: "Club Blanco",
+      slug: "blanco",
+      image: "/images/club/blanco.jpg",
+      description: "Explorá nuestra curada selección de vinos blancos, perfectos para cada ocasión.",
+      href: "/weekly-wine/blanco",
+    },
+    {
+      name: "Club Mixto",
+      slug: "mixto",
+      image: "/images/club/mixto.jpg",
+      description: "Una combinación perfecta de tintos y blancos para disfrutar de la mejor experiencia enológica.",
+      href: "/weekly-wine/mixto",
+    },
+    {
+      name: "Club Naranjo",
+      slug: "naranjo",
+      image: "/images/club/naranjo.jpg",
+      description: "Descubrí el mundo de los vinos naranjos, una experiencia única y diferente.",
+      href: "/weekly-wine/naranjo",
+    },
+  ]
+
   return (
     <NavigationMenu className="hidden md:flex w-full justify-center mega-menu-container">
       <NavigationMenuList className="flex-wrap">
@@ -148,9 +181,22 @@ export default function MegaMenu() {
           </Link>
         </NavigationMenuItem>
 
+        {/* WEEKLY WINE: click navega, hover muestra menú */}
         <NavigationMenuItem key="weekly-wine">
           <NavigationMenuTrigger
-            onClick={() => setIsWeeklyWineOpen(!isWeeklyWineOpen)}
+            onPointerDown={e => {
+              // Si es click izquierdo, navegar
+              if (e.pointerType === "mouse" && e.button === 0) {
+                e.preventDefault();
+                router.push("/weekly-wine");
+              }
+            }}
+            onClick={e => {
+              // Para accesibilidad (teclado)
+              if (e.detail === 0) {
+                router.push("/weekly-wine");
+              }
+            }}
             className={isWeeklyWineOpen ? "text-primary" : ""}
           >
             {t.navigation?.weeklyWine || "Weekly Wine"}
@@ -167,38 +213,27 @@ export default function MegaMenu() {
                       </Link>
                     </div>
                     <div className="grid grid-cols-4 gap-4">
-                      <div className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <Link href="/weekly-wine/tinto" onClick={closeWeeklyWineMenu}>
-                          <div className="text-sm font-medium leading-none mb-2">Club Tinto</div>
-                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                            Descubrí una selección cuidadosamente elegida de vinos tintos de las mejores bodegas de Argentina.
-                          </p>
+                      {clubs.map(club => (
+                        <Link
+                          key={club.slug}
+                          href={club.href}
+                          onClick={closeWeeklyWineMenu}
+                          className="block select-none rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground shadow group"
+                        >
+                          <div className="relative w-full h-32 mb-2 rounded overflow-hidden">
+                            <Image
+                              src={club.image}
+                              alt={club.name}
+                              fill
+                              style={{objectFit: 'cover'}}
+                              className="rounded group-hover:scale-105 transition-transform duration-200"
+                              sizes="(max-width: 768px) 100vw, 25vw"
+                            />
+                          </div>
+                          <div className="text-sm font-medium leading-none mb-1">{club.name}</div>
+                          <p className="line-clamp-2 text-xs leading-snug text-muted-foreground">{club.description}</p>
                         </Link>
-                      </div>
-                      <div className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <Link href="/weekly-wine/blanco" onClick={closeWeeklyWineMenu}>
-                          <div className="text-sm font-medium leading-none mb-2">Club Blanco</div>
-                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                            Explorá nuestra curada selección de vinos blancos, perfectos para cada ocasión.
-                          </p>
-                        </Link>
-                      </div>
-                      <div className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <Link href="/weekly-wine/mixto" onClick={closeWeeklyWineMenu}>
-                          <div className="text-sm font-medium leading-none mb-2">Club Mixto</div>
-                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                            Una combinación perfecta de tintos y blancos para disfrutar de la mejor experiencia enológica.
-                          </p>
-                        </Link>
-                      </div>
-                      <div className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <Link href="/weekly-wine/naranjo" onClick={closeWeeklyWineMenu}>
-                          <div className="text-sm font-medium leading-none mb-2">Club Naranjo</div>
-                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                            Descubrí el mundo de los vinos naranjos, una experiencia única y diferente.
-                          </p>
-                        </Link>
-                      </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -207,9 +242,20 @@ export default function MegaMenu() {
           </NavigationMenuContent>
         </NavigationMenuItem>
 
+        {/* PRODUCTS: click navega, hover muestra menú */}
         <NavigationMenuItem key="products">
           <NavigationMenuTrigger
-            onClick={() => setIsProductsOpen(!isProductsOpen)}
+            onPointerDown={e => {
+              if (e.pointerType === "mouse" && e.button === 0) {
+                e.preventDefault();
+                router.push("/products");
+              }
+            }}
+            onClick={e => {
+              if (e.detail === 0) {
+                router.push("/products");
+              }
+            }}
             className={isProductsOpen ? "text-primary" : ""}
           >
             {t.navigation?.products || "Productos"}
