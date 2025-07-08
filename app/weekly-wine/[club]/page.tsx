@@ -1,4 +1,4 @@
-import { getSubscriptionPlanByClub, getSubscriptionPlanProducts } from '@/lib/subscriptions-client'
+import { getSubscriptionPlansByClub, getSubscriptionPlanProducts } from '@/lib/subscriptions-client'
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -69,26 +69,29 @@ const CLUB_INFO = {
 
 export default async function ClubPage({ params }: { params: Promise<{ club: string }> }) {
   const { club } = await params
-  const { plan, error } = await getSubscriptionPlanByClub(club)
+  const { plans, error } = await getSubscriptionPlansByClub(club)
   const clubInfo = CLUB_INFO[club as keyof typeof CLUB_INFO]
   
-  // Obtener productos del plan si existe
+  // Obtener productos del primer plan si existe
   let planProducts: any[] = []
-  if (plan?.id) {
-    const { products, error: productsError } = await getSubscriptionPlanProducts(plan.id)
+  if (plans && plans.length > 0) {
+    const { products, error: productsError } = await getSubscriptionPlanProducts(plans[0].id)
     if (!productsError && products) {
       planProducts = products
     }
   }
 
-  if (error || !plan || !clubInfo) {
+  if (error || !plans || plans.length === 0 || !clubInfo) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <h1 className="text-3xl font-bold mb-8">Club no encontrado</h1>
-        <p className="text-muted-foreground">El club solicitado no existe.</p>
+        <p className="text-muted-foreground">El club solicitado no existe o no tiene planes activos.</p>
       </div>
     )
   }
+
+  // Use the first plan for display purposes (banner, image, etc.)
+  const displayPlan = plans[0]
 
   return (
     <div className="min-h-screen">
@@ -97,8 +100,8 @@ export default async function ClubPage({ params }: { params: Promise<{ club: str
         <div className="relative h-[70vh] w-full overflow-hidden">
           <div className="absolute inset-0">
             <Image
-              src={plan.banner_image || clubInfo.image}
-              alt={plan.name}
+              src={displayPlan.banner_image || clubInfo.image}
+              alt={displayPlan.name}
               fill
               priority
               sizes="100vw"
@@ -116,8 +119,8 @@ export default async function ClubPage({ params }: { params: Promise<{ club: str
           <div className="flex flex-col items-center">
             <div className="relative w-full aspect-[4/5] max-w-xl rounded-lg overflow-hidden mb-4">
               <Image
-                src={plan.image || clubInfo.image}
-                alt={plan.name}
+                src={displayPlan.image || clubInfo.image}
+                alt={displayPlan.name}
                 fill
                 className="object-cover"
               />
@@ -126,18 +129,18 @@ export default async function ClubPage({ params }: { params: Promise<{ club: str
 
           {/* Detalles del club y suscripción */}
           <div className="flex flex-col gap-6 justify-center">
-            <h2 className="text-3xl font-bold mb-2">{plan.name}</h2>
-            {plan.tagline && (
-              <p className="text-lg text-muted-foreground mb-4">{plan.tagline}</p>
+            <h2 className="text-3xl font-bold mb-2">{displayPlan.name}</h2>
+            {displayPlan.tagline && (
+              <p className="text-lg text-muted-foreground mb-4">{displayPlan.tagline}</p>
             )}
             
             {/* Selector de suscripción */}
             <div className="mb-6">
-              <SubscriptionSelector plan={plan} />
+              <SubscriptionSelector plans={plans} />
             </div>
             
             {/* Tabs funcionales */}
-            <ClubTabs plan={plan} products={planProducts} clubInfo={clubInfo} />
+            <ClubTabs plan={displayPlan} products={planProducts} clubInfo={clubInfo} />
           </div>
         </div>
 

@@ -219,9 +219,6 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
       if (selectedFile) {
         const imageUrl = await uploadImage(selectedFile)
         submitData.set('image', imageUrl)
-      } else if (product.image) {
-        // Mantener la imagen existente si no se seleccionó una nueva
-        submitData.set('image', product.image)
       }
       
       await onSubmit(submitData)
@@ -518,20 +515,20 @@ export default function AdminProductsTab({ products, t }: AdminProductsTabProps)
           '/placeholder.svg';
           
         return (
-          <div className="relative w-[80px] h-[80px]">
-            <Image
+        <div className="relative w-[80px] h-[80px]">
+          <Image
               src={imgSrc}
-              alt={row.original.name}
-              fill
-              className="object-contain bg-gray-50 rounded-md"
-              sizes="80px"
-            />
+            alt={row.original.name}
+            fill
+            className="object-contain bg-gray-50 rounded-md"
+            sizes="80px"
+          />
             {isGoogleDriveLink && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-100/80 text-xs text-center p-1">
                 Google Drive<br/>Link
               </div>
             )}
-          </div>
+        </div>
         );
       },
       enableSorting: false
