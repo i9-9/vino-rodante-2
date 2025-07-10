@@ -82,7 +82,7 @@ export default function MegaMenu() {
   const allTypes = wineTypesData.map(type => ({
     name: type.name,
     slug: type.slug,
-    href: `/collections/type/${type.slug}`,
+    href: `/collections/${type.slug}`,
   }))
 
   const allRegions = regionsData.map(region => ({

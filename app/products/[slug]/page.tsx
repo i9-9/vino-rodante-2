@@ -112,7 +112,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
               <span>
                 {product.stock > 0 
-                  ? `${t.products.inStock} (${product.stock} ${t.products.available})` 
+                  ? t.products.inStock
                   : t.products.outOfStock
                 }
               </span>
