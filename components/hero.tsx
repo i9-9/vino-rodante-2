@@ -59,7 +59,7 @@ export default function Hero() {
           </h1>
           <div className="max-w-2xl text-lg text-[#F2F2F2]/90 sm:text-xl">
             {heroSlide.subtitle.split('\n').map((line, index) => (
-              <p key={index} className="mb-2">
+              <p key={index} className="">
                 {line}
               </p>
             ))}

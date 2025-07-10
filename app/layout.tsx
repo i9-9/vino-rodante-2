@@ -24,11 +24,11 @@ const getBaseUrl = () => {
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseUrl()),
-  title: "Vino Rodante | Selección de Vinos Finos",
+  title: "Vino Rodante | Selección de Vinos Argentinos",
   description:
-    "Descubre vinos excepcionales de todo el mundo, cuidadosamente seleccionados para los paladares más exigentes.",
+    "Descubre vinos excepcionales de todo el país, cuidadosamente seleccionados para los paladares más exigentes.",
   keywords: [
-    "vino", "wine", "argentina", "malbec", "cabernet", "chardonnay", "vinos online", "ecommerce vino", "vinorodante", "comprar vino", "vinos argentinos"
+    "vino", "wine", "argentina", "malbec", "cabernet", "chardonnay", "vinos online", "ecommerce vino", "vinorodante", "comprar vino", "vinos argentinos", "suscripcion de vino", "riesling", "vino de jujuy", "vino de la patagonia", "vino de mendoza", "club de vino", "club tinto", "club blanco", "club mixto", "club naranjo"
   ],
   openGraph: {
     title: "Vino Rodante | El Vino Rueda en el Tiempo y Crece con la Historia",

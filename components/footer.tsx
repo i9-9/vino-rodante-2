@@ -15,27 +15,16 @@ export default function Footer() {
     <footer className="bg-primary text-primary-foreground">
       <div className="container px-4 py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <Link href="/" className="flex items-center gap-2 mb-4">
+          <div className="flex flex-col justify-between h-full self-stretch">
+            <Link href="/" className="flex items-center gap-2 mb-4 ">
               <Image 
                 src="/logo/logo2.svg" 
                 alt="Vino Rodante Logo" 
-                width={160} 
-                height={50} 
-                className="h-12 w-auto brightness-0 invert"
+                width={240}
+                height={80}
+                className="h-20 w-auto brightness-0 invert"
               />
             </Link>
-            <p className="text-primary-foreground/70 mb-6">
-            El Vino Rueda en el Tiempo y Crece con la Historia
-            </p>
-            <div className="flex space-x-4">
-              <Button variant="ghost" size="icon" className="hover:bg-white/10 hover:text-white/80">
-              <Link href="https://www.instagram.com/vinorodante/">
-                <Instagram className="h-5 w-5" />
-                <span className="sr-only">Instagram</span>
-              </Link>
-              </Button>
-            </div>
           </div>
 
           <div>
@@ -108,9 +97,19 @@ export default function Footer() {
                 <Mail className="h-5 w-5 text-accent flex-shrink-0" />
                 <a 
                   href="mailto:vino@vinorodante.com" 
-                  className="text-primary-foreground/70 hover:text-primary-foreground transition-colors cursor-pointer"
                 >
                   vino@vinorodante.com
+                </a>
+              </li>
+              <li className="flex items-center gap-3">
+                <Instagram className="h-5 w-5 text-accent flex-shrink-0" />
+                <a
+                  href="https://www.instagram.com/vinorodante/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary-foreground/70 hover:text-primary-foreground transition-colors cursor-pointer"
+                >
+                  @vinorodante
                 </a>
               </li>
             </ul>

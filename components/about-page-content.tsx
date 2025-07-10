@@ -14,7 +14,7 @@ export default function AboutPageContent() {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: "url('/placeholder.svg?height=800&width=1600')",
+            backgroundImage: "url('/images/Banner_us.png')",
             filter: "brightness(0.7)",
           }}
         />
