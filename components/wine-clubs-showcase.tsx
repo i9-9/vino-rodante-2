@@ -33,16 +33,16 @@ export default function WineClubsShowcase() {
   return (
     <section className="w-full py-16 bg-white">
       <div className="container px-4 mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#5B0E2D] mb-4">
+        {/* <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-medium text-[#5B0E2D] mb-4">
             Nuestros Clubes de Vino
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Únete a uno de nuestros exclusivos clubes y recibe una selección mensual de vinos cuidadosamente elegidos
           </p>
-        </div>
+        </div> */}
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {clubs.map((club) => (
             <div
               key={club.id}
@@ -68,7 +68,7 @@ export default function WineClubsShowcase() {
               </div>
             </div>
           ))}
-        </div>
+        </div> */}
       </div>
     </section>
   )

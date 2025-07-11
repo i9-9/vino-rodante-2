@@ -113,10 +113,10 @@ export default function Header() {
           <Image 
             src="/logo/logo_vr.svg" 
             alt="Vino Rodante Logo" 
-            width={120} 
-            height={40} 
+            width={240} 
+            height={80} 
             priority
-            className="h-10 w-auto"
+            className="h-10 w-auto object-contain"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.src = "/logo/logo2.svg";

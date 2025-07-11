@@ -103,33 +103,21 @@
   h4,
   h5,
   h6 {
-    font-family: 'pinot-grigio-modern', serif;
-    text-transform: uppercase;
-    font-weight: 400 !important;
+    font-family: 'neue-haas-unica', system-ui, sans-serif;
+    font-weight: 600;
     font-style: normal;
   }
   
-  /* Ensure all elements with Pinot Grigio font are uppercase and never bold */
-  [style*="font-family: 'pinot-grigio-modern'"],
-  [style*='font-family: pinot-grigio-modern'],
-  [class*="font-pinot"],
-  [class*="font-heading"],
-  [font-family*="pinot-grigio-modern"] {
-    text-transform: uppercase !important;
-    font-weight: 400 !important;
-    font-style: normal !important;
+  /* Ensure consistent typography */
+  [class*="font-heading"] {
+    font-family: 'neue-haas-unica', system-ui, sans-serif;
+    font-weight: 600;
+    font-style: normal;
   }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
-  }
-  
-  .font-pinot-grigio {
-    font-family: 'pinot-grigio-modern', serif;
-    text-transform: uppercase;
-    font-weight: 400 !important;
-    font-style: normal;
   }
 }

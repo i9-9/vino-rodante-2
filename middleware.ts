@@ -13,11 +13,12 @@ const authRoutes = [
   '/auth/clear-session',
 ]
 
-// Lista de rutas que pueden necesitar auth en el futuro (admin, dashboard)
+// Lista de rutas que requieren autenticación
 const protectedRoutes = [
   '/admin',
   '/dashboard',
   '/profile',
+  '/account', // Dashboard principal
 ]
 
 export async function middleware(request: NextRequest) {
@@ -54,13 +55,29 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/auth')
-  ) {
+  // Solo proteger rutas específicas que requieren autenticación
+  const isProtectedRoute = protectedRoutes.some(route => 
+    request.nextUrl.pathname.startsWith(route)
+  )
+  
+  const isAuthRoute = authRoutes.some(route => 
+    request.nextUrl.pathname.startsWith(route)
+  )
+
+  // Solo redirigir si:
+  // 1. No hay usuario autenticado
+  // 2. Está intentando acceder a una ruta protegida
+  // 3. No está ya en una ruta de auth
+  if (!user && isProtectedRoute && !isAuthRoute) {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = '/auth/sign-in'
+    return NextResponse.redirect(redirectUrl)
+  }
+
+  // Si el usuario está autenticado y está en una ruta de auth, redirigir al dashboard
+  if (user && isAuthRoute) {
+    const redirectUrl = request.nextUrl.clone()
+    redirectUrl.pathname = '/account'
     return NextResponse.redirect(redirectUrl)
   }
 

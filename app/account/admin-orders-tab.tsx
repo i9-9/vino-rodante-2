@@ -14,6 +14,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronDown, ChevronUp, Search } from 'lucide-react'
 import Image from 'next/image'
 import { Skeleton } from '@/components/ui/skeleton'
+import PaginatedList from './components/PaginatedList'
 import type { OrderStatus, Order } from './types'
 
 interface Product {
@@ -168,7 +169,7 @@ export default function AdminOrdersTab({ orders, t }: AdminOrdersTabProps) {
         {filteredOrders.length === 0 ? (
           <EmptyOrdersState searchTerm={searchTerm} selectedStatus={selectedStatus} t={t} />
         ) : (
-          filteredOrders.map((order) => (
+          filteredOrders.slice(0, 10).map((order) => (
             <Card key={order.id}>
               <CardHeader className="bg-muted/50">
                 <div className="flex flex-col sm:flex-row justify-between gap-4">

@@ -227,13 +227,6 @@ export default function MobileMenu({
               >
                 {t.megamenu.bestsellers}
               </Link>
-              <Link
-                href="/collections/gift-sets"
-                className="block text-foreground hover:text-secondary text-base transition-colors"
-                onClick={onClose}
-              >
-                {t.megamenu.giftSets}
-              </Link>
             </div>
           </div>
 

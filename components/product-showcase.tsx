@@ -13,7 +13,7 @@ export default function ProductShowcase({ products }: { products: Product[] }) {
     <section className="w-full py-16 bg-[#F2F2F2]">
       <div className="container px-4">
         <div className="mb-10 text-center">
-          <h2 className="text-3xl font-bold text-[#5B0E2D] mb-4">{t.home.featuredWines.title}</h2>
+          <h2 className="text-3xl font-medium text-[#5B0E2D] mb-4">{t.home.featuredWines.title}</h2>
           <p className="text-[#1F1F1F]/70 max-w-2xl mx-auto">
             {t.home.featuredWines.description}
           </p>

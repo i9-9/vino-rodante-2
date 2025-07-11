@@ -13,7 +13,7 @@ export default function AboutUs() {
       <div className="container px-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="order-2 lg:order-1">
-            <h2 className="text-3xl font-bold text-[#5B0E2D] mb-4">{t.home.about.title}</h2>
+            <h2 className="text-3xl font-medium text-[#5B0E2D] mb-4">{t.home.about.title}</h2>
             <p className="text-[#1F1F1F]/80 mb-4">
               {t.home.about.paragraph1}
             </p>

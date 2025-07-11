@@ -51,10 +51,6 @@ const collections = [
     name: "Novedades",
     href: "/collections/new-arrivals",
   },
-  {
-    name: "Sets de Regalo",
-    href: "/collections/gift-sets",
-  },
 ]
 
 // Función para formatear nombres

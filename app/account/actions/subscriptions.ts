@@ -215,21 +215,39 @@ export async function uploadPlanImage(file: File) {
       return { success: false, error: 'Permisos insuficientes' }
     }
 
+    // Validar tipo de archivo
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      return { success: false, error: 'Tipo de archivo no permitido. Use JPG, PNG o WebP.' }
+    }
+
+    // Validar tamaño (max 20MB)
+    const maxSize = 20 * 1024 * 1024 // 20MB
+    if (file.size > maxSize) {
+      return { success: false, error: 'La imagen es demasiado grande. Máximo 20MB.' }
+    }
+
     // Generar un nombre único para el archivo
     const fileExt = file.name.split('.').pop()
-    const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
-    const filePath = `subscription-plans/${fileName}`
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+    const filePath = fileName
 
     // Subir el archivo
     const { data, error } = await supabase.storage
-      .from('public')
-      .upload(filePath, file)
+      .from('subscription-plans')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      })
 
-    if (error) throw error
+    if (error) {
+      console.error('Error de Supabase Storage:', error)
+      throw error
+    }
 
     // Obtener la URL pública
     const { data: { publicUrl } } = supabase.storage
-      .from('public')
+      .from('subscription-plans')
       .getPublicUrl(filePath)
 
     return { success: true, url: publicUrl }

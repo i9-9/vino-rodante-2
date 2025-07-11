@@ -8,16 +8,22 @@ import { LogOut, Menu, X } from 'lucide-react'
 import { signOut } from '@/app/auth/actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import Spinner from '@/components/ui/Spinner'
 import type { Profile } from '@/lib/types'
-import type { Product, Order, Address, UserSubscription, SubscriptionPlan, Customer } from './types'
+import type { Address } from './types'
 import type { Translations } from '@/lib/i18n/types'
 
 // Import tab components
 import { ProfileTab } from './components/ProfileTab'
-import { OrdersTab } from './components/OrdersTab'
 import { AddressesTab } from './components/AddressesTab'
+import SmartLoader from './components/SmartLoader'
+import { OrdersTabSkeleton } from './components/OrdersTabSkeleton'
+import { SubscriptionsTabSkeleton } from './components/SubscriptionsTabSkeleton'
+import { AdminOrdersSkeleton, AdminProductsSkeleton, AdminSubscriptionsSkeleton, AdminPlansSkeleton } from './components/AdminSkeleton'
+
+// Import components directly with skeletons for better UX
+import { OrdersTab } from './components/OrdersTab'
 import { SubscriptionsTab } from './components/SubscriptionsTab'
 import AdminOrdersTab from './admin-orders-tab'
 import AdminProductsTab from './admin-products-tab'
@@ -27,33 +33,39 @@ import { AdminPlansTab } from './admin-plans-tab'
 interface AccountClientProps {
   user: User
   profile: Profile
-  orders: Order[]
   addresses: Address[]
-  userSubscriptions: UserSubscription[]
-  availablePlans: SubscriptionPlan[]
   userRole: 'admin' | 'user'
   t: Translations
-  // Admin data
-  adminOrders?: Order[]
-  adminSubscriptions?: UserSubscription[]
-  adminProducts?: Product[]
-  adminUsers?: Customer[]
+}
+
+// Placeholder data - en una implementación real vendría del servidor
+const mockOrders: any[] = []
+const mockSubscriptions: any[] = []
+const mockAvailablePlans: any[] = []
+const mockAdminOrders: any[] = []
+const mockAdminProducts: any[] = []
+const mockAdminUsers: any[] = []
+
+// Loading skeleton component
+function TabSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>
+      <div className="space-y-2">
+        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+        <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+        <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+      </div>
+    </div>
+  )
 }
 
 export default function AccountClientNew({
   user,
   profile,
-  orders,
   addresses,
-  userSubscriptions,
-  availablePlans,
   userRole,
-  t,
-  // Admin data
-  adminOrders = [],
-  adminSubscriptions = [],
-  adminProducts = [],
-  adminUsers = []
+  t
 }: AccountClientProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
@@ -172,9 +184,9 @@ export default function AccountClientNew({
               </TabsContent>
 
               <TabsContent value="orders" className="space-y-4 m-0">
-                <div className="grid gap-4">
-                  <OrdersTab orders={orders} t={t} />
-                </div>
+                <SmartLoader skeleton={<OrdersTabSkeleton />}>
+                  <OrdersTab orders={mockOrders} t={t} />
+                </SmartLoader>
               </TabsContent>
 
               <TabsContent value="addresses" className="space-y-4 m-0">
@@ -182,48 +194,35 @@ export default function AccountClientNew({
               </TabsContent>
 
               <TabsContent value="subscriptions" className="space-y-4 m-0">
-                <div className="grid gap-4">
-                  <SubscriptionsTab 
-                    subscriptions={userSubscriptions} 
-                    availablePlans={availablePlans}
-                    t={t} 
-                  />
-                </div>
+                <SmartLoader skeleton={<SubscriptionsTabSkeleton />}>
+                  <SubscriptionsTab subscriptions={mockSubscriptions} availablePlans={mockAvailablePlans} t={t} />
+                </SmartLoader>
               </TabsContent>
 
               {userRole === 'admin' && (
                 <>
                   <TabsContent value="admin-orders" className="space-y-4 m-0">
-                    <div className="grid gap-4">
-                      <AdminOrdersTab orders={adminOrders} t={t} />
-                    </div>
+                    <SmartLoader skeleton={<AdminOrdersSkeleton />}>
+                      <AdminOrdersTab orders={mockAdminOrders} t={t} />
+                    </SmartLoader>
                   </TabsContent>
 
                   <TabsContent value="admin-products" className="space-y-4 m-0">
-                    <div className="grid gap-4">
-                      <AdminProductsTab 
-                        products={adminProducts} 
-                        t={t} 
-                      />
-                    </div>
+                    <SmartLoader skeleton={<AdminProductsSkeleton />}>
+                      <AdminProductsTab products={mockAdminProducts} t={t} />
+                    </SmartLoader>
                   </TabsContent>
 
                   <TabsContent value="admin-subscriptions" className="space-y-4 m-0">
-                    <div className="grid gap-4">
-                      <AdminSubscriptionsTab 
-                        t={t}
-                      />
-                    </div>
+                    <SmartLoader skeleton={<AdminSubscriptionsSkeleton />}>
+                      <AdminSubscriptionsTab t={t} />
+                    </SmartLoader>
                   </TabsContent>
 
                   <TabsContent value="admin-plans" className="space-y-4 m-0">
-                    <div className="grid gap-4">
-                      <AdminPlansTab 
-                        plans={availablePlans} 
-                        users={adminUsers}
-                        t={t} 
-                      />
-                    </div>
+                    <SmartLoader skeleton={<AdminPlansSkeleton />}>
+                      <AdminPlansTab plans={mockAvailablePlans} users={mockAdminUsers} t={t} />
+                    </SmartLoader>
                   </TabsContent>
                 </>
               )}

@@ -1,77 +1,84 @@
-"use client"
-
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import Image from "next/image"
-import { useTranslations } from "@/lib/providers/translations-provider"
-import { useEffect, useState } from "react"
+import { getAvailablePlans } from '@/app/account/actions/subscriptions'
+import type { SubscriptionPlan } from '@/app/account/types'
+import { Truck, Clock, Wine } from "lucide-react"
 
-export default function Hero() {
-  const t = useTranslations()
-  const [imageLoaded, setImageLoaded] = useState(false)
-
-  const heroSlide = {
-    image: "/images/hero_bg.png",
-    title: t.home.hero.title,
-    subtitle: t.home.hero.subtitle,
-    cta: t.home.hero.cta,
-    secondaryCta: t.home.hero.secondaryCta,
-    ctaLink: "/products",
-    secondaryCtaLink: "/about"
-  }
-
-  // Preload the image when component mounts
-  useEffect(() => {
-    const img = new window.Image()
-    img.src = heroSlide.image
-    img.onload = () => {
-      setImageLoaded(true)
-    }
-  }, [])
+export default async function Hero() {
+  // Obtener los 4 planes activos y visibles
+  const { data: plans = [] } = await getAvailablePlans() as { data: SubscriptionPlan[] }
+  const weeklyPlans = plans.slice(0, 4)
 
   return (
-    <section className="w-full relative">
-      <div className="relative h-[70vh] w-full overflow-hidden">
-        <div className="absolute inset-0">
-          <Image
-            src={heroSlide.image}
-            alt={heroSlide.title}
-            fill
-            priority
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
-            quality={75}
-            className="object-cover object-center transition-opacity duration-300"
-            style={{
-              filter: "brightness(0.7)",
-              opacity: imageLoaded ? 1 : 0,
-            }}
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = "/placeholder.svg?height=1080&width=1920";
-            }}
-          />
+    <section className="w-full bg-white border-b">
+      <div className="container px-4 py-6 grid grid-cols-1 md:grid-cols-2 gap-8 items-center min-h-[750px]">
+        {/* Columna Izquierda: Texto alineado a la izquierda y centrado verticalmente, pero más arriba */}
+        <div className="flex flex-col items-start text-left z-10 mb-20">
+          <div className="w-full">
+            <h1 className="text-4xl md:text-5xl font-medium text-[#1F1F1F] leading-tight mb-4">
+              Weekly Wine
+            </h1>
+            <p className="text-lg text-[#555] max-w-xl whitespace-pre-line mb-6">
+              {`En Vino Rodante lo sabemos: tu tiempo es para disfrutar, no para buscar.
+Por eso te llevamos a casa una cuidada selección de vinos de calidad a precios irresistibles.
+Descorcha sin salir de casa. Disfruta sin complicaciones.`}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+              <Button size="lg" variant="primary" asChild>
+                <Link href="/weekly-wine">Ver suscripciones</Link>
+              </Button>
+              <Button size="lg" variant="secondary" asChild>
+                <Link href="/products">Ver productos</Link>
+              </Button>
+            </div>
+            <div className="flex flex-row justify-center sm:justify-start gap-6 text-sm text-[#444] items-center text-left">
+              <div className="flex flex-col items-center sm:flex-row sm:items-center gap-2">
+                <Truck size={22} strokeWidth={1.5} className="text-[#444]" />
+                <span>Envío gratis</span>
+              </div>
+              <div className="flex flex-col items-center sm:flex-row sm:items-center gap-2">
+                <Clock size={22} strokeWidth={1.5} className="text-[#444]" />
+                <span>Entrega rápida</span>
+              </div>
+              <div className="flex flex-col items-center sm:flex-row sm:items-center gap-2">
+                <Wine size={22} strokeWidth={1.5} className="text-[#444]" />
+                <span>Selección curada</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-black/5 to-transparent" />
-        <div className="absolute inset-0 bg-black/10" />
-        <div className="container relative z-10 flex h-full flex-col justify-center px-4 text-white">
-          <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-            {heroSlide.title}
-          </h1>
-          <div className="max-w-2xl text-lg text-[#F2F2F2]/90 sm:text-xl">
-            {heroSlide.subtitle.split('\n').map((line, index) => (
-              <p key={index} className="">
-                {line}
-              </p>
-            ))}
-          </div>
-          <div className="mt-8 flex flex-col sm:flex-row gap-4">
-            <Button size="lg" className="bg-[#A83935] hover:bg-[#A83935]/90 text-white">
-              <Link href={heroSlide.ctaLink}>{heroSlide.cta}</Link>
-            </Button>
-            <Button size="lg" variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/20">
-              <Link href={heroSlide.secondaryCtaLink}>{heroSlide.secondaryCta}</Link>
-            </Button>
-          </div>
+        {/* Columna Derecha: Grid 2x2 de planes de suscripción */}
+        <div className="grid grid-cols-2 gap-4 mb-20">
+          {weeklyPlans.map((plan) => (
+            <div
+              key={plan.id}
+              className="group relative aspect-[4/3] w-full rounded-lg overflow-hidden shadow-md hover:shadow-lg transition"
+            >
+              <Image
+                src={plan.image || '/placeholder.svg'}
+                alt={plan.name}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 50vw, 25vw"
+                priority
+              />
+              {/* Overlay para texto */}
+              <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/70 to-transparent px-4 py-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="font-semibold text-white text-base truncate mb-1 drop-shadow">
+                  {plan.name}
+                </div>
+                {plan.tagline && (
+                  <div className="text-white/80 text-xs mb-2 drop-shadow line-clamp-2">
+                    {plan.tagline}
+                  </div>
+                )}
+                <Button size="sm" variant="secondary" asChild className="mt-1">
+                  <Link href={`/weekly-wine/${plan.type}`}>Ver plan</Link>
+                </Button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>

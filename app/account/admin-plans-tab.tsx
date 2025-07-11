@@ -159,6 +159,10 @@ const handleSubmit = async (e: React.FormEvent) => {
   setLoading(true)
 
   try {
+    // Forzar a número antes de validar
+    const priceMonthly = Number(formData.price_monthly)
+    const priceQuarterly = Number(formData.price_quarterly)
+
     // Validar datos requeridos
     if (!formData.name || !formData.club || !formData.description) {
       throw new Error('Por favor completa todos los campos requeridos')
@@ -170,7 +174,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     }
 
     // Validar precios
-    if (formData.price_monthly <= 0 || formData.price_quarterly <= 0) {
+    if (priceMonthly <= 0 || priceQuarterly <= 0) {
       throw new Error('Los precios mensuales y trimestrales deben ser mayores a 0')
     }
 
@@ -182,7 +186,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       Object.entries(formData).forEach(([key, value]) => {
         const originalValue = editingPlan[key as keyof SubscriptionPlan]
         if (value !== originalValue) {
-          changedData[key as keyof SubscriptionPlan] = value
+          (changedData as any)[key] = value
         }
       })
 
@@ -214,10 +218,10 @@ const handleEdit = (plan: SubscriptionPlan) => {
     description: plan.description || '',
     image: plan.image,
     banner_image: plan.banner_image || '',
-    price_monthly: plan.price_monthly,
-    price_quarterly: plan.price_quarterly,
-    price_weekly: plan.price_weekly || 0,
-    price_biweekly: plan.price_biweekly || 0,
+    price_monthly: Number(plan.price_monthly) || 0,
+    price_quarterly: Number(plan.price_quarterly) || 0,
+    price_weekly: Number(plan.price_weekly) || 0,
+    price_biweekly: Number(plan.price_biweekly) || 0,
     is_active: plan.is_active,
     slug: plan.slug || '',
     tagline: plan.tagline || '',
@@ -260,12 +264,15 @@ const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>, type: '
 
     if (type === 'main') {
       setFormData(prev => ({ ...prev, image: result.url }))
+      toast.success('Imagen principal subida correctamente')
     } else {
       setFormData(prev => ({ ...prev, banner_image: result.url }))
+      toast.success('Imagen de banner subida correctamente')
     }
   } catch (error) {
-    toast.error('Error al subir la imagen')
-    console.error(error)
+    const errorMessage = error instanceof Error ? error.message : 'Error al subir la imagen'
+    toast.error(errorMessage)
+    console.error('Error uploading image:', error)
   } finally {
     setLoading(false)
   }
@@ -468,8 +475,11 @@ return (
                 <Input
                   type="number"
                   min={0}
-                  value={formData.price_monthly}
-                  onChange={e => setFormData(prev => ({ ...prev, price_monthly: Number(e.target.value) }))}
+                  value={formData.price_monthly === 0 ? '' : formData.price_monthly}
+                  onChange={e => {
+                    const value = e.target.value === '' ? 0 : Number(e.target.value)
+                    setFormData(prev => ({ ...prev, price_monthly: value }))
+                  }}
                   required
                 />
               </div>
@@ -482,8 +492,11 @@ return (
                 <Input
                   type="number"
                   min={0}
-                  value={formData.price_monthly}
-                  onChange={e => setFormData(prev => ({ ...prev, price_monthly: Number(e.target.value) }))}
+                  value={formData.price_monthly === 0 ? '' : formData.price_monthly}
+                  onChange={e => {
+                    const value = e.target.value === '' ? 0 : Number(e.target.value)
+                    setFormData(prev => ({ ...prev, price_monthly: value }))
+                  }}
                   required
                 />
               </div>
