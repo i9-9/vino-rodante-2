@@ -40,7 +40,6 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center">
       <Hero />
-      <WineClubsShowcase />
       <Suspense 
         fallback={
           <div className="w-full py-16 bg-[#F2F2F2]">
