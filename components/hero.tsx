@@ -21,14 +21,14 @@ export default async function Hero() {
           <p className="text-base md:text-lg text-[#444] max-w-xl whitespace-pre-line mb-8 leading-relaxed">
             {`En Vino Rodante lo sabemos: tu tiempo es para disfrutar, no para buscar.
 Por eso te llevamos a casa una cuidada selección de vinos de calidad a precios irresistibles.
-Descorcha sin salir de casa. Disfruta sin complicaciones.`}
+Descorchá sin salir de casa. Disfrutá sin complicaciones.`}
           </p>
           <div className="flex flex-row gap-4 mb-8 w-full justify-start">
             <Button size="lg" variant="primary" asChild className="text-base px-8 py-3 w-full sm:w-auto">
               <Link href="/weekly-wine">Ver suscripciones</Link>
             </Button>
             <Button size="lg" variant="secondary" asChild className="text-base px-8 py-3 w-full sm:w-auto">
-              <Link href="/products">Ver productos</Link>
+              <Link href="/products">Explorar vinos</Link>
             </Button>
           </div>
           <div className="flex flex-row gap-3 sm:gap-6 text-xs sm:text-sm text-[#444] items-center mt-2">
