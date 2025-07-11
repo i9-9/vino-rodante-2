@@ -35,15 +35,18 @@ export default function MobileMenu({
           <SheetHeader className="border-b pb-4">
             <SheetTitle className="flex items-center justify-center">
               <Image 
-                src="/logo/logo_vr.svg" 
+                src="/logo/logo2.svg" 
                 alt="Vino Rodante Logo" 
                 width={120} 
                 height={40} 
                 priority
                 className="h-10 w-auto"
+                style={{
+                  imageRendering: 'crisp-edges'
+                }}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = "/logo/logo2.svg";
+                  target.src = "/logo/logo_vr.svg";
                 }}
               />
             </SheetTitle>

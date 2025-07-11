@@ -103,28 +103,33 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background">
-      <div className="container flex h-16 items-center px-4">
-        <Button variant="ghost" size="icon" className="mr-2 md:hidden" onClick={() => setIsMenuOpen(true)}>
-          <Menu className="h-6 w-6" />
-          <span className="sr-only">{t.common.menu}</span>
-        </Button>
-
-        <Link href="/" className="flex items-center gap-2">
-          <Image 
-            src="/logo/logo_vr.svg" 
-            alt="Vino Rodante Logo" 
-            width={240} 
-            height={80} 
-            priority
-            className="h-10 w-auto object-contain"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = "/logo/logo2.svg";
-            }}
-          />
-        </Link>
-
-        <div className="mx-auto flex flex-1 justify-center">
+      <div className="container h-16 grid grid-cols-[auto_1fr_auto] items-center px-4">
+        {/* Logo a la izquierda */}
+        <div className="flex items-center">
+          <Button variant="ghost" size="icon" className="mr-2 md:hidden" onClick={() => setIsMenuOpen(true)}>
+            <Menu className="h-6 w-6" />
+            <span className="sr-only">{t.common.menu}</span>
+          </Button>
+          <Link href="/" className="flex items-center gap-2">
+            <Image 
+              src="/logo/logo2.svg" 
+              alt="Vino Rodante Logo" 
+              width={240} 
+              height={80} 
+              priority
+              className="h-10 w-auto object-contain"
+              style={{
+                imageRendering: 'crisp-edges'
+              }}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = "/logo/logo_vr.svg";
+              }}
+            />
+          </Link>
+        </div>
+        {/* Navegación centrada */}
+        <div className="justify-self-center w-full flex justify-center">
           <Suspense fallback={
             <div className="hidden md:flex w-full justify-center">
               <div className="h-10 w-96 bg-gray-100 rounded animate-pulse" />
@@ -133,10 +138,9 @@ export default function Header() {
             <MegaMenu />
           </Suspense>
         </div>
-
-        <div className="flex items-center gap-2">
+        {/* Íconos a la derecha */}
+        <div className="flex items-center gap-2 justify-self-end">
           <LanguageSwitcher />
-          
           <Suspense fallback={
             <Button variant="ghost" size="icon" disabled>
               <div className="h-5 w-5 rounded bg-gray-200 animate-pulse" />
@@ -144,7 +148,6 @@ export default function Header() {
           }>
             <SearchDialog />
           </Suspense>
-
           <Suspense fallback={
             <Button variant="ghost" size="icon">
               <div className="h-5 w-5 rounded-full bg-gray-200 animate-pulse" />
@@ -152,7 +155,6 @@ export default function Header() {
           }>
             <UserMenuContent />
           </Suspense>
-
           <Suspense fallback={
             <Button variant="ghost" size="icon">
               <div className="h-5 w-5 rounded bg-gray-200 animate-pulse" />
@@ -162,7 +164,6 @@ export default function Header() {
           </Suspense>
         </div>
       </div>
-
       <MobileMenu open={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
       <CartSidebar open={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </header>

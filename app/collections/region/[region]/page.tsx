@@ -18,7 +18,7 @@ export default function RegionPage({ params }: { params: Promise<{ region: strin
 
   return (
     <div className="container py-8">
-      <h1 className="text-3xl font-bold mb-8">
+      <h1 className="text-3xl font-medium mb-8">
         {t.wineRegions[region as keyof typeof t.wineRegions] || prettyLabel(region)}
       </h1>
       

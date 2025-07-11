@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic"
 
 // Componente asíncrono para cargar productos destacados
 async function ProductSection() {
-  console.log('📦 Rendering ProductSection...')
+  
   const { data: products, error } = await getFeaturedProducts()
   
   if (error) {
@@ -35,7 +35,7 @@ async function ProductSection() {
 }
 
 export default function Home() {
-  console.log('🏠 Homepage rendering...')
+  
   
   return (
     <main className="flex min-h-screen flex-col items-center">

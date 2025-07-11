@@ -39,7 +39,7 @@ export default function CollectionPage({ params }: { params: Promise<{ type: str
   if (!isValid) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
-        <h1 className="text-3xl font-bold mb-8">{t.products.title || "Colección no encontrada"}</h1>
+        <h1 className="text-3xl font-medium mb-8">{t.products.title || "Colección no encontrada"}</h1>
         <p className="text-muted-foreground">{t.products.description || "El tipo de vino solicitado no existe."}</p>
       </div>
     )
@@ -47,7 +47,7 @@ export default function CollectionPage({ params }: { params: Promise<{ type: str
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">{typeData?.name}</h1>
+      <h1 className="text-3xl font-medium mb-8">{typeData?.name}</h1>
       {loading ? (
         <div className="text-center py-8">
           <p className="text-muted-foreground">Cargando productos...</p>

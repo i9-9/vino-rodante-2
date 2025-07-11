@@ -72,9 +72,12 @@ export const es = {
   home: {
     hero: {
       title: "Weekly Wine",
-      subtitle: "En Vino Rodante lo sabemos: tu tiempo es para disfrutar, no para buscar.\nPor eso te llevamos a casa una cuidada selección de vinos de calidad a precios irresistibles.\nDescorcha sin salir de casa. Disfruta sin complicaciones.",
-      cta: "Ver Productos",
-      secondaryCta: "Conoce más",
+      subtitle: "En Vino Rodante lo sabemos: tu tiempo es para disfrutar, no para buscar.\nPor eso te llevamos a casa una cuidada selección de vinos de calidad a precios irresistibles. Descorchá sin salir de casa. Disfrutá sin complicaciones.",
+      cta: "Ver suscripciones",
+      secondaryCta: "Explorar vinos",
+      shipping: "Envío gratis a toda Argentina",
+      fastDelivery: "Entrega rápida",
+      curatedSelection: "Selección curada",
     },
     featuredWines: {
       title: "Vinos Destacados",

@@ -45,7 +45,7 @@ export default function NewArrivalsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold mb-4">{t.megamenu?.newArrivals || "Novedades"}</h1>
+        <h1 className="text-4xl font-medium mb-4">{t.megamenu?.newArrivals || "Novedades"}</h1>
         <p className="text-muted-foreground text-lg">
           {t.collections?.newArrivalsDescription || "Descubre nuestros vinos más recientes"}
         </p>

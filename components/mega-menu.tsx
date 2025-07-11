@@ -169,8 +169,8 @@ export default function MegaMenu() {
   ]
 
   return (
-    <NavigationMenu className="hidden md:flex w-full justify-center mega-menu-container">
-      <NavigationMenuList className="flex-wrap">
+    <NavigationMenu className="hidden md:flex justify-center mega-menu-container">
+      <NavigationMenuList className="flex-wrap justify-center">
         <NavigationMenuItem key="home">
           <Link href="/" legacyBehavior passHref>
             <NavigationMenuLink className={navigationMenuTriggerStyle()}>{t.navigation?.home || "Inicio"}</NavigationMenuLink>
@@ -197,9 +197,9 @@ export default function MegaMenu() {
           >
             {t.navigation?.weeklyWine || "Weekly Wine"}
           </NavigationMenuTrigger>
-          <NavigationMenuContent>
-            <div className="w-screen left-0 fixed">
-              <div className="container mx-auto px-4 py-6 bg-background border border-border rounded-lg shadow-lg">
+          <NavigationMenuContent className="!left-1/2 !transform !-translate-x-1/2 !w-screen">
+            <div className="w-full bg-background border border-border rounded-lg shadow-lg">
+              <div className="max-w-6xl mx-auto px-4 py-6">
                 <div className="grid grid-cols-12 gap-6">
                   <div className="col-span-12">
                     <div className="flex items-center justify-between mb-6">
@@ -208,7 +208,7 @@ export default function MegaMenu() {
                         {t.common?.view || "Ver todos"} {t.common?.all || "los clubs"}
                       </Link>
                     </div>
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid grid-cols-4 gap-4 justify-center">
                       {clubs.map(club => (
                         <Link
                           key={club.slug}
@@ -256,9 +256,9 @@ export default function MegaMenu() {
           >
             {t.navigation?.products || "Productos"}
           </NavigationMenuTrigger>
-          <NavigationMenuContent>
-            <div className="w-screen left-0 fixed">
-              <div className="container mx-auto px-4 py-6 bg-background border border-border rounded-lg shadow-lg">
+          <NavigationMenuContent className="!left-1/2 !transform !-translate-x-1/2 !w-screen">
+            <div className="w-full bg-background border border-border rounded-lg shadow-lg">
+              <div className="max-w-6xl mx-auto px-4 py-6">
                 <div className="grid grid-cols-12 gap-6">
                   {/* Main categories - 4 columns */}
                   <div className="col-span-4">

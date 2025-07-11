@@ -83,8 +83,11 @@ export const en = {
     hero: {
       title: "Weekly Wine",
       subtitle: "At Vino Rodante we know: your time is for enjoying, not searching.\nThat's why we bring you a carefully curated selection of quality wines at irresistible prices.\nUncork without leaving home. Enjoy without complications.",
-      cta: "View Products",
-      secondaryCta: "Learn More",
+      cta: "View Subscriptions",
+      secondaryCta: "Explore Wines",
+      shipping: "Free shipping across Argentina",
+      fastDelivery: "Fast delivery",
+      curatedSelection: "Curated selection",
     },
     featuredWines: {
       title: "Featured Wines",

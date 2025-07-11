@@ -4,45 +4,45 @@ import Image from "next/image"
 import { getAvailablePlans } from '@/app/account/actions/subscriptions'
 import type { SubscriptionPlan } from '@/app/account/types'
 import { Truck, Clock, Wine } from "lucide-react"
+import { getTranslations } from '@/lib/get-translations'
 
 export default async function Hero() {
   // Obtener los 4 planes activos y visibles
   const { data: plans = [] } = await getAvailablePlans() as { data: SubscriptionPlan[] }
   const weeklyPlans = plans.slice(0, 4)
+  const t = await getTranslations()
 
   return (
     <section className="w-full bg-white relative md:h-[calc(100vh-4rem)]">
       {/* Columna izquierda: contenido alineado con el logo */}
       <div className="container h-full">
-        <div className="flex flex-col items-start text-left z-10 h-full justify-center w-full py-16 md:py-6 mb-28 md:mb-8">
+        <div className="flex flex-col items-start text-left z-10 h-full justify-center w-full py-28 md:py-20 mb-0 md:mb-0">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-medium text-[#5B0E2D] leading-tight mb-6 max-w-xl">
-            Weekly Wine
+            {t.home.hero.title}
           </h1>
-          <p className="text-base md:text-lg text-[#444] max-w-xl whitespace-pre-line mb-8 leading-relaxed">
-            {`En Vino Rodante lo sabemos: tu tiempo es para disfrutar, no para buscar.
-Por eso te llevamos a casa una cuidada selección de vinos de calidad a precios irresistibles.
-Descorchá sin salir de casa. Disfrutá sin complicaciones.`}
+          <p className="text-base md:text-base text-[#444] max-w-xl whitespace-pre-line mb-8 leading-relaxed">
+            {t.home.hero.subtitle}
           </p>
           <div className="flex flex-row gap-4 mb-8 w-full justify-start">
             <Button size="lg" variant="primary" asChild className="text-base px-8 py-3 w-full sm:w-auto">
-              <Link href="/weekly-wine">Ver suscripciones</Link>
+              <Link href="/weekly-wine">{t.home.hero.cta}</Link>
             </Button>
             <Button size="lg" variant="secondary" asChild className="text-base px-8 py-3 w-full sm:w-auto">
-              <Link href="/products">Explorar vinos</Link>
+              <Link href="/products">{t.home.hero.secondaryCta}</Link>
             </Button>
           </div>
           <div className="flex flex-row gap-3 sm:gap-6 text-xs sm:text-sm text-[#444] items-center mt-2">
             <div className="flex items-center gap-1.5">
               <Truck size={16} strokeWidth={1.5} className="text-[#444] flex-shrink-0" />
-              <span>Envío gratis a toda Argentina</span>
+              <span>{t.home.hero.shipping}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Clock size={16} strokeWidth={1.5} className="text-[#444] flex-shrink-0" />
-              <span>Entrega rápida</span>
+              <span>{t.home.hero.fastDelivery}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Wine size={16} strokeWidth={1.5} className="text-[#444] flex-shrink-0" />
-              <span>Selección curada</span>
+              <span>{t.home.hero.curatedSelection}</span>
             </div>
           </div>
         </div>
@@ -69,8 +69,10 @@ Descorchá sin salir de casa. Disfrutá sin complicaciones.`}
               {/* Overlay para texto en hover */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               {/* Contenido del texto */}
-              <div className="absolute bottom-0 left-0 w-full p-3 md:p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                <div className="flex flex-col gap-2">
+              <div className="absolute bottom-0 left-0 w-full p-3 md:p-4 flex flex-row items-end justify-between gap-2
+                md:transform md:translate-y-full md:group-hover:translate-y-0 md:transition-transform md:duration-300
+                bg-gradient-to-t from-black/70 to-transparent">
+                <div>
                   <div className="font-semibold text-white text-sm md:text-base truncate drop-shadow-lg">
                     {plan.name}
                   </div>
@@ -79,10 +81,10 @@ Descorchá sin salir de casa. Disfrutá sin complicaciones.`}
                       {plan.tagline}
                     </div>
                   )}
-                  <Button size="sm" variant="primary" asChild className="mt-2 w-fit">
-                    <Link href={`/weekly-wine/${plan.type}`}>Ver plan</Link>
-                  </Button>
                 </div>
+                <Button size="sm" variant="primary" asChild className="mt-2 w-fit">
+                  <Link href={`/weekly-wine/${plan.type}`}>{t.home.hero.cta}</Link>
+                </Button>
               </div>
             </div>
           ))}
