@@ -59,6 +59,7 @@ Descorchá sin salir de casa. Disfrutá sin complicaciones.`}
                 src={plan.image || '/placeholder.svg'}
                 alt={plan.name}
                 fill
+                quality={70}
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
                 sizes="(max-width: 768px) 50vw, 25vw"
                 priority
