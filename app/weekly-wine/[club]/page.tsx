@@ -83,7 +83,7 @@ export default async function ClubPage({ params }: { params: Promise<{ club: str
 
   if (error || !plans || plans.length === 0 || !clubInfo) {
     return (
-      <div className="container mx-auto px-4 py-8 text-center">
+      <div className="container mx-auto px-6 md:px-8 lg:px-12 py-8 text-center">
         <h1 className="text-3xl font-bold mb-8">Club no encontrado</h1>
         <p className="text-muted-foreground">El club solicitado no existe o no tiene planes activos.</p>
       </div>
@@ -113,7 +113,7 @@ export default async function ClubPage({ params }: { params: Promise<{ club: str
       </section>
 
       {/* Grid principal: producto destacado + detalles */}
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-6 md:px-8 lg:px-12 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-16">
           {/* Imagen grande del producto/plan */}
           <div className="flex flex-col items-center">
@@ -145,7 +145,7 @@ export default async function ClubPage({ params }: { params: Promise<{ club: str
         </div>
 
         {/* Beneficios */}
-        <div className="py-12 bg-muted rounded-lg mb-12">
+        <div className="py-12 bg-muted rounded-lg mb-12 px-6">
           <h3 className="text-2xl font-bold text-center mb-8">¿Qué recibís?</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             {clubInfo.benefits.slice(0, 3).map((benefit, idx) => (

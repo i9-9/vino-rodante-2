@@ -5,7 +5,7 @@ import { calculateNextDeliveryDate } from '@/utils/subscription-helpers';
 import type { SubscriptionFrequency } from '@/types/subscription';
 
 const mp = new MercadoPagoConfig({ 
-  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN! 
+  accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN! 
 });
 
 export async function POST(request: Request) {
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     }
 
     const payment = new Payment(mp);
-    const { response: paymentData } = await payment.get({ id: body.data.id });
+    const paymentData = await payment.get({ id: body.data.id });
 
     // Obtener la referencia externa del pago
     const { external_reference, status } = paymentData;
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     // Extraer información de la referencia
     const [userId, planId, frequency] = external_reference.split('_');
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Buscar la suscripción
     const { data: subscription, error: subscriptionError } = await supabase

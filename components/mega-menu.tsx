@@ -199,7 +199,7 @@ export default function MegaMenu() {
           </NavigationMenuTrigger>
           <NavigationMenuContent className="!left-1/2 !transform !-translate-x-1/2 !w-screen">
             <div className="w-full bg-background border border-border rounded-lg shadow-lg">
-              <div className="max-w-6xl mx-auto px-4 py-6">
+              <div className="max-w-6xl mx-auto px-4 md:px-8 py-6">
                 <div className="grid grid-cols-12 gap-6">
                   <div className="col-span-12">
                     <div className="flex items-center justify-between mb-6">
@@ -258,7 +258,7 @@ export default function MegaMenu() {
           </NavigationMenuTrigger>
           <NavigationMenuContent className="!left-1/2 !transform !-translate-x-1/2 !w-screen">
             <div className="w-full bg-background border border-border rounded-lg shadow-lg">
-              <div className="max-w-6xl mx-auto px-4 py-6">
+              <div className="max-w-6xl mx-auto px-4 md:px-8 py-6">
                 <div className="grid grid-cols-12 gap-6">
                   {/* Main categories - 4 columns */}
                   <div className="col-span-4">

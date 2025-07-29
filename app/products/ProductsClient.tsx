@@ -119,11 +119,11 @@ export default function ProductsClient({ t }: ProductsClientProps) {
   }
 
   if (loading) {
-    return <div className="container px-4 py-12">Loading...</div>
+    return <div className="container px-6 md:px-8 lg:px-12 py-12">Loading...</div>
   }
 
   return (
-    <div className="container px-4 py-12">
+    <div className="container px-6 md:px-8 lg:px-12 py-12">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-[#5B0E2D] mb-4">{t.products.title}</h1>
         <p className="text-[#1F1F1F]/70 max-w-3xl">

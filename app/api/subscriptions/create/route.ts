@@ -13,12 +13,12 @@ import {
 } from '@/utils/subscription-helpers';
 
 const mp = new MercadoPagoConfig({ 
-  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN! 
+  accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN! 
 });
 
 export async function POST(request: Request) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
@@ -97,7 +97,7 @@ export async function POST(request: Request) {
       }
     };
 
-    const { init_point, id: mpSubscriptionId } = await preference.create(preferenceData);
+    const { init_point, id: mpSubscriptionId } = await preference.create({ body: preferenceData });
 
     if (!init_point || !mpSubscriptionId) {
       throw new Error('Error al crear preferencia en MercadoPago');

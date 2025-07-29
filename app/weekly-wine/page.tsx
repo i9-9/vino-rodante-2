@@ -40,7 +40,7 @@ export default function WeeklyWinePage() {
   const t = useTranslations()
 
   return (
-    <div className="container mx-auto px-4 py-16">
+    <div className="container mx-auto px-6 md:px-8 lg:px-12 py-16">
       {/* Header */}
       <div className="text-center mb-16">
         <h1 className="text-4xl md:text-5xl font-medium mb-6">Weekly Wine</h1>

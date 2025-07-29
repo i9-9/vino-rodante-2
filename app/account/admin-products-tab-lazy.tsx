@@ -20,41 +20,68 @@ export default function AdminProductsTabLazy({ t }: AdminProductsTabLazyProps) {
 
     const loadAdminProducts = async () => {
       try {
+        console.log('🔄 Iniciando carga de productos admin...')
         const supabase = createClient()
         
         // Verificar que el usuario sea admin
-        const { data: { user } } = await supabase.auth.getUser()
+        console.log('👤 Verificando usuario...')
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        if (userError) {
+          console.error('❌ Error de autenticación:', userError)
+          setError(`Error de autenticación: ${userError.message}`)
+          return
+        }
+        
         if (!user) {
-          setError('No autorizado')
+          console.error('❌ No hay usuario autenticado')
+          setError('No autorizado - No hay usuario')
           return
         }
 
-        const { data: customer } = await supabase
+        console.log('✅ Usuario autenticado:', user.email)
+        console.log('🔍 Verificando permisos de admin...')
+
+        const { data: customer, error: customerError } = await supabase
           .from('customers')
-          .select('is_admin')
+          .select('is_admin, email, name')
           .eq('id', user.id)
           .single()
 
-        if (!customer?.is_admin) {
-          setError('No autorizado')
+        if (customerError) {
+          console.error('❌ Error al verificar customer:', customerError)
+          setError(`Error al verificar permisos: ${customerError.message}`)
           return
         }
 
+        console.log('👤 Datos del customer:', customer)
+
+        if (!customer?.is_admin) {
+          console.error('❌ Usuario no es admin:', customer)
+          setError('No autorizado - Se requieren permisos de administrador')
+          return
+        }
+
+        console.log('✅ Usuario verificado como admin, cargando productos...')
+
         // Cargar todos los productos
-        const { data, error } = await supabase
+        const { data, error, count } = await supabase
           .from('products')
-          .select('*')
+          .select('*', { count: 'exact' })
           .order('created_at', { ascending: false })
           .limit(100) // Límite inicial para performance
 
         if (!isMounted) return
 
         if (error) {
-          setError(error.message)
+          console.error('❌ Error al cargar productos:', error)
+          setError(`Error al cargar productos: ${error.message}`)
         } else {
+          console.log(`✅ Productos cargados exitosamente: ${data?.length || 0} de ${count} total`)
+          console.log('📋 Productos:', data)
           setProducts(data || [])
         }
       } catch (err) {
+        console.error('💥 Error inesperado al cargar productos:', err)
         if (isMounted) {
           setError(err instanceof Error ? err.message : 'Error desconocido')
         }

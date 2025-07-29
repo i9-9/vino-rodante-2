@@ -20,15 +20,15 @@ import { AddressesTab } from './components/AddressesTab'
 import SmartLoader from './components/SmartLoader'
 import { OrdersTabSkeleton } from './components/OrdersTabSkeleton'
 import { SubscriptionsTabSkeleton } from './components/SubscriptionsTabSkeleton'
-import { AdminOrdersSkeleton, AdminProductsSkeleton, AdminSubscriptionsSkeleton, AdminPlansSkeleton } from './components/AdminSkeleton'
+import { AdminOrdersSkeleton, AdminSubscriptionsSkeleton } from './components/AdminSkeleton'
 
 // Import components directly with skeletons for better UX
 import { OrdersTab } from './components/OrdersTab'
 import { SubscriptionsTab } from './components/SubscriptionsTab'
 import AdminOrdersTab from './admin-orders-tab'
-import AdminProductsTab from './admin-products-tab'
+import AdminProductsTabLazy from './admin-products-tab-lazy'
 import { AdminSubscriptionsTab } from './admin-subscriptions-tab'
-import { AdminPlansTab } from './admin-plans-tab'
+import AdminPlansTabLazy from './admin-plans-tab-lazy'
 
 interface AccountClientProps {
   user: User
@@ -43,8 +43,7 @@ const mockOrders: any[] = []
 const mockSubscriptions: any[] = []
 const mockAvailablePlans: any[] = []
 const mockAdminOrders: any[] = []
-const mockAdminProducts: any[] = []
-const mockAdminUsers: any[] = []
+
 
 // Loading skeleton component
 function TabSkeleton() {
@@ -208,9 +207,7 @@ export default function AccountClientNew({
                   </TabsContent>
 
                   <TabsContent value="admin-products" className="space-y-4 m-0">
-                    <SmartLoader skeleton={<AdminProductsSkeleton />}>
-                      <AdminProductsTab products={mockAdminProducts} t={t} />
-                    </SmartLoader>
+                    <AdminProductsTabLazy t={t} />
                   </TabsContent>
 
                   <TabsContent value="admin-subscriptions" className="space-y-4 m-0">
@@ -220,9 +217,7 @@ export default function AccountClientNew({
                   </TabsContent>
 
                   <TabsContent value="admin-plans" className="space-y-4 m-0">
-                    <SmartLoader skeleton={<AdminPlansSkeleton />}>
-                      <AdminPlansTab plans={mockAvailablePlans} users={mockAdminUsers} t={t} />
-                    </SmartLoader>
+                    <AdminPlansTabLazy t={t} />
                   </TabsContent>
                 </>
               )}

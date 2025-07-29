@@ -54,7 +54,7 @@ export function MercadoPagoCheckout({
     try {
       if (!preferenceId) return;
 
-      const mp = new window.MercadoPago('APP_USR-cb682995-6da4-474b-8f26-02dc26c36771', {
+      const mp = new window.MercadoPago(process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY!, {
         locale: 'es-AR',
       });
 

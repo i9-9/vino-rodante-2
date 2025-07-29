@@ -31,9 +31,9 @@ export default function MobileMenu({
   if (!t || !language) {
     return (
       <Sheet open={open} onOpenChange={onClose}>
-        <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+        <SheetContent side="left" className="w-full sm:w-[400px] px-4">
           <SheetHeader className="border-b pb-4">
-            <SheetTitle className="flex items-center justify-center">
+            <SheetTitle className="flex items-center justify-start">
               <Image 
                 src="/logo/logo2.svg" 
                 alt="Vino Rodante Logo" 
@@ -75,9 +75,9 @@ export default function MobileMenu({
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+      <SheetContent side="left" className="w-full sm:w-[400px] px-4">
         <SheetHeader className="border-b pb-4">
-          <SheetTitle className="flex items-center justify-center">
+          <SheetTitle className="flex items-center justify-start">
             <Image 
               src="/logo/logo_vr.svg" 
               alt="Vino Rodante Logo" 
@@ -92,8 +92,8 @@ export default function MobileMenu({
             />
           </SheetTitle>
         </SheetHeader>
-        <div className="flex flex-col gap-4 py-6">
-          <div className="flex items-center gap-2 mb-2">
+        <div className="py-6">
+          <div className="flex items-center gap-2 mb-4">
             <Globe className="h-5 w-5 text-muted-foreground" />
             <span className="font-medium">{t.language[language]}</span>
             <div className="flex gap-2 ml-auto">
@@ -114,140 +114,148 @@ export default function MobileMenu({
             </div>
           </div>
 
-          <Separator />
+          <Separator className="mb-4" />
 
-          <Link
-            href="/"
-            className="text-foreground hover:text-secondary text-lg font-medium transition-colors"
-            onClick={onClose}
-          >
-            {t.navigation.home}
-          </Link>
+          <div className="grid grid-cols-2 gap-6">
+            {/* Columna Izquierda */}
+            <div className="space-y-4">
+              <Link
+                href="/"
+                className="block text-foreground hover:text-primary text-base font-semibold transition-colors py-1"
+                onClick={onClose}
+              >
+                {t.navigation.home}
+              </Link>
 
-          <div className="space-y-2">
-            <Link
-              href="/weekly-wine"
-              className="text-foreground hover:text-secondary text-lg font-medium transition-colors"
-              onClick={onClose}
-            >
-              {t.navigation.weeklyWine}
-            </Link>
-            <div className="pl-4 space-y-2">
+              <div className="space-y-3">
+                <Link
+                  href="/weekly-wine"
+                  className="block text-foreground hover:text-primary text-base font-semibold transition-colors py-1"
+                  onClick={onClose}
+                >
+                  {t.navigation.weeklyWine}
+                </Link>
+                <div className="pl-3 space-y-1.5 border-l-2 border-muted">
+                  <Link
+                    href="/weekly-wine/tinto"
+                    className="block text-muted-foreground hover:text-foreground text-sm transition-colors py-0.5"
+                    onClick={onClose}
+                  >
+                    Club Tinto
+                  </Link>
+                  <Link
+                    href="/weekly-wine/blanco"
+                    className="block text-muted-foreground hover:text-foreground text-sm transition-colors py-0.5"
+                    onClick={onClose}
+                  >
+                    Club Blanco
+                  </Link>
+                  <Link
+                    href="/weekly-wine/mixto"
+                    className="block text-muted-foreground hover:text-foreground text-sm transition-colors py-0.5"
+                    onClick={onClose}
+                  >
+                    Club Mixto
+                  </Link>
+                  <Link
+                    href="/weekly-wine/naranjo"
+                    className="block text-muted-foreground hover:text-foreground text-sm transition-colors py-0.5"
+                    onClick={onClose}
+                  >
+                    Club Naranjo
+                  </Link>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <span className="block text-foreground text-base font-semibold py-1">
+                  {t.megamenu.collections}
+                </span>
+                <div className="pl-3 space-y-1.5 border-l-2 border-muted">
+                  <Link
+                    href="/collections/featured"
+                    className="block text-muted-foreground hover:text-foreground text-sm transition-colors py-0.5"
+                    onClick={onClose}
+                  >
+                    {t.megamenu.featured}
+                  </Link>
+                  <Link
+                    href="/collections/new-arrivals"
+                    className="block text-muted-foreground hover:text-foreground text-sm transition-colors py-0.5"
+                    onClick={onClose}
+                  >
+                    {t.megamenu.newArrivals}
+                  </Link>
+                  <Link
+                    href="/collections/bestsellers"
+                    className="block text-muted-foreground hover:text-foreground text-sm transition-colors py-0.5"
+                    onClick={onClose}
+                  >
+                    {t.megamenu.bestsellers}
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Columna Derecha */}
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <Link
+                  href="/products"
+                  className="block text-foreground hover:text-primary text-base font-semibold transition-colors py-1"
+                  onClick={onClose}
+                >
+                  {t.navigation.products}
+                </Link>
+                <div className="pl-3 space-y-1.5 border-l-2 border-muted">
+                  <Link
+                    href="/collections/red"
+                    className="block text-muted-foreground hover:text-foreground text-sm transition-colors py-0.5"
+                    onClick={onClose}
+                  >
+                    {t.navigation.redWines}
+                  </Link>
+                  <Link
+                    href="/collections/white"
+                    className="block text-muted-foreground hover:text-foreground text-sm transition-colors py-0.5"
+                    onClick={onClose}
+                  >
+                    {t.navigation.whiteWines}
+                  </Link>
+                  <Link
+                    href="/collections/sparkling"
+                    className="block text-muted-foreground hover:text-foreground text-sm transition-colors py-0.5"
+                    onClick={onClose}
+                  >
+                    {t.navigation.sparklingWines}
+                  </Link>
+                  <Link
+                    href="/collections/naranjo"
+                    className="block text-muted-foreground hover:text-foreground text-sm transition-colors py-0.5"
+                    onClick={onClose}
+                  >
+                    {t.navigation.orangeWines}
+                  </Link>
+                </div>
+              </div>
+
               <Link
-                href="/weekly-wine/tinto"
-                className="block text-foreground hover:text-secondary text-base transition-colors"
+                href="/about"
+                className="block text-foreground hover:text-primary text-base font-semibold transition-colors py-1"
                 onClick={onClose}
               >
-                Club Tinto
+                {t.navigation.about}
               </Link>
+
               <Link
-                href="/weekly-wine/blanco"
-                className="block text-foreground hover:text-secondary text-base transition-colors"
+                href="/contact"
+                className="block text-foreground hover:text-primary text-base font-semibold transition-colors py-1"
                 onClick={onClose}
               >
-                Club Blanco
-              </Link>
-              <Link
-                href="/weekly-wine/mixto"
-                className="block text-foreground hover:text-secondary text-base transition-colors"
-                onClick={onClose}
-              >
-                Club Mixto
-              </Link>
-              <Link
-                href="/weekly-wine/naranjo"
-                className="block text-foreground hover:text-secondary text-base transition-colors"
-                onClick={onClose}
-              >
-                Club Naranjo
+                {t.navigation.contact}
               </Link>
             </div>
           </div>
-
-          <div className="space-y-2">
-            <Link
-              href="/products"
-              className="text-foreground hover:text-secondary text-lg font-medium transition-colors"
-              onClick={onClose}
-            >
-              {t.navigation.products}
-            </Link>
-            <div className="pl-4 space-y-2">
-              <Link
-                href="/collections/red"
-                className="block text-foreground hover:text-secondary text-base transition-colors"
-                onClick={onClose}
-              >
-                {t.navigation.redWines}
-              </Link>
-              <Link
-                href="/collections/white"
-                className="block text-foreground hover:text-secondary text-base transition-colors"
-                onClick={onClose}
-              >
-                {t.navigation.whiteWines}
-              </Link>
-              <Link
-                href="/collections/sparkling"
-                className="block text-foreground hover:text-secondary text-base transition-colors"
-                onClick={onClose}
-              >
-                {t.navigation.sparklingWines}
-              </Link>
-              <Link
-                href="/collections/naranjo"
-                className="block text-foreground hover:text-secondary text-base transition-colors"
-                onClick={onClose}
-              >
-                {t.navigation.orangeWines}
-              </Link>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <span className="text-foreground text-lg font-medium">
-              {t.megamenu.collections}
-            </span>
-            <div className="pl-4 space-y-2">
-              <Link
-                href="/collections/featured"
-                className="block text-foreground hover:text-secondary text-base transition-colors"
-                onClick={onClose}
-              >
-                {t.megamenu.featured}
-              </Link>
-              <Link
-                href="/collections/new-arrivals"
-                className="block text-foreground hover:text-secondary text-base transition-colors"
-                onClick={onClose}
-              >
-                {t.megamenu.newArrivals}
-              </Link>
-              <Link
-                href="/collections/bestsellers"
-                className="block text-foreground hover:text-secondary text-base transition-colors"
-                onClick={onClose}
-              >
-                {t.megamenu.bestsellers}
-              </Link>
-            </div>
-          </div>
-
-          <Link
-            href="/about"
-            className="text-foreground hover:text-secondary text-lg font-medium transition-colors"
-            onClick={onClose}
-          >
-            {t.navigation.about}
-          </Link>
-
-          <Link
-            href="/contact"
-            className="text-foreground hover:text-secondary text-lg font-medium transition-colors"
-            onClick={onClose}
-          >
-            {t.navigation.contact}
-          </Link>
 
           <Separator className="my-2" />
 
