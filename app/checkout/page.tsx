@@ -49,6 +49,7 @@ export default function CheckoutPage() {
     console.log("Checkout useEffect triggered:", {
       isInitialized,
       user: !!user,
+      userEmail: user?.email,
       cartItemsLength: cartItems.length,
       step
     })
@@ -64,35 +65,50 @@ export default function CheckoutPage() {
     if (user && isInitialized) {
       console.log("User authenticated, fetching user info")
       const fetchUserInfo = async () => {
-        const { data, error } = await supabase.from("customers").select(`*, addresses(*)`).eq("id", user.id).single()
+        try {
+          const { data, error } = await supabase
+            .from("customers")
+            .select(`*, addresses(*)`)
+            .eq("id", user.id)
+            .single()
 
-        if (data) {
-          setCustomerInfo((prev) => ({
-            ...prev,
-            name: data.name,
-            email: user.email || "",
-          }))
+          if (error) {
+            console.error("Error fetching user data:", error)
+            return
+          }
 
-          // If user has a default address, use it
-          if (data.addresses && data.addresses.length > 0) {
-            const defaultAddress = data.addresses.find((addr: any) => addr.is_default) || data.addresses[0]
-
+          if (data) {
+            console.log("User data fetched:", data)
             setCustomerInfo((prev) => ({
               ...prev,
-              address1: defaultAddress.line1,
-              address2: defaultAddress.line2 || "",
-              city: defaultAddress.city,
-              state: defaultAddress.state,
-              postalCode: defaultAddress.postal_code,
-              country: defaultAddress.country,
+              name: data.name || "",
+              email: user.email || "",
             }))
+
+            // If user has addresses, use the default one or the first one
+            if (data.addresses && data.addresses.length > 0) {
+              const defaultAddress = data.addresses.find((addr: any) => addr.is_default) || data.addresses[0]
+              console.log("Using address:", defaultAddress)
+
+              setCustomerInfo((prev) => ({
+                ...prev,
+                address1: defaultAddress.line1 || "",
+                address2: defaultAddress.line2 || "",
+                city: defaultAddress.city || "",
+                state: defaultAddress.state || "",
+                postalCode: defaultAddress.postal_code || "",
+                country: defaultAddress.country || "Argentina",
+              }))
+            }
           }
+        } catch (error) {
+          console.error("Error in fetchUserInfo:", error)
         }
       }
 
       fetchUserInfo()
     }
-  }, [user, isInitialized, router, cartItems.length])
+  }, [user, isInitialized, router, cartItems.length, supabase])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -310,7 +326,7 @@ export default function CheckoutPage() {
                       console.log("Debug user state:", { user: !!user, isInitialized, userEmail: user?.email });
                       return null;
                     })()}
-                    {!user && (
+                    {!user && isInitialized && (
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <p className="text-blue-800 text-sm">
                           <strong>Nota:</strong> Se creará una cuenta automáticamente con tu información para gestionar tu pedido.
