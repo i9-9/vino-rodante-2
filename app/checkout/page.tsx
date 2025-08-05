@@ -40,53 +40,29 @@ export default function CheckoutPage() {
   const [step, setStep] = useState<"info" | "payment">("info")
   const supabase = createClient()
 
-  if (!isInitialized) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-pulse text-center">
-            <div className="w-12 h-12 bg-wine-600 rounded-full mx-auto mb-4"></div>
-            <p className="text-wine-800">Inicializando checkout...</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (initError) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center text-red-600">
-            <p>Error de autenticación: {initError}</p>
-            <Button variant="outline" className="mt-4" onClick={() => router.push('/auth/sign-in')}>
-              Iniciar sesión
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (!user) {
-    router.push('/auth/sign-in?return_to=/checkout')
-    return null
-  }
-
   // Calculate totals
-  const tax = subtotal * 0.21 // 21% IVA in Argentina
+  // Los precios ya incluyen IVA, por lo que no agregamos IVA adicional
   const shipping = subtotal > 10000 ? 0 : 1500 // Free shipping over 10,000 ARS
-  const total = subtotal + tax + shipping
+  const total = subtotal + shipping
 
   useEffect(() => {
+    console.log("Checkout useEffect triggered:", {
+      isInitialized,
+      user: !!user,
+      cartItemsLength: cartItems.length,
+      step
+    })
+
     // Redirect if cart is empty
     if (cartItems.length === 0) {
+      console.log("Redirecting to products: cart is empty")
       router.push("/products");
       return;
     }
 
-    // If user is logged in, fetch their information
-    if (user && !isInitialized) {
+    // If user is logged in and initialized, fetch their information
+    if (user && isInitialized) {
+      console.log("User authenticated, fetching user info")
       const fetchUserInfo = async () => {
         const { data, error } = await supabase.from("customers").select(`*, addresses(*)`).eq("id", user.id).single()
 
@@ -147,6 +123,90 @@ export default function CheckoutPage() {
     }
 
     try {
+      let customerId = user?.id
+
+      // If user is not authenticated, create account automatically
+      if (!user) {
+        console.log("Creating account for guest user")
+        
+        // Create user account with email and password
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: customerInfo.email,
+          password: `temp_${Date.now()}`, // Temporary password
+          options: {
+            data: {
+              name: customerInfo.name,
+            }
+          }
+        })
+
+        if (authError) {
+          // If user already exists, try to sign in
+          if (authError.message.includes('already registered')) {
+            console.log("User already exists, trying to sign in")
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+              email: customerInfo.email,
+              password: `temp_${Date.now()}`,
+            })
+            
+            if (signInError) {
+              // If sign in fails, create a new account with different email
+              const tempEmail = `guest_${Date.now()}@vinorodante.com`
+              const { data: newAuthData, error: newAuthError } = await supabase.auth.signUp({
+                email: tempEmail,
+                password: `temp_${Date.now()}`,
+                options: {
+                  data: {
+                    name: customerInfo.name,
+                  }
+                }
+              })
+              
+              if (newAuthError) {
+                throw new Error("Error creating guest account")
+              }
+              
+              customerId = newAuthData.user?.id
+            } else {
+              customerId = signInData.user?.id
+            }
+          } else {
+            throw new Error("Error creating account")
+          }
+        } else {
+          customerId = authData.user?.id
+        }
+
+        // Create customer record
+        if (customerId) {
+          const { error: customerError } = await supabase.from("customers").insert({
+            id: customerId,
+            name: customerInfo.name,
+            email: customerInfo.email,
+          })
+
+          if (customerError) {
+            console.error("Error creating customer record:", customerError)
+          }
+
+          // Create address record
+          const { error: addressError } = await supabase.from("addresses").insert({
+            customer_id: customerId,
+            line1: customerInfo.address1,
+            line2: customerInfo.address2,
+            city: customerInfo.city,
+            state: customerInfo.state,
+            postal_code: customerInfo.postalCode,
+            country: customerInfo.country,
+            is_default: true,
+          })
+
+          if (addressError) {
+            console.error("Error creating address record:", addressError)
+          }
+        }
+      }
+
       // Create a temporary order to get an order ID
       const response = await fetch("/api/checkout/create-preference", {
         method: "POST",
@@ -158,6 +218,7 @@ export default function CheckoutPage() {
           customer: {
             name: customerInfo.name,
             email: customerInfo.email,
+            id: customerId, // Include customer ID if available
           },
         }),
       })
@@ -194,8 +255,38 @@ export default function CheckoutPage() {
     setStep("info")
   }
 
+  // Render loading state
+  if (!isInitialized) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-pulse text-center">
+            <div className="w-12 h-12 bg-wine-600 rounded-full mx-auto mb-4"></div>
+            <p className="text-wine-800">Inicializando checkout...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Render error state
+  if (initError) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center text-red-600">
+            <p>Error de autenticación: {initError}</p>
+            <Button variant="outline" className="mt-4" onClick={() => router.push('/auth/sign-in')}>
+              Iniciar sesión
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <SupabaseGuard>
+    <>
       {cartItems.length === 0 ? (
         <div className="container py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">{t.cart.empty}</h1>
@@ -215,6 +306,18 @@ export default function CheckoutPage() {
                   {error && <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-md">{error}</div>}
 
                   <div className="space-y-8">
+                    {(() => {
+                      console.log("Debug user state:", { user: !!user, isInitialized, userEmail: user?.email });
+                      return null;
+                    })()}
+                    {!user && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p className="text-blue-800 text-sm">
+                          <strong>Nota:</strong> Se creará una cuenta automáticamente con tu información para gestionar tu pedido.
+                        </p>
+                      </div>
+                    )}
+                    
                     <div className="border rounded-lg p-6">
                       <h2 className="text-xl font-semibold mb-4">{t.checkout?.contactInfo || "Contact Information"}</h2>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -343,10 +446,6 @@ export default function CheckoutPage() {
                       <p>{formatCurrency(subtotal)}</p>
                     </div>
                     <div className="flex justify-between">
-                      <p>{t.checkout?.tax || "Tax (21% IVA)"}</p>
-                      <p>{formatCurrency(tax)}</p>
-                    </div>
-                    <div className="flex justify-between">
                       <p>{t.checkout?.shipping || "Shipping"}</p>
                       <p>{shipping === 0 ? (t.checkout?.free || "Free") : formatCurrency(shipping)}</p>
                     </div>
@@ -386,6 +485,6 @@ export default function CheckoutPage() {
           )}
         </div>
       )}
-    </SupabaseGuard>
+    </>
   )
 }

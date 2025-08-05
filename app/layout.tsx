@@ -71,7 +71,8 @@ export const metadata: Metadata = {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
     ],
-    apple: "/logo/logo_vr.svg",
+    apple: "/favicon.svg",
+    shortcut: "/favicon.svg",
   },
   alternates: {
     canonical: "https://www.vinorodante.com"
@@ -94,7 +95,6 @@ export default function RootLayout({
     <html lang="es">
       <head>
         <link rel="stylesheet" href="https://use.typekit.net/brq4dey.css" />
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <meta name="theme-color" content="#5B0E2D" />
       </head>
       <body className="antialiased min-h-screen bg-background text-foreground">

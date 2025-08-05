@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { CheckCircle, Clock, AlertCircle } from "lucide-react"
+import { Clock, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { createClient } from '@/lib/supabase/client'
 import { useTranslations } from "@/lib/providers/translations-provider"
-import { formatCurrency } from "@/lib/utils"
 
 interface OrderDetails {
   id: string
@@ -17,7 +16,7 @@ interface OrderDetails {
   user_id: string
 }
 
-export default function ConfirmationPage() {
+export default function PendingPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const t = useTranslations()
@@ -61,50 +60,6 @@ export default function ConfirmationPage() {
 
     fetchOrderDetails()
   }, [orderId, supabase])
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "paid":
-        return <CheckCircle className="h-8 w-8 text-green-600" />
-      case "pending":
-        return <Clock className="h-8 w-8 text-yellow-600" />
-      case "cancelled":
-      case "refunded":
-        return <AlertCircle className="h-8 w-8 text-red-600" />
-      default:
-        return <Clock className="h-8 w-8 text-gray-600" />
-    }
-  }
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "paid":
-        return "¡Pago confirmado!"
-      case "pending":
-        return "Pago en proceso"
-      case "cancelled":
-        return "Pago cancelado"
-      case "refunded":
-        return "Pago reembolsado"
-      default:
-        return "Estado desconocido"
-    }
-  }
-
-  const getStatusDescription = (status: string) => {
-    switch (status) {
-      case "paid":
-        return "Tu pedido ha sido confirmado y está siendo preparado. Recibirás un email con los detalles de envío."
-      case "pending":
-        return "Tu pago está siendo procesado. Te notificaremos cuando se confirme."
-      case "cancelled":
-        return "El pago fue cancelado. Puedes intentar nuevamente o contactarnos si tienes problemas."
-      case "refunded":
-        return "El pago fue reembolsado. Si tienes preguntas, contáctanos."
-      default:
-        return "Estado del pedido desconocido."
-    }
-  }
 
   if (loading) {
     return (
@@ -150,27 +105,28 @@ export default function ConfirmationPage() {
         <Card>
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
-              {getStatusIcon(orderDetails.status)}
+              <Clock className="h-8 w-8 text-yellow-600" />
             </div>
             <CardTitle className="text-2xl">
-              {getStatusText(orderDetails.status)}
+              Pago en proceso
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="text-center">
               <p className="text-gray-600 mb-4">
-                {getStatusDescription(orderDetails.status)}
+                Tu pago está siendo procesado. Esto puede tardar hasta 24 horas en confirmarse.
+                Te enviaremos un email cuando el pago se confirme.
               </p>
               
-              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+              <div className="bg-yellow-50 rounded-lg p-4 mb-6">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="font-medium text-gray-700">Número de orden</p>
                     <p className="text-gray-600">{orderDetails.id}</p>
                   </div>
                   <div>
-                    <p className="font-medium text-gray-700">Total</p>
-                    <p className="text-gray-600">{formatCurrency(orderDetails.total)}</p>
+                    <p className="font-medium text-gray-700">Estado</p>
+                    <p className="text-gray-600 capitalize">{orderDetails.status}</p>
                   </div>
                   <div>
                     <p className="font-medium text-gray-700">Fecha</p>
@@ -179,9 +135,26 @@ export default function ConfirmationPage() {
                     </p>
                   </div>
                   <div>
-                    <p className="font-medium text-gray-700">Estado</p>
-                    <p className="text-gray-600 capitalize">{orderDetails.status}</p>
+                    <p className="font-medium text-gray-700">Total</p>
+                    <p className="text-gray-600">${orderDetails.total.toLocaleString('es-AR')}</p>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-start">
+                <Clock className="h-5 w-5 text-yellow-600 mt-0.5 mr-2 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-yellow-800">
+                    ¿Qué pasa ahora?
+                  </p>
+                  <ul className="text-sm text-yellow-700 mt-2 space-y-1">
+                    <li>• MercadoPago está procesando tu pago</li>
+                    <li>• Recibirás una confirmación por email</li>
+                    <li>• Puedes verificar el estado en tu cuenta</li>
+                    <li>• Si tienes problemas, contáctanos</li>
+                  </ul>
                 </div>
               </div>
             </div>
@@ -201,44 +174,17 @@ export default function ConfirmationPage() {
               </Button>
             </div>
 
-            {orderDetails.status === "pending" && (
-              <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div className="flex items-start">
-                  <Clock className="h-5 w-5 text-yellow-600 mt-0.5 mr-2 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-yellow-800">
-                      Pago en proceso
-                    </p>
-                    <p className="text-sm text-yellow-700 mt-1">
-                      Los pagos pueden tardar hasta 24 horas en confirmarse. 
-                      Te enviaremos un email cuando el pago se confirme.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {orderDetails.status === "cancelled" && (
-              <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-start">
-                  <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-red-800">
-                      Pago cancelado
-                    </p>
-                    <p className="text-sm text-red-700 mt-1">
-                      Si tienes problemas con el pago, contáctanos en 
-                      <a href="mailto:soporte@vinorodante.com" className="underline ml-1">
-                        soporte@vinorodante.com
-                      </a>
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+            <div className="text-center text-sm text-gray-500">
+              <p>
+                ¿Tienes preguntas? Contáctanos en{" "}
+                <a href="mailto:soporte@vinorodante.com" className="underline">
+                  soporte@vinorodante.com
+                </a>
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
     </div>
   )
-}
+} 

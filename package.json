@@ -10,7 +10,22 @@
     "start": "next start",
     "lint": "next lint",
     "test:mercadopago": "tsx scripts/test-mercadopago.ts",
-    "setup:mercadopago": "tsx scripts/setup-mercadopago.ts"
+    "setup:mercadopago": "tsx scripts/setup-mercadopago.ts",
+    "setup:webhooks": "tsx scripts/setup-webhooks.ts",
+    "setup:mercadopago-account": "tsx scripts/setup-mercadopago-account.ts",
+    "setup:mercadopago-test-accounts": "tsx scripts/setup-mercadopago-test-accounts.ts",
+    "get-test-credentials": "tsx scripts/get-test-credentials.ts",
+    "research-test-accounts": "tsx scripts/research-test-accounts.ts",
+    "test-payment-flow": "tsx scripts/test-payment-flow.ts",
+    "explain-test-accounts": "tsx scripts/explain-test-accounts.ts",
+    "debug-payment-issues": "tsx scripts/debug-payment-issues.ts",
+    "test-specific-payment": "tsx scripts/test-specific-payment.ts",
+    "check-account-status": "tsx scripts/check-account-status.ts",
+    "analyze-payment-error": "tsx scripts/analyze-payment-error.ts",
+    "setup-new-test-account": "tsx scripts/setup-new-test-account.ts",
+    "setup-production-account": "tsx scripts/setup-production-account.ts",
+    "final-integration-test": "tsx scripts/final-integration-test.ts",
+    "diagnose-app-issues": "tsx scripts/diagnose-app-issues.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
