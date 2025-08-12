@@ -93,6 +93,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Mercado Pago preference with enhanced options
+    console.log('[MP] Incoming items', items.map((it: any) => ({ id: it.id, name: it.name, price: it.price, quantity: it.quantity })))
     const preference = await createPreference({
       items,
       customer,
@@ -105,6 +106,16 @@ export async function POST(request: NextRequest) {
       },
       expires: true,
       expirationDateTo: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
+    })
+
+    // Debug trace to help diagnose payment issues
+    console.log('[MP] Preference created', {
+      preferenceId: preference.id,
+      orderId,
+      subtotal,
+      shipping: shippingCost,
+      total,
+      timestamp: new Date().toISOString(),
     })
 
     return NextResponse.json({

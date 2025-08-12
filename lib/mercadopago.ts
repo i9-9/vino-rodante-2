@@ -36,24 +36,25 @@ export async function createPreference(options: CreatePreferenceOptions) {
     description: item.description?.substring(0, 255) || "",
     category_id: item.category || "wines",
   }))
-
+  
   const shippingCost = Number.isFinite(Number(shipping)) ? Number(shipping) : 0
-  if (shippingCost > 0) {
-    mpItems.push({
-      id: "shipping",
-      title: "Envío",
-      quantity: 1,
-      unit_price: shippingCost,
-      currency_id: "ARS",
-      description: "Costo de envío",
-      category_id: "shipping",
-    })
-  }
 
   // Calculate subtotal
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0) + shippingCost
 
   // Prepare preference data
+  // Resolve base app URL robustly (handles env mismatch: NEXT_PUBLIC_APP_URL vs NEXT_PUBLIC_SITE_URL)
+  const appUrlEnv =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined)
+
+  if (!appUrlEnv) {
+    console.warn("MercadoPago: app URL is not defined. Set NEXT_PUBLIC_APP_URL or NEXT_PUBLIC_SITE_URL.")
+  }
+
+  const baseUrl = appUrlEnv?.replace(/\/$/, "") || ""
+
   const preferenceData: any = {
     items: mpItems,
     payer: {
@@ -66,15 +67,17 @@ export async function createPreference(options: CreatePreferenceOptions) {
     // Mostrar el envío como costo separado en el resumen de MP
     shipments: shippingCost > 0 ? { mode: 'not_specified', cost: shippingCost } : undefined,
     back_urls: {
-      success: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/confirmation?orderId=${orderId}`,
-      failure: `${process.env.NEXT_PUBLIC_APP_URL}/checkout?error=payment_failed&orderId=${orderId}`,
-      pending: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/pending?orderId=${orderId}`,
+      success: `${baseUrl}/checkout/confirmation?orderId=${orderId}`,
+      failure: `${baseUrl}/checkout?error=payment_failed&orderId=${orderId}`,
+      pending: `${baseUrl}/checkout/pending?orderId=${orderId}`,
     },
     statement_descriptor: "Vino Rodante",
-    notification_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/mercadopago`,
+    notification_url: `${baseUrl}/api/webhooks/mercadopago`,
     payment_methods: {
       installments: 12, // Allow up to 12 installments
       default_installments: 1,
+      // Sugerir "Dinero en cuenta" como opción predeterminada
+      default_payment_method_id: 'account_money',
       excluded_payment_types: [
         { id: "ticket" } // Exclude cash payments for online store
       ]

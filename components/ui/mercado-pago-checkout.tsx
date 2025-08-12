@@ -96,7 +96,8 @@ export function MercadoPagoCheckout({
         preference: {
           id: preferenceId,
         },
-        autoOpen: false,
+        // Evita carrera de apertura antes de que la instancia esté lista
+        autoOpen: true,
         render: {
           container: `#${uniqueId.current}`,
           label: 'Pagar con Mercado Pago',
@@ -175,8 +176,11 @@ export function MercadoPagoCheckout({
   const handlePayment = useCallback(() => {
     if (checkoutInstance) {
       checkoutInstance.open();
+    } else if (!isInitialized) {
+      // Si aún no está inicializado, intenta inicializar (autoOpen abrirá al estar listo)
+      initializeCheckout();
     }
-  }, [checkoutInstance]);
+  }, [checkoutInstance, isInitialized, initializeCheckout]);
 
   // Load Mercado Pago script
   useEffect(() => {
