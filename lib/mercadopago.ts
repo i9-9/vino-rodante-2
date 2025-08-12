@@ -63,6 +63,8 @@ export async function createPreference(options: CreatePreferenceOptions) {
     },
     external_reference: orderId,
     auto_return: "approved",
+    // Mostrar el envío como costo separado en el resumen de MP
+    shipments: shippingCost > 0 ? { mode: 'not_specified', cost: shippingCost } : undefined,
     back_urls: {
       success: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/confirmation?orderId=${orderId}`,
       failure: `${process.env.NEXT_PUBLIC_APP_URL}/checkout?error=payment_failed&orderId=${orderId}`,

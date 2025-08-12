@@ -97,6 +97,7 @@ export async function POST(request: NextRequest) {
       items,
       customer,
       orderId,
+      shipping: shippingCost,
       metadata: {
         user_id: customerId,
         order_type: "checkout",
