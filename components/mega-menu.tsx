@@ -170,7 +170,7 @@ export default function MegaMenu() {
 
   return (
     <NavigationMenu className="hidden md:flex justify-center mega-menu-container">
-      <NavigationMenuList className="flex-wrap justify-center">
+      <NavigationMenuList className="flex items-center space-x-6">
         <NavigationMenuItem key="home">
           <Link href="/" legacyBehavior passHref>
             <NavigationMenuLink className={navigationMenuTriggerStyle()}>{t.navigation?.home || "Inicio"}</NavigationMenuLink>
@@ -197,18 +197,18 @@ export default function MegaMenu() {
           >
             {t.navigation?.weeklyWine || "Weekly Wine"}
           </NavigationMenuTrigger>
-          <NavigationMenuContent className="!left-1/2 !transform !-translate-x-1/2 !w-screen">
-            <div className="w-full bg-background border border-border rounded-lg shadow-lg">
-              <div className="max-w-6xl mx-auto px-4 md:px-8 py-6">
+          <NavigationMenuContent>
+            <div className="w-full max-w-[1440px] bg-background border border-border rounded-lg shadow-lg overflow-visible mx-auto">
+              <div className="px-6 py-6">
                 <div className="grid grid-cols-12 gap-6">
                   <div className="col-span-12">
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center justify-between mb-4">
                       <h3 className="text-2xl font-medium border-b pb-2">{t.navigation?.weeklyWine || "Weekly Wine"}</h3>
                       <Link href="/weekly-wine" className="text-primary hover:underline" onClick={closeWeeklyWineMenu}>
                         {t.common?.view || "Ver todos"} {t.common?.all || "los clubs"}
                       </Link>
                     </div>
-                    <div className="grid grid-cols-4 gap-4 justify-center">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                       {clubs.map(club => (
                         <Link
                           key={club.slug}
@@ -223,7 +223,7 @@ export default function MegaMenu() {
                               fill
                               style={{objectFit: 'cover'}}
                               className="rounded group-hover:scale-105 transition-transform duration-200"
-                              sizes="(max-width: 768px) 100vw, 25vw"
+                              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
                             />
                           </div>
                           <div className="text-sm font-medium leading-none mb-1">{club.name}</div>
@@ -256,12 +256,12 @@ export default function MegaMenu() {
           >
             {t.navigation?.products || "Productos"}
           </NavigationMenuTrigger>
-          <NavigationMenuContent className="!left-1/2 !transform !-translate-x-1/2 !w-screen">
-            <div className="w-full bg-background border border-border rounded-lg shadow-lg">
-              <div className="max-w-6xl mx-auto px-4 md:px-8 py-6">
+          <NavigationMenuContent>
+            <div className="w-full max-w-[1440px] bg-background border border-border rounded-lg shadow-lg overflow-visible mx-auto">
+              <div className="px-6 py-6">
                 <div className="grid grid-cols-12 gap-6">
                   {/* Main categories - 4 columns */}
-                  <div className="col-span-4">
+                  <div className="col-span-12 md:col-span-4">
                     <h3 className="mb-3 text-lg font-medium border-b pb-2">{t.megamenu?.byType || "Por Tipo"}</h3>
                     <ul className="space-y-2">
                       {finalAvailableTypes.map((type) => (
@@ -286,7 +286,7 @@ export default function MegaMenu() {
                   </div>
 
                   {/* Regions - 4 columns */}
-                  <div className="col-span-4">
+                  <div className="col-span-12 md:col-span-4">
                     <h3 className="mb-3 text-lg font-medium border-b pb-2">{t.megamenu?.byRegion || "Por Región"}</h3>
                     <ul className="space-y-2">
                       {availableRegions.map((region) => (
@@ -300,7 +300,7 @@ export default function MegaMenu() {
                   </div>
 
                   {/* Varietals - 4 columns */}
-                  <div className="col-span-4">
+                  <div className="col-span-12 md:col-span-4">
                     <h3 className="mb-3 text-lg font-medium border-b pb-2">{t.megamenu?.byVarietal || "Por Varietal"}</h3>
                     <ul className="space-y-2">
                       {availableVarietals.map((varietal) => (

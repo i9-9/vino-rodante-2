@@ -50,6 +50,7 @@ interface AdminProductsTabProps {
   products: Product[]
   t: Translations
   onEdit?: (product: Product) => void
+  onRefresh?: () => Promise<void> | void
 }
 
 type VisibilityFilter = 'all' | 'visible' | 'hidden'
@@ -86,8 +87,9 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
   const [formData, setFormData] = useState({
     name: product.name || '',
     description: product.description || '',
-    price: product.price || 0,
-    stock: product.stock || 0,
+    // Guardar como string para no perder formato parcial (p. ej. "123.", "123,45")
+    price: typeof product.price === 'number' ? String(product.price) : (product.price || ''),
+    stock: typeof product.stock === 'number' ? String(product.stock) : (product.stock || ''),
     category: product.category || 'none',
     region: product.region || 'none',
     year: product.year || '',
@@ -106,8 +108,8 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
     setFormData({
       name: product.name || '',
       description: product.description || '',
-      price: product.price || 0,
-      stock: product.stock || 0,
+      price: typeof product.price === 'number' ? String(product.price) : (product.price || ''),
+      stock: typeof product.stock === 'number' ? String(product.stock) : (product.stock || ''),
       category: product.category || 'none',
       region: product.region || 'none',
       year: product.year || '',
@@ -121,10 +123,10 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
   }, [product])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target;
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'number' ? Number(value) : value
+      [name]: value
     }));
   };
 
@@ -202,15 +204,34 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
     
     try {
       const submitData = new FormData()
-      
-      // Agregar todos los campos del formulario
-      Object.entries(formData).forEach(([key, value]) => {
-        if (typeof value === 'boolean') {
-          submitData.set(key, value ? 'on' : 'off')
-        } else {
-          submitData.set(key, String(value))
-        }
-      })
+
+      // Campos de texto
+      submitData.set('name', formData.name)
+      submitData.set('description', formData.description)
+      submitData.set('category', formData.category)
+      submitData.set('region', formData.region)
+      submitData.set('year', String(formData.year ?? ''))
+      submitData.set('varietal', String(formData.varietal ?? ''))
+
+      // Normalizar precio (acepta "," o "." como separador decimal)
+      const normalizedPrice = (formData.price ?? '').trim().replace(',', '.')
+      const priceNumber = Number(normalizedPrice)
+      if (!Number.isFinite(priceNumber) || priceNumber < 0) {
+        throw new Error('Precio inválido')
+      }
+      submitData.set('price', priceNumber.toString())
+
+      // Normalizar stock (solo dígitos)
+      const stockDigits = (formData.stock ?? '').toString().replace(/[^0-9]/g, '')
+      const stockNumber = stockDigits === '' ? 0 : parseInt(stockDigits, 10)
+      if (!Number.isFinite(stockNumber) || stockNumber < 0) {
+        throw new Error('Stock inválido')
+      }
+      submitData.set('stock', stockNumber.toString())
+
+      // Booleans
+      submitData.set('featured', formData.featured ? 'on' : 'off')
+      submitData.set('is_visible', formData.is_visible ? 'on' : 'off')
 
       // Agregar el ID del producto
       submitData.set('id', product.id)
@@ -474,7 +495,7 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
   )
 }
 
-export default function AdminProductsTab({ products, t }: AdminProductsTabProps) {
+export default function AdminProductsTab({ products, t, onRefresh }: AdminProductsTabProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [visibilityFilter, setVisibilityFilter] = useState<VisibilityFilter>('all')
@@ -695,6 +716,10 @@ export default function AdminProductsTab({ products, t }: AdminProductsTabProps)
         formData.append('image_file', selectedImage)
       }
       await updateProduct(formData)
+      // Solicitar refresh de datos al padre si está disponible
+      if (onRefresh) {
+        await onRefresh()
+      }
       setIsModalOpen(false)
       setSelectedProduct(null)
       setSelectedImage(null)

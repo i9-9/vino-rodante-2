@@ -107,8 +107,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       preferenceId: preference.id,
       orderId,
-      initPoint: preference.init_point,
-      sandboxInitPoint: preference.sandbox_init_point
+      initPoint: preference.init_point
     })
   } catch (error: any) {
     console.error("Error creating preference:", error)

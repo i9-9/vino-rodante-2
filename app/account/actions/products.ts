@@ -176,8 +176,11 @@ export async function updateProduct(formData: FormData) {
   const id = formData.get('id') as string
   const name = formData.get('name') as string
   const description = formData.get('description') as string
-  const price = parseFloat(formData.get('price') as string)
-  const stock = parseInt(formData.get('stock') as string)
+  // Normalizar precio por si llega con coma como separador decimal
+  const rawPrice = (formData.get('price') as string) ?? ''
+  const price = Number(rawPrice.replace(',', '.'))
+  // Aceptar solo dígitos en stock
+  const stock = parseInt(((formData.get('stock') as string) ?? '').replace(/[^0-9]/g, ''), 10)
   const category = formData.get('category') as string
   const region = formData.get('region') as string
   const year = formData.get('year') as string
@@ -190,21 +193,26 @@ export async function updateProduct(formData: FormData) {
   const finalCategory = category === 'none' ? '' : category
   const finalRegion = region === 'none' ? '' : region
 
+  // Construir update parcial y evitar sobreescribir imagen si no se envió
+  const updateData: Record<string, unknown> = {
+    name,
+    description,
+    price,
+    stock,
+    category: finalCategory,
+    region: finalRegion,
+    year: year || '',
+    varietal: varietal || '',
+    featured,
+    is_visible,
+  }
+  if (image && image.trim() !== '') {
+    updateData.image = image
+  }
+
   const { error } = await supabase
     .from('products')
-    .update({
-      name,
-      description,
-      price,
-      stock,
-      category: finalCategory,
-      region: finalRegion,
-      year: year || '',
-      varietal: varietal || '',
-      featured,
-      is_visible,
-      image: image || null
-    })
+    .update(updateData)
     .eq('id', id)
 
   if (error) {

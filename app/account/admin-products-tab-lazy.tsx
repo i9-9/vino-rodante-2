@@ -15,6 +15,17 @@ export default function AdminProductsTabLazy({ t }: AdminProductsTabLazyProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const supabase = createClient()
+
+  const refresh = async () => {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(100)
+    if (!error) setProducts(data || [])
+  }
+
   useEffect(() => {
     let isMounted = true
 
@@ -111,5 +122,5 @@ export default function AdminProductsTabLazy({ t }: AdminProductsTabLazyProps) {
     )
   }
 
-  return <AdminProductsTab products={products} t={t} />
+  return <AdminProductsTab products={products} t={t} onRefresh={refresh} />
 } 

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from '@/lib/providers/translations-provider';
@@ -50,7 +50,13 @@ export function MercadoPagoCheckout({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [checkoutInstance, setCheckoutInstance] = useState<any>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const instanceRef = useRef<any>(null);
   const t = useTranslations();
+
+  // Generate unique ID for this instance
+  const uniqueId = useRef(`mp-checkout-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
 
   const handleScriptLoad = useCallback(() => {
     console.log("Mercado Pago script loaded");
@@ -65,25 +71,34 @@ export function MercadoPagoCheckout({
 
   const initializeCheckout = useCallback(() => {
     try {
-      if (!preferenceId || !scriptLoaded) return;
+      if (!preferenceId || !scriptLoaded || isInitialized) return;
 
       const publicKey = process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY;
       if (!publicKey) {
         throw new Error("MercadoPago public key not configured");
       }
 
+      // Clean up any existing instance
+      if (instanceRef.current) {
+        try {
+          instanceRef.current.close();
+        } catch (e) {
+          console.log("Error closing previous instance:", e);
+        }
+      }
+
       const mp = new window.MercadoPago(publicKey, {
         locale: 'es-AR',
       });
 
-      // Create the checkout instance
+      // Create the checkout instance with unique container
       const checkout = mp.checkout({
         preference: {
           id: preferenceId,
         },
-        autoOpen: false, // We'll control when to open
+        autoOpen: false,
         render: {
-          container: '.cho-container',
+          container: `#${uniqueId.current}`,
           label: 'Pagar con Mercado Pago',
         },
       });
@@ -139,16 +154,15 @@ export function MercadoPagoCheckout({
         window.addEventListener('mercadopago_payment_error', handlePaymentError);
 
         // Store cleanup function
-        setCheckoutInstance({
-          ...checkout,
-          cleanup: () => {
-            window.removeEventListener('mercadopago_payment_success', handlePaymentSuccess);
-            window.removeEventListener('mercadopago_payment_error', handlePaymentError);
-          }
-        });
+        checkout.cleanup = () => {
+          window.removeEventListener('mercadopago_payment_success', handlePaymentSuccess);
+          window.removeEventListener('mercadopago_payment_error', handlePaymentError);
+        };
       }
 
+      instanceRef.current = checkout;
       setCheckoutInstance(checkout);
+      setIsInitialized(true);
       setIsLoading(false);
     } catch (error: any) {
       console.error("Error initializing Mercado Pago", error);
@@ -156,7 +170,7 @@ export function MercadoPagoCheckout({
       onError?.(error);
       setIsLoading(false);
     }
-  }, [preferenceId, scriptLoaded, onSuccess, onError, onClose]);
+  }, [preferenceId, scriptLoaded, isInitialized, onSuccess, onError, onClose]);
 
   const handlePayment = useCallback(() => {
     if (checkoutInstance) {
@@ -190,19 +204,28 @@ export function MercadoPagoCheckout({
 
   // Initialize checkout when script is loaded and we have a preference ID
   useEffect(() => {
-    if (scriptLoaded && preferenceId) {
+    if (scriptLoaded && preferenceId && !isInitialized) {
       initializeCheckout();
     }
-  }, [scriptLoaded, preferenceId, initializeCheckout]);
+  }, [scriptLoaded, preferenceId, isInitialized, initializeCheckout]);
 
   // Cleanup event listeners when component unmounts
   useEffect(() => {
     return () => {
-      if (checkoutInstance && checkoutInstance.cleanup) {
-        checkoutInstance.cleanup();
+      if (instanceRef.current) {
+        try {
+          if (instanceRef.current.cleanup) {
+            instanceRef.current.cleanup();
+          }
+          if (instanceRef.current.close) {
+            instanceRef.current.close();
+          }
+        } catch (e) {
+          console.log("Error during cleanup:", e);
+        }
       }
     };
-  }, [checkoutInstance]);
+  }, []);
 
   if (error) {
     return (
@@ -226,7 +249,7 @@ export function MercadoPagoCheckout({
 
   return (
     <div className={cn("space-y-4", className)}>
-      <div className="cho-container"></div>
+      <div id={uniqueId.current} ref={containerRef}></div>
       
       <Button
         onClick={handlePayment}
