@@ -12,6 +12,7 @@ export interface Product {
   stock: number
   featured: boolean
   is_visible: boolean
+  free_shipping?: boolean
 }
 
 export interface CartItem extends Product {

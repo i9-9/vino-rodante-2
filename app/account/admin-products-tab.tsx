@@ -96,6 +96,7 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
     varietal: product.varietal || '',
     featured: product.featured || false,
     is_visible: product.is_visible || false,
+    free_shipping: (product as any).free_shipping || false,
   });
   const [imagePreview, setImagePreview] = useState<string | null>(product.image || null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -116,6 +117,7 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
       varietal: product.varietal || '',
       featured: product.featured || false,
       is_visible: product.is_visible || false,
+      free_shipping: (product as any).free_shipping || false,
     });
     setImagePreview(product.image || null)
     setSelectedFile(null)
@@ -464,6 +466,16 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
               onCheckedChange={handleSwitchChange('is_visible')}
             />
             <Label htmlFor="is_visible">Visible</Label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="free_shipping"
+              name="free_shipping"
+              checked={!!(formData as any).free_shipping}
+              onCheckedChange={handleSwitchChange('free_shipping')}
+            />
+            <Label htmlFor="free_shipping">Envío gratis</Label>
           </div>
 
           <div className="flex justify-end space-x-2">

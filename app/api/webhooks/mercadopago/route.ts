@@ -18,10 +18,23 @@ export async function POST(request: NextRequest) {
     try {
       data = JSON.parse(body)
     } catch {
-      const url = new URL(request.url)
-      const topic = url.searchParams.get('topic') || url.searchParams.get('type')
-      const id = url.searchParams.get('id') || url.searchParams.get('data.id')
-      data = { type: topic, data: { id } }
+      data = null
+    }
+
+    // Support multiple MP notification formats
+    // 1) JSON: { type: 'payment', data: { id } }
+    // 2) JSON: { topic: 'payment'|'merchant_order', resource: 'https://.../payments/{id}' }
+    // 3) Query params: ?topic=payment&id=123
+    const url = new URL(request.url)
+    const qpTopic = url.searchParams.get('topic') || url.searchParams.get('type')
+    const qpId = url.searchParams.get('id') || url.searchParams.get('data.id')
+
+    // Normalize to { type, data: { id }, topic, resource }
+    const norm = {
+      type: data?.type || qpTopic || data?.topic,
+      data: { id: data?.data?.id || qpId },
+      topic: data?.topic || qpTopic,
+      resource: data?.resource,
     }
 
     console.log("MercadoPago webhook received:", {
@@ -31,8 +44,38 @@ export async function POST(request: NextRequest) {
     })
 
     // Validate the webhook
-    if (data.type !== "payment" || !data.data || !data.data.id) {
-      console.error("Invalid webhook format:", data)
+    const supabase = await createClient()
+
+    // Resolve paymentId
+    let paymentId: string | null = null
+    if (norm.type === 'payment' && norm.data?.id) {
+      paymentId = String(norm.data.id)
+    } else if ((norm.topic === 'payment' || norm.type === 'payment') && norm.resource) {
+      // Extract from resource URL or numeric id
+      const resStr = String(norm.resource)
+      const maybeId = resStr.split('/').pop()
+      paymentId = maybeId && /\d+/.test(maybeId) ? maybeId : null
+    } else if ((norm.topic === 'merchant_order' || norm.type === 'merchant_order') && norm.resource) {
+      // Fetch merchant order and pick first payment id
+      try {
+        const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN
+        const moUrl = typeof norm.resource === 'string' ? norm.resource : ''
+        const moResp = await fetch(moUrl, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+        const mo = await moResp.json()
+        if (Array.isArray(mo.payments) && mo.payments.length > 0) {
+          paymentId = String(mo.payments[0].id)
+        }
+      } catch (e) {
+        console.error('Error resolving merchant_order resource:', e)
+      }
+    } else if (qpTopic === 'payment' && qpId) {
+      paymentId = String(qpId)
+    }
+
+    if (!paymentId) {
+      console.error("Invalid webhook format:", data || { qpTopic, qpId })
       return NextResponse.json({ message: "Invalid webhook format" }, { status: 400 })
     }
 
@@ -45,8 +88,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get payment details
-    const paymentId = data.data.id
-    const supabase = await createClient()
+    
     
     let paymentData
     try {
@@ -103,8 +145,7 @@ export async function POST(request: NextRequest) {
     const { error: orderUpdateError } = await supabase
       .from("orders")
       .update({ 
-        status: orderStatus,
-        updated_at: new Date().toISOString()
+        status: orderStatus
       })
       .eq("id", orderId)
 

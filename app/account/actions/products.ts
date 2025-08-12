@@ -187,6 +187,7 @@ export async function updateProduct(formData: FormData) {
   const varietal = formData.get('varietal') as string
   const featured = formData.get('featured') === 'on'
   const is_visible = formData.get('is_visible') === 'on'
+  const free_shipping = formData.get('free_shipping') === 'on'
   const image = formData.get('image') as string
 
   // Si category o region son 'none', usar string vacío
@@ -205,6 +206,7 @@ export async function updateProduct(formData: FormData) {
     varietal: varietal || '',
     featured,
     is_visible,
+    free_shipping,
   }
   if (image && image.trim() !== '') {
     updateData.image = image

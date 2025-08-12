@@ -72,7 +72,8 @@ export async function POST(request: NextRequest) {
     // Create a temporary order
     const orderId = uuidv4()
     const subtotal = items.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0)
-    const shippingCost = Number.isFinite(Number(shipping)) ? Number(shipping) : 0
+    const allFreeShipping = items.length > 0 && items.every((it: any) => it.free_shipping === true)
+    const shippingCost = allFreeShipping ? 0 : (Number.isFinite(Number(shipping)) ? Number(shipping) : 0)
     const total = subtotal + shippingCost
 
     const { error: orderError } = await supabase.from("orders").insert([

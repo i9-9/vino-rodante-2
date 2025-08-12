@@ -52,8 +52,9 @@ export default function CheckoutPage() {
   }, [user, isInitialized])
 
   // Calculate totals
-  // Los precios ya incluyen IVA, por lo que no agregamos IVA adicional
-  const shipping = 5000
+  // Envío: gratis si todos los items tienen free_shipping
+  const allFreeShipping = cartItems.length > 0 && cartItems.every((it) => (it as any).free_shipping === true)
+  const shipping = allFreeShipping ? 0 : 5000
   const total = subtotal + shipping
 
   useEffect(() => {
