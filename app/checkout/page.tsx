@@ -40,6 +40,17 @@ export default function CheckoutPage() {
   const [step, setStep] = useState<"info" | "payment">("info")
   const supabase = createClient()
 
+  // Prefill from authenticated user metadata fast, before DB fetch completes
+  useEffect(() => {
+    if (user && isInitialized) {
+      setCustomerInfo((prev) => ({
+        ...prev,
+        name: prev.name || (user.user_metadata?.name ?? ""),
+        email: user.email ?? prev.email,
+      }))
+    }
+  }, [user, isInitialized])
+
   // Calculate totals
   // Los precios ya incluyen IVA, por lo que no agregamos IVA adicional
   const shipping = 5000
@@ -339,7 +350,7 @@ export default function CheckoutPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="name">{t.checkout?.fullName || "Full Name"}</Label>
-                          <Input id="name" name="name" required value={customerInfo.name} onChange={handleInputChange} />
+                          <Input id="name" name="name" required value={customerInfo.name} onChange={handleInputChange} autoComplete="name" />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="email">{t.checkout?.email || "Email"}</Label>
@@ -352,6 +363,7 @@ export default function CheckoutPage() {
                             onChange={handleInputChange}
                             readOnly={!!user}
                             className={user ? "bg-muted" : ""}
+                            autoComplete="email"
                           />
                         </div>
                       </div>
@@ -368,16 +380,17 @@ export default function CheckoutPage() {
                             required
                             value={customerInfo.address1}
                             onChange={handleInputChange}
+                            autoComplete="address-line1"
                           />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="address2">{t.checkout?.address2 || "Address Line 2 (Optional)"}</Label>
-                          <Input id="address2" name="address2" value={customerInfo.address2} onChange={handleInputChange} />
+                          <Input id="address2" name="address2" value={customerInfo.address2} onChange={handleInputChange} autoComplete="address-line2" />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="city">{t.checkout?.city || "City"}</Label>
-                            <Input id="city" name="city" required value={customerInfo.city} onChange={handleInputChange} />
+                            <Input id="city" name="city" required value={customerInfo.city} onChange={handleInputChange} autoComplete="address-level2" />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="state">{t.checkout?.state || "State/Province"}</Label>
@@ -387,6 +400,7 @@ export default function CheckoutPage() {
                               required
                               value={customerInfo.state}
                               onChange={handleInputChange}
+                            autoComplete="address-level1"
                             />
                           </div>
                         </div>
@@ -399,6 +413,7 @@ export default function CheckoutPage() {
                               required
                               value={customerInfo.postalCode}
                               onChange={handleInputChange}
+                            autoComplete="postal-code"
                             />
                           </div>
                           <div className="space-y-2">
@@ -409,6 +424,7 @@ export default function CheckoutPage() {
                               required
                               value={customerInfo.country}
                               onChange={handleInputChange}
+                            autoComplete="country-name"
                             />
                           </div>
                         </div>
