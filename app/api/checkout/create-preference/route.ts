@@ -92,6 +92,23 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
+    // Insert order items immediately so panels can show details
+    const orderItemsPayload = items.map((it: any) => ({
+      order_id: orderId,
+      product_id: it.id,
+      quantity: it.quantity,
+      price: it.price,
+    }))
+
+    const { error: orderItemsError } = await supabase
+      .from('order_items')
+      .insert(orderItemsPayload)
+
+    if (orderItemsError) {
+      console.error('Error creating order items:', orderItemsError)
+      // Continuar, pero dejar registro en logs
+    }
+
     // Create Mercado Pago preference with enhanced options
     console.log('[MP] Incoming items', items.map((it: any) => ({ id: it.id, name: it.name, price: it.price, quantity: it.quantity })))
     const preference = await createPreference({

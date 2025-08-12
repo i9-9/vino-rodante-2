@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from '@/lib/supabase/server'
 import { getPaymentStatus } from "@/lib/mercadopago"
+import { sendEmail, renderOrderSummaryEmail } from "@/lib/emails/resend"
 
 // Validate webhook signature (optional but recommended for production)
 function validateWebhookSignature(request: NextRequest, body: string): boolean {
@@ -115,20 +116,48 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // If payment is approved, you might want to:
-    // 1. Send confirmation email
-    // 2. Update inventory
-    // 3. Create shipping label
-    // 4. Send notifications
-
+    // If payment is approved, send confirmation emails
     if (paymentData.status === "approved") {
       console.log("Payment approved for order:", orderId)
-      
-      // You can add additional logic here:
-      // - Send confirmation email
-      // - Update inventory
-      // - Create shipping label
-      // - Send notifications to admin
+
+      // Fetch order with items for email
+      const { data: orderWithItems } = await supabase
+        .from('orders')
+        .select(`id, total, user_id, order_items (quantity, price, products (name))`)
+        .eq('id', orderId)
+        .single()
+
+      const items = (orderWithItems?.order_items || []).map((it: any) => ({
+        name: it.products?.name || 'Producto',
+        quantity: it.quantity,
+        price: it.price * it.quantity,
+      }))
+      const subtotal = items.reduce((s: number, it: any) => s + it.price, 0)
+      // shipping = total - subtotal (aproximado)
+      const shipping = Math.max(0, (orderWithItems?.total || 0) - subtotal)
+
+      const html = renderOrderSummaryEmail({
+        title: 'Pago confirmado',
+        orderId,
+        subtotal,
+        shipping,
+        total: orderWithItems?.total || 0,
+        items,
+      })
+
+      const { data: customer } = await supabase
+        .from('customers')
+        .select('email, name')
+        .eq('id', orderWithItems?.user_id)
+        .single()
+
+      const toCustomer = customer?.email
+      const toAdmin = process.env.EMAIL_ADMIN || process.env.EMAIL_FROM || 'vino@vinorodante.com'
+
+      if (toCustomer) {
+        await sendEmail({ to: toCustomer, subject: `Vino Rodante · Pago confirmado #${orderId.slice(-8)}`, html })
+      }
+      await sendEmail({ to: toAdmin, subject: `Nueva orden pagada #${orderId.slice(-8)}`, html })
     }
 
     return NextResponse.json({ 

@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { sendEmail, renderOrderSummaryEmail } from '@/lib/emails/resend'
 import type { OrderStatus } from '../types'
 
 interface DbOrderItem {
@@ -189,6 +190,43 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
     if (error) throw error
 
     revalidatePath('/account')
+    
+    // Notify customer via email
+    try {
+      const { data: order } = await supabase
+        .from('orders')
+        .select(`id, total, user_id, order_items (quantity, price, products (name))`)
+        .eq('id', orderId)
+        .single()
+
+      const items = (order?.order_items || []).map((it: any) => ({
+        name: it.products?.name || 'Producto',
+        quantity: it.quantity,
+        price: it.price * it.quantity,
+      }))
+      const subtotal = items.reduce((s: number, it: any) => s + it.price, 0)
+      const shipping = Math.max(0, (order?.total || 0) - subtotal)
+      const html = renderOrderSummaryEmail({
+        title: `Estado actualizado: ${newStatus}`,
+        orderId,
+        subtotal,
+        shipping,
+        total: order?.total || 0,
+        items,
+      })
+
+      const { data: customer } = await supabase
+        .from('customers')
+        .select('email')
+        .eq('id', order?.user_id)
+        .single()
+
+      if (customer?.email) {
+        await sendEmail({ to: customer.email, subject: `Vino Rodante · Pedido ${newStatus} #${orderId.slice(-8)}`, html })
+      }
+    } catch (notifyError) {
+      console.error('Error sending status update email:', notifyError)
+    }
     
     return { success: true }
   } catch (error) {
