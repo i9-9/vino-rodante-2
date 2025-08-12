@@ -100,17 +100,7 @@ export async function getOrdersByUser(userId: string): Promise<ActionResponse> {
       .from('orders')
       .select(`
         *,
-        customer:customers (
-          id,
-          name,
-          email,
-          phone,
-          address,
-          city,
-          state,
-          postal_code,
-          country
-        ),
+        customer:customers ( id, name, email ),
         order_items (
           id,
           order_id,
@@ -160,17 +150,7 @@ export async function getAllOrders(): Promise<ActionResponse> {
       .from('orders')
       .select(`
         *,
-        customer:customers (
-          id,
-          name,
-          email,
-          phone,
-          address,
-          city,
-          state,
-          postal_code,
-          country
-        ),
+        customer:customers ( id, name, email ),
         order_items (
           id,
           order_id,

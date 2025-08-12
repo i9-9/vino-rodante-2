@@ -23,9 +23,9 @@ import { SubscriptionsTabSkeleton } from './components/SubscriptionsTabSkeleton'
 import { AdminOrdersSkeleton, AdminSubscriptionsSkeleton } from './components/AdminSkeleton'
 
 // Import components directly with skeletons for better UX
-import { OrdersTab } from './components/OrdersTab'
+import OrdersTabLazy from './components/OrdersTabLazy'
 import { SubscriptionsTab } from './components/SubscriptionsTab'
-import AdminOrdersTab from './admin-orders-tab'
+import AdminOrdersTabLazy from './admin-orders-tab-lazy'
 import AdminProductsTabLazy from './admin-products-tab-lazy'
 import { AdminSubscriptionsTab } from './admin-subscriptions-tab'
 import AdminPlansTabLazy from './admin-plans-tab-lazy'
@@ -183,9 +183,7 @@ export default function AccountClientNew({
               </TabsContent>
 
               <TabsContent value="orders" className="space-y-4 m-0">
-                <SmartLoader skeleton={<OrdersTabSkeleton />}>
-                  <OrdersTab orders={mockOrders} t={t} />
-                </SmartLoader>
+                <OrdersTabLazy userId={user.id} t={t} />
               </TabsContent>
 
               <TabsContent value="addresses" className="space-y-4 m-0">
@@ -201,9 +199,7 @@ export default function AccountClientNew({
               {userRole === 'admin' && (
                 <>
                   <TabsContent value="admin-orders" className="space-y-4 m-0">
-                    <SmartLoader skeleton={<AdminOrdersSkeleton />}>
-                      <AdminOrdersTab orders={mockAdminOrders} t={t} />
-                    </SmartLoader>
+                    <AdminOrdersTabLazy t={t} />
                   </TabsContent>
 
                   <TabsContent value="admin-products" className="space-y-4 m-0">

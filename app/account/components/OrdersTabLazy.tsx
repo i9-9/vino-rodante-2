@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getUserOrders } from '../actions/data-loader'
 import { OrdersTab } from './OrdersTab'
 import { OrdersTabSkeleton } from './OrdersTabSkeleton'
 import type { Order } from '../types'
+import { createClient } from '@/utils/supabase/client'
 
 interface OrdersTabLazyProps {
   userId: string
@@ -21,11 +21,37 @@ export default function OrdersTabLazy({ userId, t }: OrdersTabLazyProps) {
 
     const loadOrders = async () => {
       try {
-        // Usar función optimizada
-        const data = await getUserOrders(userId, 20)
-        
+        const supabase = createClient()
+        // Asegurar sesión (pero listamos por userId explícitamente)
+        await supabase.auth.getUser()
+        const { data, error } = await supabase
+          .from('orders')
+          .select(`
+            *,
+            order_items (
+              id,
+              order_id,
+              product_id,
+              quantity,
+              price,
+              products (
+                id,
+                name,
+                description,
+                image,
+                price,
+                varietal,
+                year,
+                region
+              )
+            )
+          `)
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+
         if (!isMounted) return
-        setOrders(data as any)
+        if (error) throw error
+        setOrders((data as any) || [])
       } catch (err) {
         if (isMounted) {
           setError(err instanceof Error ? err.message : 'Error desconocido')

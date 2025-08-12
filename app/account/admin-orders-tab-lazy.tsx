@@ -21,46 +21,28 @@ export default function AdminOrdersTabLazy({ t }: AdminOrdersTabLazyProps) {
     const loadAdminOrders = async () => {
       try {
         const supabase = createClient()
-        
-        // Verificar que el usuario sea admin
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) {
-          setError('No autorizado')
-          return
-        }
-
+        if (!user) throw new Error('No autorizado')
         const { data: customer } = await supabase
           .from('customers')
           .select('is_admin')
           .eq('id', user.id)
           .single()
+        if (!customer?.is_admin) throw new Error('No autorizado')
 
-        if (!customer?.is_admin) {
-          setError('No autorizado')
-          return
-        }
-
-        // Cargar todas las órdenes con límite inicial
         const { data, error } = await supabase
           .from('orders')
           .select(`
             *,
-            order_items(*),
-            customer:customers!user_id(
-              id,
-              name,
-              email
-            )
+            order_items (*, products (*))
           `)
           .order('created_at', { ascending: false })
-          .limit(50) // Límite inicial para performance
 
         if (!isMounted) return
-
         if (error) {
           setError(error.message)
         } else {
-          setOrders(data || [])
+          setOrders((data as any) || [])
         }
       } catch (err) {
         if (isMounted) {

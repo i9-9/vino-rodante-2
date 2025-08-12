@@ -44,6 +44,7 @@ export interface Address {
 
 export type OrderStatus = 
   | 'pending'
+  | 'paid'
   | 'in_preparation'
   | 'shipped'
   | 'delivered'

@@ -49,12 +49,13 @@ interface AdminOrdersTabProps {
 }
 
 const STATUS_COLORS = {
-  pending: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200',
-  in_preparation: 'bg-purple-100 text-purple-800 hover:bg-purple-200',
-  shipped: 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200',
-  delivered: 'bg-green-100 text-green-800 hover:bg-green-200',
-  cancelled: 'bg-gray-100 text-gray-800 hover:bg-gray-200',
-  refunded: 'bg-red-100 text-red-800 hover:bg-red-200'
+  pending: 'bg-amber-100 text-amber-800 ring-1 ring-amber-200',
+  paid: 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200',
+  in_preparation: 'bg-blue-100 text-blue-800 ring-1 ring-blue-200',
+  shipped: 'bg-indigo-100 text-indigo-800 ring-1 ring-indigo-200',
+  delivered: 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200',
+  cancelled: 'bg-gray-100 text-gray-700 ring-1 ring-gray-200',
+  refunded: 'bg-rose-100 text-rose-800 ring-1 ring-rose-200'
 } as const satisfies Record<OrderStatus, string>
 
 export default function AdminOrdersTab({ orders, t }: AdminOrdersTabProps) {
@@ -149,7 +150,7 @@ export default function AdminOrdersTab({ orders, t }: AdminOrdersTabProps) {
           value={selectedStatus || 'all'}
           onValueChange={(value) => setSelectedStatus(value === 'all' ? null : value as OrderStatus)}
         >
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[180px] text-foreground">
             <SelectValue placeholder="Filtrar por estado" />
           </SelectTrigger>
           <SelectContent>
