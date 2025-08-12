@@ -48,6 +48,7 @@ export async function createPreference(options: CreatePreferenceOptions) {
       email: customer.email,
     },
     external_reference: orderId,
+    auto_return: "approved",
     back_urls: {
       success: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/confirmation?orderId=${orderId}`,
       failure: `${process.env.NEXT_PUBLIC_APP_URL}/checkout?error=payment_failed&orderId=${orderId}`,

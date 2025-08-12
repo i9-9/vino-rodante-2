@@ -197,11 +197,8 @@ export default function MegaMenu() {
           >
             {t.navigation?.weeklyWine || "Weekly Wine"}
           </NavigationMenuTrigger>
-          <NavigationMenuContent>
-            <div className="w-full max-w-[1440px] bg-background border border-border rounded-lg shadow-lg overflow-visible mx-auto">
-              <div className="px-6 py-6">
-                <div className="grid grid-cols-12 gap-6">
-                  <div className="col-span-12">
+          <NavigationMenuContent className="left-1/2 -translate-x-1/2 w-auto max-w-6xl bg-background border border-border rounded-lg shadow-lg overflow-visible">
+            <div className="px-6 py-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-2xl font-medium border-b pb-2">{t.navigation?.weeklyWine || "Weekly Wine"}</h3>
                       <Link href="/weekly-wine" className="text-primary hover:underline" onClick={closeWeeklyWineMenu}>
@@ -231,10 +228,7 @@ export default function MegaMenu() {
                         </Link>
                       ))}
                     </div>
-                  </div>
-                </div>
               </div>
-            </div>
           </NavigationMenuContent>
         </NavigationMenuItem>
 
@@ -256,9 +250,8 @@ export default function MegaMenu() {
           >
             {t.navigation?.products || "Productos"}
           </NavigationMenuTrigger>
-          <NavigationMenuContent>
-            <div className="w-full max-w-[1440px] bg-background border border-border rounded-lg shadow-lg overflow-visible mx-auto">
-              <div className="px-6 py-6">
+          <NavigationMenuContent className="left-1/2 -translate-x-1/2 w-auto max-w-6xl bg-background border border-border rounded-lg shadow-lg overflow-visible">
+            <div className="px-6 py-6">
                 <div className="grid grid-cols-12 gap-6">
                   {/* Main categories - 4 columns */}
                   <div className="col-span-12 md:col-span-4">
@@ -314,7 +307,6 @@ export default function MegaMenu() {
                   </div>
                 </div>
               </div>
-            </div>
           </NavigationMenuContent>
         </NavigationMenuItem>
 

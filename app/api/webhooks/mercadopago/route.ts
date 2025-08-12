@@ -12,7 +12,16 @@ function validateWebhookSignature(request: NextRequest, body: string): boolean {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text()
-    const data = JSON.parse(body)
+    // Mercado Pago envía diferentes formatos. Intentar parsear query params si el body viene vacío o como x-www-form-urlencoded
+    let data: any
+    try {
+      data = JSON.parse(body)
+    } catch {
+      const url = new URL(request.url)
+      const topic = url.searchParams.get('topic') || url.searchParams.get('type')
+      const id = url.searchParams.get('id') || url.searchParams.get('data.id')
+      data = { type: topic, data: { id } }
+    }
 
     console.log("MercadoPago webhook received:", {
       type: data.type,
