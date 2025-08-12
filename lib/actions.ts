@@ -203,7 +203,7 @@ export async function createOrder(formData: FormData) {
 
   const subtotal = cart.reduce((total, item) => total + item.price * item.quantity, 0)
   const tax = subtotal * 0.21
-  const shipping = subtotal > 10000 ? 0 : 1500
+  const shipping = 5000
   const total = subtotal + tax + shipping
 
   try {

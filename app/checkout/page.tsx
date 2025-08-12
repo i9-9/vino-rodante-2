@@ -42,7 +42,7 @@ export default function CheckoutPage() {
 
   // Calculate totals
   // Los precios ya incluyen IVA, por lo que no agregamos IVA adicional
-  const shipping = subtotal > 10000 ? 0 : 1500 // Free shipping over 10,000 ARS
+  const shipping = 5000
   const total = subtotal + shipping
 
   useEffect(() => {
@@ -463,7 +463,7 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex justify-between">
                       <p>{t.checkout?.shipping || "Shipping"}</p>
-                      <p>{shipping === 0 ? (t.checkout?.free || "Free") : formatCurrency(shipping)}</p>
+                      <p>{formatCurrency(shipping)}</p>
                     </div>
                     <div className="flex justify-between font-bold text-lg pt-2 border-t">
                       <p>{t.checkout?.total || "Total"}</p>
