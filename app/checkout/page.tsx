@@ -242,6 +242,7 @@ export default function CheckoutPage() {
         },
         body: JSON.stringify({
           items: cartItems,
+          shipping,
           customer: {
             name: customerInfo.name,
             email: customerInfo.email,

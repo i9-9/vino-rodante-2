@@ -6,7 +6,7 @@ import { cookies } from "next/headers"
 
 export async function POST(request: NextRequest) {
   try {
-    const { items, customer } = await request.json()
+    const { items, customer, shipping } = await request.json()
 
     if (!items || !items.length || !customer || !customer.name || !customer.email) {
       return NextResponse.json({ 
@@ -71,7 +71,9 @@ export async function POST(request: NextRequest) {
 
     // Create a temporary order
     const orderId = uuidv4()
-    const total = items.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0)
+    const subtotal = items.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0)
+    const shippingCost = Number.isFinite(Number(shipping)) ? Number(shipping) : 0
+    const total = subtotal + shippingCost
 
     const { error: orderError } = await supabase.from("orders").insert([
       {

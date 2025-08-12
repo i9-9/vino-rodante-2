@@ -13,6 +13,7 @@ export interface CreatePreferenceOptions {
     email: string
   }
   orderId: string
+  shipping?: number
   metadata?: Record<string, any>
   expires?: boolean
   expirationDateFrom?: string
@@ -20,7 +21,7 @@ export interface CreatePreferenceOptions {
 }
 
 export async function createPreference(options: CreatePreferenceOptions) {
-  const { items, customer, orderId, metadata, expires, expirationDateFrom, expirationDateTo } = options
+  const { items, customer, orderId, shipping, metadata, expires, expirationDateFrom, expirationDateTo } = options
   
   const preference = new Preference(mercadopago)
 
@@ -36,8 +37,21 @@ export async function createPreference(options: CreatePreferenceOptions) {
     category_id: item.category || "wines",
   }))
 
-  // Calculate total
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const shippingCost = Number.isFinite(Number(shipping)) ? Number(shipping) : 0
+  if (shippingCost > 0) {
+    mpItems.push({
+      id: "shipping",
+      title: "Envío",
+      quantity: 1,
+      unit_price: shippingCost,
+      currency_id: "ARS",
+      description: "Costo de envío",
+      category_id: "shipping",
+    })
+  }
+
+  // Calculate subtotal
+  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0) + shippingCost
 
   // Prepare preference data
   const preferenceData: any = {
@@ -67,6 +81,7 @@ export async function createPreference(options: CreatePreferenceOptions) {
       order_id: orderId,
       customer_email: customer.email,
       total_amount: total,
+      shipping_amount: shippingCost,
       ...metadata
     }
   }
