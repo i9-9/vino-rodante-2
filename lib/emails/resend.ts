@@ -18,7 +18,7 @@ const getResendClient = () => {
 
 export async function sendEmail({ to, subject, html, text, from }: SendEmailParams) {
   const resend = getResendClient()
-  const fromAddress = from || process.env.EMAIL_FROM || 'vino@vinorodante.com'
+  const fromAddress = from || process.env.EMAIL_FROM || 'Vino Rodante <info@vinorodante.com>'
 
   // Use the raw API to avoid React requirement
   return resend.emails.send({ from: fromAddress, to, subject, html, text } as any)
@@ -58,6 +58,75 @@ export function renderOrderSummaryEmail(params: {
       </tbody>
     </table>
     <p style="color:#666;margin-top:24px">Gracias por tu compra en Vino Rodante.</p>
+  </div>`
+}
+
+export function renderBoxNotificationEmail(params: {
+  action: 'created' | 'updated' | 'deleted'
+  boxName: string
+  boxId: string
+  totalWines: number
+  price: number
+  discountPercentage?: number
+  adminName?: string
+}) {
+  const { action, boxName, boxId, totalWines, price, discountPercentage, adminName } = params
+  const currency = (n: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n)
+  
+  const actionText = {
+    created: 'creado',
+    updated: 'actualizado',
+    deleted: 'eliminado'
+  }[action]
+
+  const discountText = discountPercentage && discountPercentage > 0 
+    ? `<p style="color:#666;">Descuento aplicado: <strong>${discountPercentage}%</strong></p>`
+    : ''
+
+  return `
+  <div style="font-family:Arial,Helvetica,sans-serif;max-width:640px;margin:0 auto;padding:24px">
+    <div style="text-align:center;margin-bottom:24px">
+      <h1 style="color:#7B1E1E;margin:0;">🍷 Vino Rodante</h1>
+      <p style="color:#666;margin:8px 0 0;">Box ${actionText} exitosamente</p>
+    </div>
+    
+    <div style="background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:24px">
+      <h2 style="margin:0 0 16px;color:#333;">${boxName}</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div>
+          <strong>ID del Box:</strong><br>
+          <span style="color:#666;font-family:monospace;">${boxId.slice(-8)}</span>
+        </div>
+        <div>
+          <strong>Vinos incluidos:</strong><br>
+          <span style="color:#666;">${totalWines} vinos</span>
+        </div>
+        <div>
+          <strong>Precio:</strong><br>
+          <span style="color:#7B1E1E;font-size:18px;font-weight:bold;">${currency(price)}</span>
+        </div>
+        <div>
+          <strong>Acción:</strong><br>
+          <span style="color:#666;text-transform:capitalize;">${actionText}</span>
+        </div>
+      </div>
+      ${discountText}
+    </div>
+
+    ${adminName ? `
+    <div style="background:#e8f5e8;padding:16px;border-radius:8px;margin-bottom:24px">
+      <p style="margin:0;color:#2d5a2d;">
+        <strong>Administrador:</strong> ${adminName}
+      </p>
+    </div>
+    ` : ''}
+
+    <div style="text-align:center;margin-top:24px;padding-top:24px;border-top:1px solid #eee">
+      <p style="color:#666;margin:0;">
+        Sistema de gestión de Vino Rodante<br>
+        <small>Este es un email automático del sistema</small>
+      </p>
+    </div>
   </div>`
 }
 

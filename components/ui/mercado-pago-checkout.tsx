@@ -7,7 +7,6 @@ import { useTranslations } from '@/lib/providers/translations-provider';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-// Define window interface to include MercadoPago
 declare global {
   interface Window {
     MercadoPago: {

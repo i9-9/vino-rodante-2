@@ -250,7 +250,7 @@ export default function MegaMenu() {
           >
             {t.navigation?.products || "Productos"}
           </NavigationMenuTrigger>
-          <NavigationMenuContent className="left-1/2 -translate-x-1/2 w-auto max-w-6xl bg-background border border-border rounded-lg shadow-lg overflow-visible">
+          <NavigationMenuContent className="left-1/2 -translate-x-1/2 w-auto max-w-6xl bg-background border border-border rounded-lg shadow-lg overflow-visible p-0">
             <div className="px-6 py-6">
                 <div className="grid grid-cols-12 gap-6">
                   {/* Main categories - 4 columns */}

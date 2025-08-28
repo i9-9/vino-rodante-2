@@ -6,6 +6,7 @@ export const CATEGORIES = [
   'Rosado',
   'Espumante',
   'Dulce',
+  'Boxes',
   'Otro'
 ] as const
 
@@ -33,11 +34,12 @@ export const ProductSchema = z.object({
   region: z.enum(REGIONS, {
     errorMap: () => ({ message: 'Región inválida' })
   }),
-  year: z.string().regex(/^\d{4}$/, 'Año inválido'),
-  varietal: z.string().min(1, 'El varietal es requerido'),
+  year: z.string().optional().default(''),
+  varietal: z.string().optional().default(''),
   image: z.string().optional(),
   featured: z.boolean().default(false),
-  is_visible: z.boolean().default(true)
+  is_visible: z.boolean().default(true),
+  slug: z.string().optional()
 })
 
 export type ProductFormData = z.infer<typeof ProductSchema>

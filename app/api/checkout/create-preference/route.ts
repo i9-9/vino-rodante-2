@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createPreference } from "@/lib/mercadopago"
 import { v4 as uuidv4 } from "uuid"
+import { calculateShipping } from "@/lib/shipping-utils"
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from "next/headers"
 
@@ -73,7 +74,19 @@ export async function POST(request: NextRequest) {
     const orderId = uuidv4()
     const subtotal = items.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0)
     const allFreeShipping = items.length > 0 && items.every((it: any) => it.free_shipping === true)
-    const shippingCost = allFreeShipping ? 0 : (Number.isFinite(Number(shipping)) ? Number(shipping) : 0)
+    
+    // Calcular envío basado en código postal del cliente si está disponible
+    let shippingCost = 0
+    if (!allFreeShipping) {
+      // Buscar código postal en la información del cliente
+      const customerPostalCode = customer.postalCode || customer.postal_code
+      if (customerPostalCode) {
+        shippingCost = calculateShipping(customerPostalCode, 15000)
+      } else {
+        shippingCost = Number.isFinite(Number(shipping)) ? Number(shipping) : 15000
+      }
+    }
+    
     const total = subtotal + shippingCost
 
     const { error: orderError } = await supabase.from("orders").insert([

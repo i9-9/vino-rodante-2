@@ -17,6 +17,7 @@ import { MercadoPagoCheckout } from "@/components/ui/mercado-pago-checkout"
 import { useToast } from "@/components/ui/use-toast"
 import { useCart } from "@/lib/hooks/use-cart"
 import SupabaseGuard from "@/components/SupabaseGuard"
+import { calculateShipping, getShippingZone } from "@/lib/shipping-utils"
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -51,11 +52,13 @@ export default function CheckoutPage() {
     }
   }, [user, isInitialized])
 
-  // Calculate totals
-  // Envío: gratis si todos los items tienen free_shipping
   const allFreeShipping = cartItems.length > 0 && cartItems.every((it) => (it as any).free_shipping === true)
-  const shipping = allFreeShipping ? 0 : 5000
+  // Calcular envío basado en código postal si está disponible
+  const shipping = allFreeShipping ? 0 : calculateShipping(customerInfo.postalCode, 15000)
   const total = subtotal + shipping
+  
+  // Obtener información de la zona de envío para mostrar al usuario
+  const shippingZone = getShippingZone(customerInfo.postalCode)
 
   useEffect(() => {
     console.log("Checkout useEffect triggered:", {
@@ -480,7 +483,15 @@ export default function CheckoutPage() {
                       <p>{formatCurrency(subtotal)}</p>
                     </div>
                     <div className="flex justify-between">
-                      <p>{t.checkout?.shipping || "Shipping"}</p>
+                      <div>
+                        <p>{t.checkout?.shipping || "Shipping"}</p>
+                        {shippingZone && (
+                          <p className="text-xs text-gray-500">
+                            {shippingZone.name}
+                            {shipping === 0 && " - Envío gratis"}
+                          </p>
+                        )}
+                      </div>
                       <p>{formatCurrency(shipping)}</p>
                     </div>
                     <div className="flex justify-between font-bold text-lg pt-2 border-t">

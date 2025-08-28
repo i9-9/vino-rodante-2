@@ -11,6 +11,11 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 MERCADO_PAGO_ACCESS_TOKEN=TEST-your_mercadopago_access_token_here
 NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY=TEST-your_mercadopago_public_key_here
 
+# Email Configuration (Resend)
+RESEND_API_KEY=your_resend_api_key_here
+EMAIL_FROM=Vino Rodante <info@vinorodante.com>
+EMAIL_ADMIN=admin@vinorodante.com
+
 # App Configuration
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_SITE_URL=http://localhost:3000

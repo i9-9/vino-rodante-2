@@ -35,8 +35,24 @@ export default function CartSidebar({
               </Button>
             </div>
           ) : (
-            <ul className="divide-y">
-              {cartItems.map((item) => (
+            <>
+              {/* Información sobre mínimo de botellas */}
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>Mínimo requerido:</strong> 3 botellas para compras individuales
+                </p>
+                <p className="text-sm text-blue-600 mt-1">
+                  Total en carrito: {cartItems.reduce((total, item) => total + item.quantity, 0)} botella{cartItems.reduce((total, item) => total + item.quantity, 0) === 1 ? '' : 's'}
+                </p>
+                {cartItems.reduce((total, item) => total + item.quantity, 0) < 3 && (
+                  <p className="text-sm text-orange-600 mt-1">
+                    ⚠️ Necesitas {3 - cartItems.reduce((total, item) => total + item.quantity, 0)} botella{(3 - cartItems.reduce((total, item) => total + item.quantity, 0)) === 1 ? '' : 's'} más para completar tu pedido
+                  </p>
+                )}
+              </div>
+
+              <ul className="divide-y">
+                {cartItems.map((item) => (
                 <li key={item.id} className="flex py-4">
                   <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border">
                     <Image
@@ -95,8 +111,9 @@ export default function CartSidebar({
                     </div>
                   </div>
                 </li>
-              ))}
-            </ul>
+                              ))}
+              </ul>
+            </>
           )}
         </div>
 
@@ -108,7 +125,13 @@ export default function CartSidebar({
                 <p>{formatCurrency(subtotal)}</p>
               </div>
               <p className="text-sm text-gray-500 mb-4">{t.cart.shippingTaxes}</p>
-              <Button className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white" size="lg" asChild>
+              
+              <Button 
+                className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white disabled:bg-gray-400 disabled:cursor-not-allowed" 
+                size="lg" 
+                asChild
+                disabled={cartItems.reduce((total, item) => total + item.quantity, 0) < 3}
+              >
                 <Link href="/checkout" onClick={onClose}>
                   {t.cart.checkout}
                 </Link>

@@ -15,8 +15,25 @@ export default function CheckoutClientPage() {
   const [tax, setTax] = useState(0)
   const [shipping, setShipping] = useState(0)
   const [total, setTotal] = useState(0)
+  const [cartError, setCartError] = useState<string | null>(null)
+
+  // Función para validar el mínimo de botellas
+  const validateCartMinimum = (cartItems: CartItem[]): boolean => {
+    const totalBottles = cartItems.reduce((total, item) => total + item.quantity, 0)
+    if (totalBottles < 3) {
+      setCartError(`Para compras individuales, el mínimo es de 3 botellas. Actualmente tienes ${totalBottles} botella${totalBottles === 1 ? '' : 's'}.`)
+      return false
+    }
+    setCartError(null)
+    return true
+  }
 
   const handleSubmit = async (formData: FormData) => {
+    // Validar antes de enviar
+    if (!validateCartMinimum(cart)) {
+      return
+    }
+
     try {
       const result = await createOrder(formData)
       if (result?.error) {
@@ -47,6 +64,9 @@ export default function CheckoutClientPage() {
         return;
       }
       setCart(parsedCart)
+
+      // Validar mínimo de botellas
+      validateCartMinimum(parsedCart)
 
       // Calculate totals
       const subtotalCalc = parsedCart.reduce((total, item) => total + item.price * item.quantity, 0)
@@ -140,7 +160,20 @@ export default function CheckoutClientPage() {
                 </div>
               </div>
 
-              <Button type="submit" size="lg" className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white">
+              {cartError && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg mb-4">
+                  <p className="text-sm text-red-800">
+                    <strong>Error:</strong> {cartError}
+                  </p>
+                </div>
+              )}
+
+              <Button 
+                type="submit" 
+                size="lg" 
+                className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                disabled={cartError !== null}
+              >
                 Complete Order
               </Button>
             </div>
@@ -150,6 +183,16 @@ export default function CheckoutClientPage() {
         <div className="lg:col-span-1">
           <div className="border rounded-lg p-6 sticky top-20">
             <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+
+            {/* Información sobre mínimo de botellas */}
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Mínimo requerido:</strong> 3 botellas para compras individuales
+              </p>
+              <p className="text-sm text-blue-600 mt-1">
+                Total en carrito: {cart.reduce((total, item) => total + item.quantity, 0)} botella{cart.reduce((total, item) => total + item.quantity, 0) === 1 ? '' : 's'}
+              </p>
+            </div>
 
             <div className="divide-y">
               {cart.map((item) => (

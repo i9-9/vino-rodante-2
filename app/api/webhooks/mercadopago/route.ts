@@ -195,10 +195,27 @@ export async function POST(request: NextRequest) {
       const toCustomer = customer?.email
       const toAdmin = process.env.EMAIL_ADMIN || process.env.EMAIL_FROM || 'vino@vinorodante.com'
 
-      if (toCustomer) {
-        await sendEmail({ to: toCustomer, subject: `Vino Rodante · Pago confirmado #${orderId.slice(-8)}`, html })
+      // Do not let email failures cause the webhook to fail and trigger long MP retries
+      try {
+        const customerPromise = toCustomer
+          ? sendEmail({
+              to: toCustomer,
+              subject: `Vino Rodante · Pago confirmado #${orderId.slice(-8)}`,
+              html,
+            })
+          : Promise.resolve()
+
+        const adminPromise = sendEmail({
+          to: toAdmin,
+          subject: `Nueva orden pagada #${orderId.slice(-8)}`,
+          html,
+        })
+
+        await Promise.allSettled([customerPromise, adminPromise])
+      } catch (emailError) {
+        console.error('Email send error (non-blocking):', emailError)
+        // Continue without throwing to ensure a 200 response to MP
       }
-      await sendEmail({ to: toAdmin, subject: `Nueva orden pagada #${orderId.slice(-8)}`, html })
     }
 
     return NextResponse.json({ 

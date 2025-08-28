@@ -16,7 +16,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import Image from 'next/image'
-import { updateProduct } from './actions/products'
+import { updateProduct, createProduct } from './actions/products'
+import { CreateProductForm } from './components/CreateProductForm'
 import {
   Table,
   TableBody,
@@ -41,10 +42,11 @@ import {
   useReactTable,
   type SortingState,
 } from '@tanstack/react-table'
-import { WINE_TYPES, WINE_REGIONS } from '@/lib/wine-data'
+
 import { useToast } from '@/components/ui/use-toast'
 import { Loader2 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
+import { CATEGORIES, REGIONS } from './types/product'
 
 interface AdminProductsTabProps {
   products: Product[]
@@ -54,27 +56,6 @@ interface AdminProductsTabProps {
 }
 
 type VisibilityFilter = 'all' | 'visible' | 'hidden'
-
-const REGIONS = [
-  'Mendoza',
-  'San Juan',
-  'La Rioja',
-  'Salta',
-  'Catamarca',
-  'Neuquén',
-  'Río Negro',
-  'Córdoba',
-  'Buenos Aires'
-] as const
-
-const CATEGORIES = [
-  'Tinto',
-  'Blanco',
-  'Rosado',
-  'Espumante',
-  'Dulce',
-  'Otro'
-] as const
 
 interface EditProductDialogProps {
   product: Product
@@ -90,8 +71,8 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
     // Guardar como string para no perder formato parcial (p. ej. "123.", "123,45")
     price: typeof product.price === 'number' ? String(product.price) : (product.price || ''),
     stock: typeof product.stock === 'number' ? String(product.stock) : (product.stock || ''),
-    category: product.category || 'none',
-    region: product.region || 'none',
+    category: product.category || 'Tinto',
+    region: product.region || 'Mendoza',
     year: product.year || '',
     varietal: product.varietal || '',
     featured: product.featured || false,
@@ -111,8 +92,8 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
       description: product.description || '',
       price: typeof product.price === 'number' ? String(product.price) : (product.price || ''),
       stock: typeof product.stock === 'number' ? String(product.stock) : (product.stock || ''),
-      category: product.category || 'none',
-      region: product.region || 'none',
+      category: product.category || 'Tinto',
+      region: product.region || 'Mendoza',
       year: product.year || '',
       varietal: product.varietal || '',
       featured: product.featured || false,
@@ -235,8 +216,10 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
       submitData.set('featured', formData.featured ? 'on' : 'off')
       submitData.set('is_visible', formData.is_visible ? 'on' : 'off')
 
-      // Agregar el ID del producto
-      submitData.set('id', product.id)
+      // Si es edición, agregar el ID del producto
+      if (product.id) {
+        submitData.set('id', product.id)
+      }
       
       // Si hay una imagen nueva, subirla primero
       if (selectedFile) {
@@ -247,14 +230,14 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
       await onSubmit(submitData)
       toast({
         title: "Éxito",
-        description: "Producto actualizado correctamente",
+        description: product.id ? "Producto actualizado correctamente" : "Producto creado correctamente",
       })
       onClose()
     } catch (error) {
       console.error('Error submitting form:', error)
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Error al actualizar el producto",
+        description: error instanceof Error ? error.message : "Error al procesar el producto",
         variant: "destructive"
       })
     } finally {
@@ -314,7 +297,7 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Editar Producto</DialogTitle>
+          <DialogTitle>{product.id ? 'Editar Producto' : 'Crear Nuevo Producto'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -727,7 +710,14 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
       if (selectedImage) {
         formData.append('image_file', selectedImage)
       }
-      await updateProduct(formData)
+      
+      // Determinar si es crear o editar
+      if (selectedProduct?.id) {
+        await updateProduct(formData)
+      } else {
+        await createProduct(formData)
+      }
+      
       // Solicitar refresh de datos al padre si está disponible
       if (onRefresh) {
         await onRefresh()
@@ -737,20 +727,19 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
       setSelectedImage(null)
       setImagePreview(null)
     } catch (error) {
-      console.error('Error updating product:', error)
+      console.error('Error processing product:', error)
     }
   }
 
-  // Convertir los tipos de vino del enum a opciones para el select
-  const categoryOptions = Object.entries(WINE_TYPES).map(([key, value]) => ({
-    value: t.wineTypes[value as keyof typeof t.wineTypes].toLowerCase(),
-    label: t.wineTypes[value as keyof typeof t.wineTypes]
+  // Opciones para los selects
+  const categoryOptions = CATEGORIES.map(category => ({
+    value: category,
+    label: category
   }))
 
-  // Convertir las regiones del enum a opciones para el select
-  const regionOptions = Object.entries(WINE_REGIONS).map(([key, value]) => ({
-    value: value,
-    label: t.wineRegions[value as keyof typeof t.wineRegions] || value
+  const regionOptions = REGIONS.map(region => ({
+    value: region,
+    label: region
   }))
 
   return (
@@ -828,17 +817,41 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
         </Table>
       </div>
 
-      <EditProductDialog
-        product={selectedProduct || ({} as Product)}
-        isOpen={isModalOpen}
-        onClose={() => {
+      {selectedProduct ? (
+        <EditProductDialog
+          product={selectedProduct}
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false)
+            setSelectedProduct(null)
+            setSelectedImage(null)
+            setImagePreview(null)
+          }}
+          onSubmit={handleEditProduct}
+        />
+      ) : (
+        <Dialog open={isModalOpen} onOpenChange={() => {
           setIsModalOpen(false)
           setSelectedProduct(null)
           setSelectedImage(null)
           setImagePreview(null)
-        }}
-        onSubmit={handleEditProduct}
-      />
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Crear Nuevo Producto</DialogTitle>
+            </DialogHeader>
+            <CreateProductForm
+              onSubmit={handleEditProduct}
+              onClose={() => {
+                setIsModalOpen(false)
+                setSelectedProduct(null)
+                setSelectedImage(null)
+                setImagePreview(null)
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 } 

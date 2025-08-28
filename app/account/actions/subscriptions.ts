@@ -291,6 +291,7 @@ export async function updateSubscriptionPlan(planId: string, data: Partial<Subsc
       name: data.name || currentPlan.name,
       club: data.club || currentPlan.club,
       description: data.description ?? currentPlan.description,
+      tagline: data.tagline ?? currentPlan.tagline, // Permitir actualizar el tagline
       image: data.image || currentPlan.image, // Mantener imagen existente si no se proporciona una nueva
       banner_image: data.banner_image === '' ? null : (data.banner_image || currentPlan.banner_image), // Permitir eliminar el banner
       price_monthly: data.price_monthly ?? currentPlan.price_monthly,
@@ -301,7 +302,6 @@ export async function updateSubscriptionPlan(planId: string, data: Partial<Subsc
       updated_at: new Date().toISOString(),
       // Mantener otros campos que no deberían cambiar
       slug: currentPlan.slug,
-      tagline: currentPlan.tagline,
       features: currentPlan.features,
       discount_percentage: currentPlan.discount_percentage,
       status: currentPlan.status,

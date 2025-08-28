@@ -7,6 +7,7 @@ import { getProductById, updateProductStock } from "./products"
 import { createClient } from './supabase/server'
 import type { CartItem } from "./types"
 import { v4 as uuidv4 } from "uuid"
+import { calculateShipping } from "./shipping-utils"
 
 // Get the authenticated user from the server
 async function getUser() {
@@ -174,6 +175,22 @@ export async function clearCart() {
   return { success: true }
 }
 
+// Función para validar el mínimo de botellas para compras individuales
+export async function validateCartMinimum(cart: CartItem[]): Promise<{ isValid: boolean; error?: string }> {
+  // Calcular el total de botellas en el carrito
+  const totalBottles = cart.reduce((total, item) => total + item.quantity, 0)
+  
+  // Si hay menos de 3 botellas, la compra no es válida
+  if (totalBottles < 3) {
+    return {
+      isValid: false,
+      error: `Para compras individuales, el mínimo es de 3 botellas. Actualmente tienes ${totalBottles} botella${totalBottles === 1 ? '' : 's'}.`
+    }
+  }
+  
+  return { isValid: true }
+}
+
 export async function createOrder(formData: FormData) {
   const cookieStore = await nextCookies()
   const cartCookie = cookieStore.get("cart")?.value
@@ -186,6 +203,12 @@ export async function createOrder(formData: FormData) {
 
   if (cart.length === 0) {
     return { error: "El carrito está vacío" }
+  }
+
+  // Validar mínimo de botellas para compras individuales
+  const cartValidation = await validateCartMinimum(cart)
+  if (!cartValidation.isValid) {
+    return { error: cartValidation.error }
   }
 
   const name = formData.get("name") as string
@@ -203,7 +226,8 @@ export async function createOrder(formData: FormData) {
 
   const subtotal = cart.reduce((total, item) => total + item.price * item.quantity, 0)
   const tax = subtotal * 0.21
-  const shipping = 5000
+  // Calcular envío basado en código postal
+  const shipping = calculateShipping(postalCode, 15000)
   const total = subtotal + tax + shipping
 
   try {

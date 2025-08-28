@@ -110,6 +110,21 @@ export function AdminPlansTab({ plans: initialPlans, users, t }: AdminPlansTabPr
       cell: ({ row }: { row: { original: SubscriptionPlan } }) => row.original.club || '-'
     },
     {
+      id: 'tagline',
+      header: 'Tagline',
+      cell: ({ row }: { row: { original: SubscriptionPlan } }) => (
+        <div className="max-w-xs">
+          {row.original.tagline ? (
+            <span className="text-sm text-gray-600 line-clamp-2" title={row.original.tagline}>
+              {row.original.tagline}
+            </span>
+          ) : (
+            <span className="text-sm text-gray-400">-</span>
+          )}
+        </div>
+      )
+    },
+    {
       id: 'price_weekly',
       header: 'Precio Semanal',
       cell: ({ row }: { row: { original: SubscriptionPlan } }) => row.original.wines_per_delivery === 3 ? formatPrice(row.original.price_weekly) : '-',
@@ -319,15 +334,15 @@ return (
     </div>
 
     <Dialog open={showModal} onOpenChange={setShowModal}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>
             {editingPlan ? 'Editar Plan' : 'Nuevo Plan'}
           </DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-4 max-h-[calc(90vh-120px)] overflow-y-auto pr-2">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <Label>Nombre</Label>
               <Input 
@@ -354,6 +369,24 @@ return (
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>Slug</Label>
+              <Input 
+                value={formData.slug || ''}
+                onChange={(e) => setFormData(prev => ({...prev, slug: e.target.value}))}
+                placeholder="auto-generado"
+                disabled
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label>Tagline (subtítulo para el hero)</Label>
+            <Input 
+              value={formData.tagline || ''}
+              onChange={(e) => setFormData(prev => ({...prev, tagline: e.target.value}))}
+              placeholder="Ej: Descubre los mejores vinos tintos de Argentina"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -429,7 +462,7 @@ return (
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <Label>Botellas por entrega</Label>
               <Select
@@ -445,6 +478,32 @@ return (
                   <SelectItem value="6">6</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label>Precio Trimestral</Label>
+              <Input
+                type="number"
+                min={0}
+                value={formData.price_quarterly === 0 ? '' : formData.price_quarterly}
+                onChange={e => {
+                  const value = e.target.value === '' ? 0 : Number(e.target.value)
+                  setFormData(prev => ({ ...prev, price_quarterly: value }))
+                }}
+                required
+              />
+            </div>
+            <div>
+              <Label>Descuento (%)</Label>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={formData.discount_percentage === 0 ? '' : formData.discount_percentage}
+                onChange={e => {
+                  const value = e.target.value === '' ? 0 : Number(e.target.value)
+                  setFormData(prev => ({ ...prev, discount_percentage: value }))
+                }}
+              />
             </div>
           </div>
 
@@ -503,7 +562,7 @@ return (
             </div>
           )}
 
-          <div className="flex gap-4">
+          <div className="grid grid-cols-4 gap-4">
             <div className="flex items-center gap-2">
               <Switch
                 id="is_active"
@@ -519,6 +578,33 @@ return (
                 onCheckedChange={(checked) => setFormData(prev => ({...prev, is_visible: checked}))}
               />
               <Label htmlFor="is_visible">Visible</Label>
+            </div>
+            <div>
+              <Label>Tipo</Label>
+              <Select
+                value={formData.type}
+                onValueChange={value => setFormData(prev => ({ ...prev, type: value as any }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tinto">Tinto</SelectItem>
+                  <SelectItem value="blanco">Blanco</SelectItem>
+                  <SelectItem value="mixto">Mixto</SelectItem>
+                  <SelectItem value="premium">Premium</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Orden</Label>
+              <Input
+                type="number"
+                min={0}
+                value={formData.display_order || ''}
+                onChange={e => setFormData(prev => ({...prev, display_order: Number(e.target.value)}))}
+                placeholder="0"
+              />
             </div>
           </div>
 

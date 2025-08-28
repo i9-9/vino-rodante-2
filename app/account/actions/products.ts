@@ -258,21 +258,35 @@ export async function createProduct(formData: FormData): Promise<ActionResponse>
       category: formData.get('category'),
       region: formData.get('region'),
       stock: Number(formData.get('stock')),
-      is_visible: formData.get('is_visible') === 'true'
+      year: formData.get('year') || '',
+      varietal: formData.get('varietal') || '',
+      featured: formData.get('featured') === 'on',
+      is_visible: formData.get('is_visible') === 'on',
+      slug: (formData.get('name') as string)?.toLowerCase().replace(/\s+/g, '-') || '',
+      image: '/placeholder.svg' // Imagen por defecto
     }
 
     // Validar datos con Zod
     const validatedData = ProductSchema.parse(rawData)
 
     // Manejar imagen si existe
-    const imageFile = formData.get('image') as File
+    const imageFile = formData.get('image_file') as File
     if (imageFile?.size > 0) {
+      const fileExt = imageFile.type.split('/')[1]
+      const fileName = `${validatedData.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.${fileExt}`
+      const filePath = `products/${fileName}`
+
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('products')
-        .upload(`${validatedData.name}-${Date.now()}`, imageFile)
+        .from('product-images')
+        .upload(filePath, imageFile)
 
       if (uploadError) throw uploadError
-      validatedData.image = uploadData.path
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath)
+
+      validatedData.image = publicUrl
     }
 
     // Crear producto
