@@ -47,6 +47,7 @@ import { useToast } from '@/components/ui/use-toast'
 import { Loader2 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { CATEGORIES, REGIONS } from './types/product'
+import { BoxForm } from './components/BoxForm'
 
 interface AdminProductsTabProps {
   products: Product[]
@@ -292,6 +293,24 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
       return null;
     }
   };
+
+  // Si es un box, mostrar el formulario específico de boxes
+  if (product.is_box) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Box</DialogTitle>
+          </DialogHeader>
+          <BoxForm
+            onSubmit={onSubmit}
+            onClose={onClose}
+            initialData={product}
+          />
+        </DialogContent>
+      </Dialog>
+    )
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

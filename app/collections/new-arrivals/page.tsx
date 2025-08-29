@@ -1,7 +1,7 @@
 "use client"
 
 import { useTranslations } from "@/lib/providers/translations-provider"
-import { getProducts } from "@/lib/products-client"
+import { getProducts, getBoxesProducts } from "@/lib/products-client"
 import ProductCard from "@/components/product-card"
 import { useEffect, useState } from "react"
 import type { Product } from "@/lib/types"
@@ -14,17 +14,41 @@ export default function NewArrivalsPage() {
   useEffect(() => {
     async function loadProducts() {
       setLoading(true)
-      const { data: allProducts, error } = await getProducts()
-      if (error) {
+      
+      try {
+        // Cargar productos normales y boxes
+        const [productsResult, boxesResult] = await Promise.all([
+          getProducts(),
+          getBoxesProducts()
+        ])
+        
+        let allProducts: Product[] = []
+        
+        // Agregar productos normales
+        if (productsResult.data) {
+          allProducts.push(...productsResult.data)
+        }
+        
+        // Agregar productos de boxes
+        if (boxesResult.data) {
+          allProducts.push(...boxesResult.data)
+        }
+        
+        if (productsResult.error && boxesResult.error) {
+          console.error("Error loading products:", productsResult.error)
+          setProducts([])
+        } else {
+          // Filter for new arrivals (most recent products by ID)
+          const sortedProducts = allProducts
+            .sort((a, b) => b.id.localeCompare(a.id)) // Sort by ID descending (newer first)
+            .slice(0, 12) // Show newest 12 products (including boxes)
+          setProducts(sortedProducts)
+        }
+      } catch (error) {
         console.error("Error loading products:", error)
         setProducts([])
-      } else {
-        // Filter for new arrivals (most recent products by ID)
-        const sortedProducts = (allProducts || [])
-          .sort((a, b) => b.id.localeCompare(a.id)) // Sort by ID descending (newer first)
-          .slice(0, 8) // Show newest 8 products
-        setProducts(sortedProducts)
       }
+      
       setLoading(false)
     }
     loadProducts()
@@ -34,7 +58,7 @@ export default function NewArrivalsPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {Array.from({ length: 8 }).map((_, i) => (
+          {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="bg-muted animate-pulse rounded-lg h-96" />
           ))}
         </div>
@@ -47,7 +71,7 @@ export default function NewArrivalsPage() {
       <div className="text-center mb-8">
         <h1 className="text-4xl font-medium mb-4">{t.megamenu?.newArrivals || "Novedades"}</h1>
         <p className="text-muted-foreground text-lg">
-          {t.collections?.newArrivalsDescription || "Descubre nuestros vinos más recientes"}
+          {t.collections?.newArrivalsDescription || "Descubre nuestros vinos y boxes más recientes"}
         </p>
       </div>
 

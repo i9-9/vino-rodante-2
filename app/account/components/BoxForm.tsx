@@ -22,6 +22,7 @@ import { BoxProduct, CreateBoxSchema } from '../types/box'
 interface BoxFormProps {
   onSubmit: (formData: FormData) => Promise<void>
   onClose: () => void
+  initialData?: any // Datos del box existente para editar (simplificado)
 }
 
 interface BoxProductItem {

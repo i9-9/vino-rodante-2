@@ -456,9 +456,9 @@ Amamos el vino, el trabajo que genera, la vinculación que propone y la música 
     newArrivals: "Novedades", 
     bestsellers: "Más Vendidos",
     giftSets: "Sets de Regalo",
-    featuredDescription: "Nuestra selección especial de vinos destacados",
-    newArrivalsDescription: "Descubre nuestros vinos más recientes",
-    bestsellersDescription: "Los vinos más populares entre nuestros clientes",
+    featuredDescription: "Nuestros vinos y boxes más destacados",
+    newArrivalsDescription: "Descubre nuestros vinos y boxes más recientes",
+    bestsellersDescription: "Los vinos y boxes más populares entre nuestros clientes",
     giftSetsDescription: "Perfectos para regalar en ocasiones especiales",
   },
   subscriptions: {

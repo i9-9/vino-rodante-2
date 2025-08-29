@@ -134,6 +134,11 @@ export function CreateProductForm({ onSubmit, onClose }: CreateProductFormProps)
       submitData.set('featured', formData.featured ? 'on' : 'off')
       submitData.set('is_visible', formData.is_visible ? 'on' : 'off')
       
+      // Si la categoría es Boxes, marcar is_box = true
+      if (formData.category === 'Boxes') {
+        submitData.set('is_box', 'true')
+      }
+      
       // Si hay una imagen, agregarla
       if (selectedFile) {
         submitData.set('image_file', selectedFile)

@@ -168,7 +168,7 @@ export const CATEGORY_SLUG_MAP: Record<string, string> = {
   naranjo: "naranjo",     // /collections/naranjo → busca productos con category="naranjo"
   dessert: "dessert",
   fortified: "fortified",
-  boxes: "boxes",         // /collections/boxes → busca productos con category="boxes"
+  boxes: "Boxes",         // /collections/boxes → busca productos con category="Boxes"
   cider: "sidra",         // /collections/cider → busca productos con category="sidra"
   gin: "gin",
   // Fallbacks por si vienen directamente en español

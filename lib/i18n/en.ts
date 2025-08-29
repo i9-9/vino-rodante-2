@@ -458,14 +458,9 @@ export const en = {
     }
   },
   collections: {
-    featured: "Featured",
-    newArrivals: "New Arrivals", 
-    bestsellers: "Bestsellers",
-    giftSets: "Gift Sets",
-    featuredDescription: "Our special selection of featured wines",
-    newArrivalsDescription: "Discover our newest wines",
-    bestsellersDescription: "The most popular wines among our customers",
-    giftSetsDescription: "Perfect for gifting on special occasions",
+    bestsellersDescription: "The most popular wines and boxes among our customers",
+    newArrivalsDescription: "Discover our newest wines and boxes",
+    featuredDescription: "Our most featured wines and boxes",
   },
   admin: {
     subscriptionPlans: "Subscription Plans",

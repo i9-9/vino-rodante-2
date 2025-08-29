@@ -149,21 +149,15 @@ export async function getFeaturedProducts(): Promise<ApiResponse<Product[]>> {
   }
 }
 
-export async function getProductsByCategory(categorySlug: string): Promise<ApiResponse<Product[]>> {
+export async function getBoxesProducts(): Promise<ApiResponse<Product[]>> {
   try {
     // Intentar primero con el cliente autenticado
     const supabase = createClient()
     
-    // Mapeo para buscar tanto en español como en inglés
-    const category = CATEGORY_SLUG_MAP[categorySlug] || categorySlug // ej: "red" → "tinto"
-    
-    // También buscar la versión en inglés por si hay productos mal categorizados
-    const englishCategory = categorySlug // ej: "red", "white", etc.
-    
     const { data, error } = await supabase
       .from('products')
       .select('*')
-      .or(`category.eq.${category},category.eq.${englishCategory}`) // Buscar AMBOS: "blanco" OR "white"
+      .or('category.eq.boxes,category.eq.Boxes')
       .eq('is_visible', true)
       .order('created_at', { ascending: false })
 
@@ -177,7 +171,56 @@ export async function getProductsByCategory(categorySlug: string): Promise<ApiRe
       const { data: publicData, error: publicError } = await publicSupabase
         .from('products')
         .select('*')
-        .or(`category.eq.${category},category.eq.${englishCategory}`)
+        .or('category.eq.boxes,category.eq.Boxes')
+        .eq('is_visible', true)
+        .order('created_at', { ascending: false })
+
+      if (publicError) {
+        console.error('🔍 [getBoxesProducts] Public client error:', publicError)
+        return { data: null, error: publicError }
+      }
+
+      return { data: publicData, error: null }
+    }
+
+    return { data, error }
+  } catch (error) {
+    console.error('🔍 [getBoxesProducts] Exception:', error)
+    return { data: null, error: error as any }
+  }
+}
+
+export async function getProductsByCategory(categorySlug: string): Promise<ApiResponse<Product[]>> {
+  try {
+    // Intentar primero con el cliente autenticado
+    const supabase = createClient()
+    
+    // Mapeo para buscar tanto en español como en inglés
+    const category = CATEGORY_SLUG_MAP[categorySlug] || categorySlug // ej: "red" → "tinto"
+    
+    // Para boxes, buscar tanto "Boxes" como "boxes"
+    const searchCategories = categorySlug === 'boxes' 
+      ? ['Boxes', 'boxes'] 
+      : [category, categorySlug]
+    
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .in('category', searchCategories) // Buscar en las categorías especificadas
+      .eq('is_visible', true)
+      .order('created_at', { ascending: false })
+
+    if (data && !error) {
+      return { data, error: null }
+    }
+
+    // Si hay error de autenticación, usar cliente público
+    if (error && (error.message?.includes('auth') || error.message?.includes('policy') || (error as any).code === 'PGRST116')) {
+      const publicSupabase = createAdaptiveClient()
+      const { data: publicData, error: publicError } = await publicSupabase
+        .from('products')
+        .select('*')
+        .in('category', searchCategories)
         .eq('is_visible', true)
         .order('created_at', { ascending: false })
 

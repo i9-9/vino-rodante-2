@@ -1,6 +1,6 @@
 "use client"
 
-import { getProducts } from '@/lib/products-client'
+import { getProducts, getBoxesProducts } from '@/lib/products-client'
 import type { Product } from '@/lib/types'
 import ProductCard from "@/components/product-card"
 import { Button } from "@/components/ui/button"
@@ -25,9 +25,32 @@ export default function ProductsClient({ t }: ProductsClientProps) {
 
   useEffect(() => {
     const fetchProducts = async () => {
-      const { data } = await getProducts()
-      setProducts(data || [])
-      setLoading(false)
+      try {
+        // Cargar productos normales y boxes
+        const [productsResult, boxesResult] = await Promise.all([
+          getProducts(),
+          getBoxesProducts()
+        ])
+        
+        let allProducts: Product[] = []
+        
+        // Agregar productos normales
+        if (productsResult.data) {
+          allProducts.push(...productsResult.data)
+        }
+        
+        // Agregar productos de boxes
+        if (boxesResult.data) {
+          allProducts.push(...boxesResult.data)
+        }
+        
+        setProducts(allProducts)
+        setLoading(false)
+      } catch (error) {
+        console.error("Error loading products:", error)
+        setProducts([])
+        setLoading(false)
+      }
     }
     fetchProducts()
   }, [])
