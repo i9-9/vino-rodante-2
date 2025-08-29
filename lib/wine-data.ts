@@ -7,7 +7,6 @@ export const WINE_TYPES = {
   DESSERT: 'dessert',
   FORTIFIED: 'fortified',
   NARANJO: 'naranjo',
-  BOXES: 'boxes',
   CIDER: 'cider',
   GIN: 'gin',
 } as const;

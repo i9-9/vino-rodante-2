@@ -406,7 +406,6 @@ Amamos el vino, el trabajo que genera, la vinculación que propone y la música 
     dessert: "De Postre",
     fortified: "Fortificado",
     naranjo: "Naranjo",
-    boxes: "Boxes",
     cider: "Sidra",
     gin: "Gin"
   },
