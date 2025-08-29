@@ -7,8 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { LogOut, Menu, X } from 'lucide-react'
 import { signOut } from '@/app/auth/actions'
 import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
-import { useState, Suspense } from 'react'
+
+import { useState } from 'react'
 import Spinner from '@/components/ui/Spinner'
 import type { Profile } from '@/lib/types'
 import type { Address } from './types'
@@ -18,9 +18,8 @@ import type { Translations } from '@/lib/i18n/types'
 import { ProfileTab } from './components/ProfileTab'
 import { AddressesTab } from './components/AddressesTab'
 import SmartLoader from './components/SmartLoader'
-import { OrdersTabSkeleton } from './components/OrdersTabSkeleton'
 import { SubscriptionsTabSkeleton } from './components/SubscriptionsTabSkeleton'
-import { AdminOrdersSkeleton, AdminSubscriptionsSkeleton } from './components/AdminSkeleton'
+import { AdminSubscriptionsSkeleton } from './components/AdminSkeleton'
 
 // Import components directly with skeletons for better UX
 import OrdersTabLazy from './components/OrdersTabLazy'
@@ -39,25 +38,13 @@ interface AccountClientProps {
 }
 
 // Placeholder data - en una implementación real vendría del servidor
-const mockOrders: any[] = []
-const mockSubscriptions: any[] = []
-const mockAvailablePlans: any[] = []
-const mockAdminOrders: any[] = []
+import type { UserSubscription, SubscriptionPlan } from './types'
+
+const mockSubscriptions: UserSubscription[] = []
+const mockAvailablePlans: SubscriptionPlan[] = []
 
 
-// Loading skeleton component
-function TabSkeleton() {
-  return (
-    <div className="space-y-4">
-      <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>
-      <div className="space-y-2">
-        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-        <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
-        <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
-      </div>
-    </div>
-  )
-}
+
 
 export default function AccountClientNew({
   user,
@@ -66,7 +53,6 @@ export default function AccountClientNew({
   userRole,
   t
 }: AccountClientProps) {
-  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('profile')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)

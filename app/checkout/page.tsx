@@ -138,6 +138,15 @@ export default function CheckoutPage() {
     setIsSubmitting(true)
     setError(null)
 
+    // Validate minimum bottles requirement
+    const totalBottles = cartItems.reduce((total, item) => total + item.quantity, 0)
+    if (totalBottles < 3) {
+      const plural = totalBottles === 1 ? '' : 's'
+      setError(t.checkout?.minimumBottlesNote?.replace('{count}', totalBottles.toString()).replace('{plural}', plural) || `Para compras individuales, el mínimo es de 3 botellas. Actualmente tienes ${totalBottles} botella${plural}.`)
+      setIsSubmitting(false)
+      return
+    }
+
     // Validate required fields
     if (
       !customerInfo.name ||
@@ -439,11 +448,23 @@ export default function CheckoutPage() {
 
                   <Button
                     type="submit"
-                    className="mt-8 w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white"
-                    disabled={isSubmitting}
+                    className="mt-8 w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    disabled={isSubmitting || cartItems.reduce((total, item) => total + item.quantity, 0) < 3}
                   >
                     {isSubmitting ? (t.checkout?.processing || "Processing...") : (t.checkout?.proceedToPayment || "Proceed to Payment")}
                   </Button>
+                  
+                  {cartItems.reduce((total, item) => total + item.quantity, 0) < 3 && (
+                    <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <p className="text-sm text-amber-800">
+                        <strong>Nota:</strong> {(() => {
+                          const totalBottles = cartItems.reduce((total, item) => total + item.quantity, 0)
+                          const plural = totalBottles === 1 ? '' : 's'
+                          return t.checkout?.minimumBottlesNote?.replace('{count}', totalBottles.toString()).replace('{plural}', plural) || `Para compras individuales, el mínimo es de 3 botellas. Actualmente tienes ${totalBottles} botella${plural}.`
+                        })()}
+                      </p>
+                    </div>
+                  )}
                 </form>
               </div>
 

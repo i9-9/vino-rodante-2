@@ -75,7 +75,7 @@ export const es = {
       subtitle: "En Vino Rodante lo sabemos: tu tiempo es para disfrutar, no para buscar.\nPor eso te llevamos a casa una cuidada selección de vinos de calidad a precios irresistibles. Descorchá sin salir de casa. Disfrutá sin complicaciones.",
       cta: "Ver suscripciones",
       secondaryCta: "Explorar vinos",
-      shipping: "Envío gratis a toda Argentina",
+      shipping: "Envío gratis en CABA",
       fastDelivery: "Entrega rápida",
       curatedSelection: "Selección curada",
     },
@@ -213,6 +213,8 @@ Amamos el vino, el trabajo que genera, la vinculación que propone y la música 
     total: "Total",
     backToInformation: "Volver a Información",
     emptyCartMessage: "Agregá productos a tu carrito antes de continuar con la compra.",
+    minimumBottlesNote: "Para compras individuales, el mínimo es de 3 botellas. Actualmente tienes {count} botella{plural}.",
+    minimumBottlesRequired: "Mínimo: 3 botellas para finalizar compra",
   },
   confirmation: {
     title: "¡Gracias por tu Pedido!",

@@ -61,3 +61,5 @@ export const BoxProductRelationSchema = z.object({
 })
 
 export type BoxProductRelation = z.infer<typeof BoxProductRelationSchema>
+
+

@@ -6,8 +6,10 @@ import { AdminSubscriptionsTab } from './admin-subscriptions-tab'
 import { AdminSubscriptionsSkeleton } from './components/AdminSkeleton'
 
 interface AdminSubscriptionsTabLazyProps {
-  t: any
+  t: unknown
 }
+
+type AdminSubscriptionsTabProps = AdminSubscriptionsTabLazyProps
 
 export default function AdminSubscriptionsTabLazy({ t }: AdminSubscriptionsTabLazyProps) {
   const [loading, setLoading] = useState(true)
@@ -81,5 +83,5 @@ export default function AdminSubscriptionsTabLazy({ t }: AdminSubscriptionsTabLa
   }
 
   // El componente AdminSubscriptionsTab ya tiene su propia lógica de carga de datos
-  return <AdminSubscriptionsTab t={t} />
+  return <AdminSubscriptionsTab t={t as unknown as import('@/lib/i18n/types').Translations} />
 } 

@@ -77,7 +77,7 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
     varietal: product.varietal || '',
     featured: product.featured || false,
     is_visible: product.is_visible || false,
-    free_shipping: (product as any).free_shipping || false,
+    free_shipping: (product as { free_shipping?: boolean }).free_shipping || false,
   });
   const [imagePreview, setImagePreview] = useState<string | null>(product.image || null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -98,7 +98,7 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
       varietal: product.varietal || '',
       featured: product.featured || false,
       is_visible: product.is_visible || false,
-      free_shipping: (product as any).free_shipping || false,
+      free_shipping: (product as { free_shipping?: boolean }).free_shipping || false,
     });
     setImagePreview(product.image || null)
     setSelectedFile(null)

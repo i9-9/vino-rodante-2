@@ -11,7 +11,7 @@ interface AdminPlansTabLazyProps {
   t: Translations
 }
 
-export default function AdminPlansTabLazy({ t }: AdminPlansTabLazyProps) {
+export default function AdminPlansTabLazy({ }: AdminPlansTabLazyProps) {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [users, setUsers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
@@ -137,5 +137,5 @@ export default function AdminPlansTabLazy({ t }: AdminPlansTabLazyProps) {
     )
   }
 
-  return <AdminPlansTab plans={plans} users={users} t={t} />
+  return <AdminPlansTab plans={plans} users={users} t={{} as Translations} />
 } 

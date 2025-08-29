@@ -7,7 +7,7 @@ export async function updateProfileAction(formData: FormData) {
   const userId = formData.get('userId') as string
   const name = formData.get('name') as string
   const supabase = await createClient()
-  const { error } = await supabase
+  await supabase
     .from("customers")
     .update({ name })
     .eq("id", userId)
@@ -49,7 +49,7 @@ export async function getAddresses(userId: string) {
   return { data, error }
 }
 
-export async function addAddress(userId: string, address: any) {
+export async function addAddress(userId: string, address: Record<string, unknown>) {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("addresses")

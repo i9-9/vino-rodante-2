@@ -7,29 +7,11 @@ import type {
   SubscriptionPlan, 
   UserSubscription, 
   SubscriptionStatus,
-  SubscriptionFrequency,
-  WineType 
+  SubscriptionFrequency
 } from '../types'
 import { redirect } from 'next/navigation'
 
-const subscriptionPlanSchema = z.object({
-  name: z.string().min(1, 'El nombre es requerido'),
-  slug: z.string().min(1, 'El slug es requerido'),
-  description: z.string().min(1, 'La descripción es requerida'),
-  tagline: z.string().optional(),
-  type: z.enum(['tinto', 'blanco', 'mixto', 'premium'] as const),
-  image: z.string().nullable(),
-  banner_image: z.string().nullable(),
-  features: z.array(z.string()),
-  price_weekly: z.number().int().min(0),
-  price_biweekly: z.number().int().min(0),
-  price_monthly: z.number().int().min(0),
-  discount_percentage: z.number().min(0).max(100).optional(),
-  wines_per_delivery: z.number().int().min(1),
-  display_order: z.number().int().min(0),
-  is_visible: z.boolean().default(true),
-  is_active: z.boolean().default(true)
-})
+
 
 // Funciones auxiliares
 async function verifyAdmin() {

@@ -4,8 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Database } from '@/lib/database.types'
 
-type SubscriptionPlan = Database['public']['Tables']['subscription_plans']['Row']
-type SubscriptionPlanInsert = Database['public']['Tables']['subscription_plans']['Insert']
+
 
 // Helper function to serialize data
 function serializeData<T>(data: T): T {

@@ -199,12 +199,12 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
         .eq('id', orderId)
         .single()
 
-      const items = (order?.order_items || []).map((it: any) => ({
-        name: it.products?.name || 'Producto',
-        quantity: it.quantity,
-        price: it.price * it.quantity,
+      const items = (order?.order_items || []).map((it: unknown) => ({
+        name: (it as { products?: { name?: string } })?.products?.name || 'Producto',
+        quantity: (it as { quantity: number }).quantity,
+        price: (it as { price: number }).price * (it as { quantity: number }).quantity,
       }))
-      const subtotal = items.reduce((s: number, it: any) => s + it.price, 0)
+      const subtotal = items.reduce((s: number, it: unknown) => s + (it as { price: number }).price, 0)
       const shipping = Math.max(0, (order?.total || 0) - subtotal)
       const html = renderOrderSummaryEmail({
         title: `Estado actualizado: ${newStatus}`,

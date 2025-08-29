@@ -169,7 +169,7 @@ Asegúrate de que todos los archivos estén en su lugar:
 - Revisar console del navegador
 - Verificar logs del servidor
 - Comprobar permisos de base de datos
-
+e
 ## Soporte
 Para problemas o preguntas sobre la implementación, revisar:
 1. Logs de la aplicación

@@ -2,12 +2,11 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
-import { BoxSchema, CreateBoxSchema, UpdateBoxSchema } from '../types/box'
+import { CreateBoxSchema, UpdateBoxSchema } from '../types/box'
 
 export type ActionResponse = {
   success: boolean
-  data?: any
+  data?: unknown
   error?: string
 }
 
@@ -57,7 +56,7 @@ export async function createBox(formData: FormData): Promise<ActionResponse> {
       const fileName = `box-${validatedData.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.${fileExt}`
       const filePath = `boxes/${fileName}`
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('product-images')
         .upload(filePath, imageFile)
 
@@ -90,7 +89,7 @@ export async function createBox(formData: FormData): Promise<ActionResponse> {
       const boxProducts = JSON.parse(boxProductsJson)
       
       // Crear registros en la tabla de relación box-productos
-      const boxProductRelations = boxProducts.map((product: any) => ({
+      const boxProductRelations = boxProducts.map((product: { product_id: string; quantity: number }) => ({
         box_id: boxData.id,
         product_id: product.product_id,
         quantity: product.quantity
@@ -162,7 +161,7 @@ export async function updateBox(boxId: string, formData: FormData): Promise<Acti
       const fileName = `box-${validatedData.name?.toLowerCase().replace(/\s+/g, '-') || 'updated'}-${Date.now()}.${fileExt}`
       const filePath = `boxes/${fileName}`
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('product-images')
         .upload(filePath, imageFile)
 
@@ -198,7 +197,7 @@ export async function updateBox(boxId: string, formData: FormData): Promise<Acti
 
       // Crear nuevas relaciones
       if (boxProducts.length > 0) {
-        const boxProductRelations = boxProducts.map((product: any) => ({
+        const boxProductRelations = boxProducts.map((product: { product_id: string; quantity: number }) => ({
           box_id: boxId,
           product_id: product.product_id,
           quantity: product.quantity

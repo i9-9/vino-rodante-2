@@ -10,42 +10,15 @@ import { updateOrderStatus } from './actions/admin-orders'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
 import { ChevronDown, ChevronUp, Search } from 'lucide-react'
 import Image from 'next/image'
 import { Skeleton } from '@/components/ui/skeleton'
-import PaginatedList from './components/PaginatedList'
 import type { OrderStatus, Order } from './types'
-
-interface Product {
-  id: string
-  name: string
-  description: string | null
-  image: string | null
-  price: number
-  year: string | null
-  region: string | null
-  varietal: string | null
-}
-
-interface OrderItem {
-  id: string
-  order_id: string
-  product_id: string
-  quantity: number
-  price: number
-  products: Product
-}
-
-interface Customer {
-  id: string
-  name: string
-  email: string
-}
 
 interface AdminOrdersTabProps {
   orders: Order[]
-  t: any
+  t: { orders: Record<string, string> }
 }
 
 const STATUS_COLORS = {

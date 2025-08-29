@@ -121,3 +121,26 @@
     text-wrap: balance;
   }
 }
+
+/* Fix para el megamenu - asegurar que no tenga fondo blanco */
+[data-radix-navigation-menu-viewport] {
+  background: transparent !important;
+}
+
+[data-radix-navigation-menu-viewport][data-state="open"] {
+  background: transparent !important;
+}
+
+/* Asegurar que el contenido del megamenu tenga el fondo correcto */
+[data-radix-navigation-menu-content] {
+  background: hsl(var(--background)) !important;
+}
+
+/* Override específico para el megamenu */
+.navigation-menu-viewport {
+  background: transparent !important;
+}
+
+.navigation-menu-viewport[data-state="open"] {
+  background: transparent !important;
+}

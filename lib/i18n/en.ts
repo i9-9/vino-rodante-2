@@ -204,6 +204,8 @@ export const en = {
     total: "Total",
     backToInformation: "Back to Information",
     emptyCartMessage: "Add some products to your cart before proceeding to checkout.",
+    minimumBottlesNote: "For individual purchases, the minimum is 3 bottles. You currently have {count} bottle{plural}.",
+    minimumBottlesRequired: "Minimum: 3 bottles to complete purchase",
   },
   confirmation: {
     title: "Thank You for Your Order!",

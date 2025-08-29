@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
@@ -21,7 +20,7 @@ import {
 } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { createClient } from '@/utils/supabase/client'
-import type { SubscriptionPlan, UserSubscription, Customer, Address } from './types'
+import type { UserSubscription, Customer } from './types'
 import type { Translations } from '@/lib/i18n/types'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { MoreHorizontal } from 'lucide-react'
@@ -55,10 +54,7 @@ const getStatusBadge = (status: string) => {
 export function AdminSubscriptionsTab({ t }: AdminSubscriptionsTabProps) {
   const [loading, setLoading] = useState(true)
   const [subscriptions, setSubscriptions] = useState<UserSubscription[]>([])
-  const [addressFilter, setAddressFilter] = useState('all')
-  const [showAddressModal, setShowAddressModal] = useState(false)
-  const [showChangeAddressModal, setShowChangeAddressModal] = useState(false)
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+
   const [selectedSubscription, setSelectedSubscription] = useState<UserSubscription | null>(null)
   const [showFrequencyModal, setShowFrequencyModal] = useState(false)
   const [selectedFrequency, setSelectedFrequency] = useState<'weekly' | 'biweekly' | 'monthly' | 'quarterly'>('weekly')

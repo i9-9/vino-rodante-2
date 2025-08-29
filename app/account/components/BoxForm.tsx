@@ -17,35 +17,41 @@ import Image from 'next/image'
 import { useToast } from '@/components/ui/use-toast'
 import { Loader2, Plus, X } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
-import { Box, BoxProduct, CreateBox, UpdateBox } from '../types/box'
-import { Product } from '../types'
-import { REGIONS } from '../types/product'
+import { BoxProduct, CreateBoxSchema } from '../types/box'
 
 interface BoxFormProps {
-  box?: Box
   onSubmit: (formData: FormData) => Promise<void>
   onClose: () => void
 }
 
-export function BoxForm({ box, onSubmit, onClose }: BoxFormProps) {
-  const [formData, setFormData] = useState<Partial<CreateBox>>({
-    name: box?.name || '',
-    description: box?.description || '',
-    price: box?.price || '',
-    stock: box?.stock || '',
-    category: 'Boxes',
-    featured: box?.featured || false,
-    is_visible: box?.is_visible || true,
-    total_wines: box?.total_wines || 3,
-    discount_percentage: box?.discount_percentage || 0,
+interface BoxProductItem {
+  product_id: string
+  quantity: number
+  name: string
+  price: number
+  image?: string
+  varietal?: string
+  year?: string
+  region?: string
+}
+
+export function BoxForm({ onSubmit, onClose }: BoxFormProps) {
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    price: '',
+    stock: '',
+    total_wines: 3,
+    discount_percentage: 0,
+    featured: false,
+    is_visible: true,
   })
-  
-  const [boxProducts, setBoxProducts] = useState<BoxProduct[]>(box?.box_products || [])
-  const [availableProducts, setAvailableProducts] = useState<Product[]>([])
-  const [imagePreview, setImagePreview] = useState<string | null>(box?.image || null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isLoadingProducts, setIsLoadingProducts] = useState(false)
+  const [boxProducts, setBoxProducts] = useState<BoxProductItem[]>([])
+  const [availableProducts, setAvailableProducts] = useState<any[]>([])
+  const [showProductSelector, setShowProductSelector] = useState(false)
   const { toast } = useToast()
   const supabase = createClient()
 
@@ -55,26 +61,18 @@ export function BoxForm({ box, onSubmit, onClose }: BoxFormProps) {
   }, [])
 
   const loadAvailableProducts = async () => {
-    setIsLoadingProducts(true)
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('*')
-        .eq('is_visible', true)
+        .select('id, name, price, image, varietal, year, region')
         .neq('category', 'Boxes')
+        .eq('is_visible', true)
         .order('name')
 
       if (error) throw error
       setAvailableProducts(data || [])
     } catch (error) {
       console.error('Error loading products:', error)
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los productos disponibles",
-        variant: "destructive"
-      })
-    } finally {
-      setIsLoadingProducts(false)
     }
   }
 
@@ -82,9 +80,14 @@ export function BoxForm({ box, onSubmit, onClose }: BoxFormProps) {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'price' || name === 'stock' || name === 'total_wines' || name === 'discount_percentage' 
-        ? Number(value) || 0 
-        : value
+      [name]: value
+    }))
+  }
+
+  const handleSelectChange = (name: string) => (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
     }))
   }
 
@@ -93,59 +96,6 @@ export function BoxForm({ box, onSubmit, onClose }: BoxFormProps) {
       ...prev,
       [name]: checked
     }))
-  }
-
-  const handleSelectChange = (name: string) => (value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'total_wines' ? Number(value) : value
-    }))
-  }
-
-  const addProductToBox = () => {
-    if (boxProducts.length >= (formData.total_wines || 3)) {
-      toast({
-        title: "Límite alcanzado",
-        description: `Este box solo puede contener ${formData.total_wines} vinos`,
-        variant: "destructive"
-      })
-      return
-    }
-
-    const newProduct: BoxProduct = {
-      product_id: '',
-      quantity: 1,
-      name: '',
-      price: 0,
-      image: '',
-      varietal: '',
-      year: '',
-      region: ''
-    }
-    setBoxProducts([...boxProducts, newProduct])
-  }
-
-  const removeProductFromBox = (index: number) => {
-    setBoxProducts(boxProducts.filter((_, i) => i !== index))
-  }
-
-  const updateBoxProduct = (index: number, field: keyof BoxProduct, value: any) => {
-    const updated = [...boxProducts]
-    updated[index] = { ...updated[index], [field]: value }
-    setBoxProducts(updated)
-  }
-
-  const handleProductSelect = (index: number, productId: string) => {
-    const product = availableProducts.find(p => p.id === productId)
-    if (product) {
-      updateBoxProduct(index, 'product_id', productId)
-      updateBoxProduct(index, 'name', product.name)
-      updateBoxProduct(index, 'price', product.price)
-      updateBoxProduct(index, 'image', product.image)
-      updateBoxProduct(index, 'varietal', product.varietal)
-      updateBoxProduct(index, 'year', product.year)
-      updateBoxProduct(index, 'region', product.region)
-    }
   }
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,47 +130,84 @@ export function BoxForm({ box, onSubmit, onClose }: BoxFormProps) {
     }
   }
 
+  const addProductToBox = (product: any) => {
+    const existingProduct = boxProducts.find(p => p.product_id === product.id)
+    if (existingProduct) {
+      setBoxProducts(prev => prev.map(p => 
+        p.product_id === product.id 
+          ? { ...p, quantity: p.quantity + 1 }
+          : p
+      ))
+    } else {
+      setBoxProducts(prev => [...prev, {
+        product_id: product.id,
+        quantity: 1,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        varietal: product.varietal,
+        year: product.year,
+        region: product.region
+      }])
+    }
+    setShowProductSelector(false)
+  }
+
+  const removeProductFromBox = (productId: string) => {
+    setBoxProducts(prev => prev.filter(p => p.product_id !== productId))
+  }
+
+  const updateProductQuantity = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeProductFromBox(productId)
+      return
+    }
+    setBoxProducts(prev => prev.map(p => 
+      p.product_id === productId ? { ...p, quantity } : p
+    ))
+  }
+
+  const calculateTotalPrice = () => {
+    return boxProducts.reduce((total, product) => {
+      return total + (product.price * product.quantity)
+    }, 0)
+  }
+
+  const calculateDiscountedPrice = () => {
+    const totalPrice = calculateTotalPrice()
+    const discount = (totalPrice * formData.discount_percentage) / 100
+    return totalPrice - discount
+  }
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    
-    if (boxProducts.length === 0) {
-      toast({
-        title: "Error",
-        description: "Debes agregar al menos un vino al box",
-        variant: "destructive"
-      })
-      return
-    }
-
-    if (boxProducts.length !== (formData.total_wines || 3)) {
-      toast({
-        title: "Error",
-        description: `El box debe contener exactamente ${formData.total_wines} vinos`,
-        variant: "destructive"
-      })
-      return
-    }
-
     setIsSubmitting(true)
     
     try {
+      if (boxProducts.length === 0) {
+        throw new Error('Debe agregar al menos un producto al box')
+      }
+
+      if (boxProducts.length !== formData.total_wines) {
+        throw new Error(`El box debe contener exactamente ${formData.total_wines} vinos`)
+      }
+
       const submitData = new FormData()
 
-      // Datos básicos del box
-      submitData.set('name', formData.name || '')
-      submitData.set('description', formData.description || '')
-      submitData.set('category', 'Boxes')
-      submitData.set('price', String(formData.price || 0))
-      submitData.set('stock', String(formData.stock || 0))
-      submitData.set('total_wines', String(formData.total_wines || 3))
-      submitData.set('discount_percentage', String(formData.discount_percentage || 0))
+      // Campos básicos
+      submitData.set('name', formData.name)
+      submitData.set('description', formData.description)
+      submitData.set('price', calculateDiscountedPrice().toString())
+      submitData.set('stock', formData.stock)
+      submitData.set('total_wines', formData.total_wines.toString())
+      submitData.set('discount_percentage', formData.discount_percentage.toString())
       submitData.set('featured', formData.featured ? 'on' : 'off')
       submitData.set('is_visible', formData.is_visible ? 'on' : 'off')
       
       // Productos del box
       submitData.set('box_products', JSON.stringify(boxProducts))
       
-      // Imagen si existe
+      // Imagen
       if (selectedFile) {
         submitData.set('image_file', selectedFile)
       }
@@ -228,14 +215,14 @@ export function BoxForm({ box, onSubmit, onClose }: BoxFormProps) {
       await onSubmit(submitData)
       toast({
         title: "Éxito",
-        description: box ? "Box actualizado correctamente" : "Box creado correctamente",
+        description: "Box creado correctamente",
       })
       onClose()
     } catch (error) {
       console.error('Error submitting form:', error)
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Error al guardar el box",
+        description: error instanceof Error ? error.message : "Error al crear el box",
         variant: "destructive"
       })
     } finally {
@@ -244,9 +231,16 @@ export function BoxForm({ box, onSubmit, onClose }: BoxFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Primera fila: Nombre y Descripción */}
-      <div className="grid grid-cols-2 gap-6">
+    <div className="space-y-6">
+      <div className="border-b pb-4">
+        <h3 className="text-lg font-semibold">Crear Box de Vinos</h3>
+        <p className="text-sm text-muted-foreground">
+          Agrupa múltiples vinos en un solo paquete con descuento
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Información básica del box */}
         <div className="space-y-2">
           <Label htmlFor="name">Nombre del Box *</Label>
           <Input
@@ -254,8 +248,8 @@ export function BoxForm({ box, onSubmit, onClose }: BoxFormProps) {
             name="name"
             value={formData.name}
             onChange={handleInputChange}
-            required
             placeholder="Ej: Box Malbec Premium"
+            required
           />
         </div>
 
@@ -266,203 +260,251 @@ export function BoxForm({ box, onSubmit, onClose }: BoxFormProps) {
             name="description"
             value={formData.description}
             onChange={handleInputChange}
-            required
-            placeholder="Describe el box y los vinos incluidos"
-            className="min-h-[80px]"
-          />
-        </div>
-      </div>
-
-      {/* Segunda fila: Precio, Stock, Cantidad de Vinos, Descuento */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="price">Precio del Box *</Label>
-          <Input
-            id="price"
-            name="price"
-            type="number"
-            step="0.01"
-            value={formData.price}
-            onChange={handleInputChange}
+            placeholder="Describe el contenido del box..."
             required
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="stock">Stock *</Label>
-          <Input
-            id="stock"
-            name="stock"
-            type="number"
-            value={formData.stock}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="total_wines">Cantidad de Vinos *</Label>
-          <Select value={String(formData.total_wines)} onValueChange={handleSelectChange('total_wines')}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="2">2 vinos</SelectItem>
-              <SelectItem value="3">3 vinos</SelectItem>
-              <SelectItem value="4">4 vinos</SelectItem>
-              <SelectItem value="6">6 vinos</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="discount_percentage">Descuento (%)</Label>
-          <Input
-            id="discount_percentage"
-            name="discount_percentage"
-            type="number"
-            min="0"
-            max="100"
-            value={formData.discount_percentage}
-            onChange={handleInputChange}
-            placeholder="0"
-          />
-        </div>
-      </div>
-
-      {/* Sección de Vinos del Box */}
-      <div className="space-y-3">
-        <Label>Vinos del Box *</Label>
         <div className="grid grid-cols-2 gap-4">
-          {boxProducts.map((product, index) => (
-            <div key={index} className="p-3 border rounded-lg space-y-3">
-              <div className="space-y-2">
-                <Select 
-                  value={product.product_id} 
-                  onValueChange={(value) => handleProductSelect(index, value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar vino" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableProducts.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.name} - {p.varietal} ({p.year})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                {product.name && (
-                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-                    <div><strong>Varietal:</strong> {product.varietal}</div>
-                    <div><strong>Año:</strong> {product.year}</div>
-                    <div><strong>Región:</strong> {product.region}</div>
-                    <div><strong>Precio:</strong> ${product.price}</div>
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor={`quantity-${index}`} className="text-xs">Cantidad:</Label>
-                  <Input
-                    id={`quantity-${index}`}
-                    type="number"
-                    min="1"
-                    value={product.quantity}
-                    onChange={(e) => updateBoxProduct(index, 'quantity', Number(e.target.value))}
-                    className="w-16 h-8"
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => removeProductFromBox(index)}
-                  className="h-8 w-8 p-0"
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-        
-        {boxProducts.length < (formData.total_wines || 3) && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={addProductToBox}
-            className="w-full"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Agregar Vino al Box
-          </Button>
-        )}
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="total_wines">Cantidad de Vinos *</Label>
+            <Select 
+              value={formData.total_wines.toString()} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, total_wines: parseInt(value) }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="2">2 vinos</SelectItem>
+                <SelectItem value="3">3 vinos</SelectItem>
+                <SelectItem value="4">4 vinos</SelectItem>
+                <SelectItem value="6">6 vinos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-      {/* Imagen y Configuraciones */}
-      <div className="grid grid-cols-3 gap-6">
-        <div className="space-y-2">
-          <Label htmlFor="image_file">Imagen del Box</Label>
-          <div className="flex items-center gap-3">
-            {imagePreview && (
-              <div className="relative w-16 h-16">
-                <Image
-                  src={imagePreview}
-                  alt="Preview"
-                  fill
-                  className="object-cover rounded-md"
-                />
-              </div>
-            )}
+          <div className="space-y-2">
+            <Label htmlFor="discount_percentage">Descuento (%)</Label>
             <Input
-              id="image_file"
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="flex-1"
+              id="discount_percentage"
+              name="discount_percentage"
+              type="number"
+              min="0"
+              max="100"
+              value={formData.discount_percentage}
+              onChange={handleInputChange}
+              placeholder="0"
             />
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <Switch
-            checked={formData.featured}
-            onCheckedChange={handleSwitchChange('featured')}
-          />
-          <Label htmlFor="featured">Destacado</Label>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="stock">Stock *</Label>
+            <Input
+              id="stock"
+              name="stock"
+              type="number"
+              min="0"
+              value={formData.stock}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="image_file">Imagen del Box</Label>
+            <div className="flex items-center gap-4">
+              {imagePreview && (
+                <div className="relative w-20 h-20">
+                  <Image
+                    src={imagePreview}
+                    alt="Preview"
+                    fill
+                    className="object-cover rounded-md"
+                  />
+                </div>
+              )}
+              <Input
+                id="image_file"
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="flex-1"
+              />
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <Switch
-            checked={formData.is_visible}
-            onCheckedChange={handleSwitchChange('is_visible')}
-          />
-          <Label htmlFor="is_visible">Visible</Label>
-        </div>
-      </div>
+        {/* Productos del box */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label>Productos del Box ({boxProducts.length}/{formData.total_wines})</Label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowProductSelector(true)}
+              disabled={boxProducts.length >= formData.total_wines}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Agregar Vino
+            </Button>
+          </div>
 
-      <div className="flex justify-end space-x-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onClose}
-          disabled={isSubmitting}
-        >
-          Cancelar
-        </Button>
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-        >
-          {isSubmitting && (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          {boxProducts.length > 0 && (
+            <div className="space-y-2">
+              {boxProducts.map((product) => (
+                <div key={product.product_id} className="flex items-center gap-3 p-3 border rounded-lg">
+                  {product.image && (
+                    <div className="relative w-12 h-12">
+                      <Image
+                        src={product.image}
+                        alt={product.name}
+                        fill
+                        className="object-cover rounded"
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <p className="font-medium">{product.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {product.varietal} • {product.year} • {product.region}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="1"
+                      value={product.quantity}
+                      onChange={(e) => updateProductQuantity(product.product_id, parseInt(e.target.value) || 1)}
+                      className="w-16"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeProductFromBox(product.product_id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
-          {box ? 'Actualizar Box' : 'Crear Box'}
-        </Button>
-      </div>
-    </form>
+
+          {/* Resumen de precios */}
+          {boxProducts.length > 0 && (
+            <div className="p-4 bg-muted rounded-lg space-y-2">
+              <div className="flex justify-between">
+                <span>Precio total de productos:</span>
+                <span>${calculateTotalPrice().toFixed(2)}</span>
+              </div>
+              {formData.discount_percentage > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Descuento ({formData.discount_percentage}%):</span>
+                  <span>-${((calculateTotalPrice() * formData.discount_percentage) / 100).toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-semibold border-t pt-2">
+                <span>Precio final del box:</span>
+                <span>${calculateDiscountedPrice().toFixed(2)}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Switches */}
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={formData.featured}
+              onCheckedChange={handleSwitchChange('featured')}
+            />
+            <Label htmlFor="featured">Destacado</Label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={formData.is_visible}
+              onCheckedChange={handleSwitchChange('is_visible')}
+            />
+            <Label htmlFor="is_visible">Visible</Label>
+          </div>
+        </div>
+
+        {/* Botones */}
+        <div className="flex justify-end space-x-2 pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            disabled={isSubmitting || boxProducts.length === 0}
+          >
+            {isSubmitting && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            Crear Box
+          </Button>
+        </div>
+      </form>
+
+      {/* Modal selector de productos */}
+      {showProductSelector && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background p-6 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Seleccionar Vinos</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowProductSelector(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="space-y-2">
+              {availableProducts.map((product) => (
+                <div
+                  key={product.id}
+                  className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted cursor-pointer"
+                  onClick={() => addProductToBox(product)}
+                >
+                  {product.image && (
+                    <div className="relative w-12 h-12">
+                      <Image
+                        src={product.image}
+                        alt={product.name}
+                        fill
+                        className="object-cover rounded"
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <p className="font-medium">{product.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {product.varietal} • {product.year} • {product.region}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">${product.price}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
+

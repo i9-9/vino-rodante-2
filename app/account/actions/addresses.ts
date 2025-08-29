@@ -6,15 +6,8 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import type { ActionResponse } from '../types'
 import type { Database } from '@/lib/database.types'
-import { validateAddress } from '../utils/validation'
-import { supabaseCache } from '@/lib/supabase/cache'
 
-type Address = Database['public']['Tables']['addresses']['Row']
-type AddressInsert = Database['public']['Tables']['addresses']['Insert']
 type AddressUpdate = Database['public']['Tables']['addresses']['Update']
-
-const REQUIRED_FIELDS = ['line1', 'city', 'state', 'postal_code', 'country'] as const
-type RequiredField = typeof REQUIRED_FIELDS[number]
 
 const addressSchema = z.object({
   line1: z.string().min(1, 'La calle y número son requeridos'),
@@ -39,7 +32,7 @@ const addressFieldValidators = {
 type AddressField = keyof typeof addressFieldValidators
 
 // Función auxiliar para validar campos individuales
-const validateField = (field: AddressField, value: any): { success: boolean; value?: any; error?: string } => {
+const validateField = (field: AddressField, value: unknown): { success: boolean; value?: unknown; error?: string } => {
   try {
     const validator = addressFieldValidators[field]
     const validatedValue = validator.parse(value)
@@ -138,7 +131,7 @@ export async function updateAddress(formData: FormData): Promise<ActionResponse>
       
       // Solo procesar campos que vienen en el FormData
       if (formValue !== null) {
-        let valueToValidate: any = formValue
+        let valueToValidate: unknown = formValue
 
         // Manejo especial para is_default
         if (field === 'is_default') {
@@ -154,12 +147,12 @@ export async function updateAddress(formData: FormData): Promise<ActionResponse>
         }
 
         // Solo validar y actualizar si el valor es diferente al existente
-        if (valueToValidate !== (existingAddress[field] as any)) {
+        if (valueToValidate !== (existingAddress[field] as unknown)) {
           const validation = validateField(field, valueToValidate)
           if (!validation.success) {
             return { success: false, error: `Error en ${field}: ${validation.error}` }
           }
-          updateData[field] = validation.value as any
+          (updateData as Record<string, unknown>)[field] = validation.value
         }
       }
     }

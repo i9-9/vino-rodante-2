@@ -7,7 +7,7 @@ import { AdminOrdersSkeleton } from './components/AdminSkeleton'
 import type { Order } from './types'
 
 interface AdminOrdersTabLazyProps {
-  t: any
+  t: unknown
 }
 
 export default function AdminOrdersTabLazy({ t }: AdminOrdersTabLazyProps) {
@@ -42,7 +42,7 @@ export default function AdminOrdersTabLazy({ t }: AdminOrdersTabLazyProps) {
         if (error) {
           setError(error.message)
         } else {
-          setOrders((data as any) || [])
+          setOrders((data as Order[]) || [])
         }
       } catch (err) {
         if (isMounted) {
@@ -74,5 +74,5 @@ export default function AdminOrdersTabLazy({ t }: AdminOrdersTabLazyProps) {
     )
   }
 
-  return <AdminOrdersTab orders={orders} t={t} />
+  return <AdminOrdersTab orders={orders} t={t as unknown as import('@/lib/i18n/types').Translations} />
 } 

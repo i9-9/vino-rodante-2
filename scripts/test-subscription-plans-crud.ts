@@ -22,6 +22,7 @@ interface TestPlan {
   is_active: boolean
   is_visible: boolean
   type: string
+  image: string
 }
 
 async function testSubscriptionPlansCRUD() {
@@ -52,7 +53,8 @@ async function testSubscriptionPlansCRUD() {
       status: 'active',
       is_active: true,
       is_visible: true,
-      type: 'tinto'
+      type: 'tinto',
+      image: 'https://via.placeholder.com/400x300?text=Test+Plan+Image'
     }
 
     const { data: createdPlan, error: createError } = await supabase

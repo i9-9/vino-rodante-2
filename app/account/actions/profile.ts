@@ -6,7 +6,7 @@ import type { ActionResponse } from '../types'
 import type { Database } from '@/lib/database.types'
 import { isValidEmail } from '../utils/validation'
 
-type Customer = Database['public']['Tables']['customers']['Row']
+
 type CustomerUpdate = Omit<Database['public']['Tables']['customers']['Update'], 'is_admin'>
 
 export async function updateProfile(formData: FormData): Promise<ActionResponse> {

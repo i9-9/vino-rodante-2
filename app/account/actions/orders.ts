@@ -3,11 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { ActionResponse } from '../types'
-import type { Database } from '@/lib/database.types'
 import { validateOrderStatus } from '../utils/validation'
-
-type Order = Database['public']['Tables']['orders']['Row']
-type OrderUpdate = Database['public']['Tables']['orders']['Update']
 
 async function verifyAdmin() {
   const supabase = await createClient()

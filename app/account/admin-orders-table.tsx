@@ -20,7 +20,7 @@ export default async function AdminOrdersTable() {
           </tr>
         </thead>
         <tbody>
-          {orders.map((order: any) => (
+          {orders.map((order: { id: string; customers?: { name?: string; email?: string }; status: string; total: number; created_at: string }) => (
             <tr key={order.id}>
               <td className="border px-2 py-1">{order.id}</td>
               <td className="border px-2 py-1">{order.customers?.name || order.customers?.email}</td>

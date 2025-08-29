@@ -7,7 +7,7 @@ import { AdminProductsSkeleton } from './components/AdminSkeleton'
 import type { Product } from './types'
 
 interface AdminProductsTabLazyProps {
-  t: any
+  t: Record<string, Record<string, string>>
 }
 
 export default function AdminProductsTabLazy({ t }: AdminProductsTabLazyProps) {
@@ -122,5 +122,5 @@ export default function AdminProductsTabLazy({ t }: AdminProductsTabLazyProps) {
     )
   }
 
-  return <AdminProductsTab products={products} t={t} onRefresh={refresh} />
+  return <AdminProductsTab products={products} t={t as unknown as import('@/lib/i18n/types').Translations} onRefresh={refresh} />
 } 

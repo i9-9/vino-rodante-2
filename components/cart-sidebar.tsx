@@ -39,13 +39,13 @@ export default function CartSidebar({
               {/* Información sobre mínimo de botellas */}
               <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  <strong>Mínimo requerido:</strong> 3 botellas para compras individuales
+                  <strong>Mínimo requerido:</strong> {t.checkout?.minimumBottlesRequired || "3 botellas para compras individuales"}
                 </p>
                 <p className="text-sm text-blue-600 mt-1">
                   Total en carrito: {cartItems.reduce((total, item) => total + item.quantity, 0)} botella{cartItems.reduce((total, item) => total + item.quantity, 0) === 1 ? '' : 's'}
                 </p>
                 {cartItems.reduce((total, item) => total + item.quantity, 0) < 3 && (
-                  <p className="text-sm text-orange-600 mt-1">
+                  <p className="text-xs text-orange-600 mt-1">
                     ⚠️ Necesitas {3 - cartItems.reduce((total, item) => total + item.quantity, 0)} botella{(3 - cartItems.reduce((total, item) => total + item.quantity, 0)) === 1 ? '' : 's'} más para completar tu pedido
                   </p>
                 )}
@@ -136,6 +136,15 @@ export default function CartSidebar({
                   {t.cart.checkout}
                 </Link>
               </Button>
+              
+              {cartItems.reduce((total, item) => total + item.quantity, 0) < 3 && (
+                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-xs text-amber-800 text-center">
+                    <strong>Mínimo:</strong> {t.checkout?.minimumBottlesRequired || "3 botellas para finalizar compra"}
+                  </p>
+                </div>
+              )}
+              
               <Button variant="outline" className="mt-2 w-full" onClick={onClose}>
                 {t.cart.continueShopping}
               </Button>

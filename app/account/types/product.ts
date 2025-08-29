@@ -5,6 +5,7 @@ export const CATEGORIES = [
   'Blanco',
   'Rosado',
   'Espumante',
+  'Naranjo',
   'Dulce',
   'Boxes',
   'Otro'

@@ -1,8 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import type { Database } from '@/lib/database.types'
-import type { OrderItem } from '@/lib/types'
-import { supabaseCache } from '@/lib/supabase/cache'
 import { PostgrestError } from '@supabase/supabase-js'
+import { supabaseCache } from '@/lib/supabase/cache'
 
 // Helper function to serialize dates
 function serializeData<T>(data: T): T {
@@ -15,7 +13,7 @@ function serializeData<T>(data: T): T {
 }
 
 // Helper function to validate Supabase connection
-async function validateSupabaseConnection(supabase: any) {
+async function validateSupabaseConnection(supabase: Awaited<ReturnType<typeof createClient>>) {
   try {
     // Intentar una consulta simple para verificar la conexión
     const { data, error } = await supabase.from('orders').select('id').limit(1)
@@ -68,28 +66,16 @@ type OrderItemWithProduct = {
   } | null;
 };
 
-type OrderWithDetails = {
-  id: string;
-  user_id: string;
-  status: string;
-  total: number;
-  created_at: string;
-  customer: {
-    id: string;
-    name: string;
-    email: string;
-  } | null;
-  order_items: OrderItemWithProduct[];
-};
+
 
 export async function getProfile(userId: string) {
   const supabase = await createClient()
-  const { data, error } = await supabase
+  const { data: profileData, error } = await supabase
     .from('customers')
     .select('name')
     .eq('id', userId)
     .single()
-  return { data: data ? serializeData(data) : null, error }
+  return { data: profileData ? serializeData(profileData) : null, error }
 }
 
 export async function getOrders(userId: string) {
@@ -299,7 +285,7 @@ export async function getAddresses(userId: string) {
   )
 }
 
-export async function addAddress(userId: string, address: any) {
+export async function addAddress(userId: string, address: Record<string, unknown>) {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('addresses')

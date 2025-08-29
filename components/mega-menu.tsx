@@ -169,7 +169,7 @@ export default function MegaMenu() {
   ]
 
   return (
-    <NavigationMenu className="hidden md:flex justify-center mega-menu-container">
+    <NavigationMenu className="hidden md:flex justify-center">
       <NavigationMenuList className="flex items-center space-x-6">
         <NavigationMenuItem key="home">
           <Link href="/" legacyBehavior passHref>
@@ -197,7 +197,7 @@ export default function MegaMenu() {
           >
             {t.navigation?.weeklyWine || "Weekly Wine"}
           </NavigationMenuTrigger>
-          <NavigationMenuContent className="left-1/2 -translate-x-1/2 w-auto max-w-6xl bg-background border border-border rounded-lg shadow-lg overflow-visible">
+          <NavigationMenuContent className="left-1/2 -translate-x-1/2 w-auto max-w-6xl bg-background border border-border rounded-lg shadow-lg overflow-visible [&[data-state=open]]:bg-background">
             <div className="px-6 py-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-2xl font-medium border-b pb-2">{t.navigation?.weeklyWine || "Weekly Wine"}</h3>
@@ -250,7 +250,7 @@ export default function MegaMenu() {
           >
             {t.navigation?.products || "Productos"}
           </NavigationMenuTrigger>
-          <NavigationMenuContent className="left-1/2 -translate-x-1/2 w-auto max-w-6xl bg-background border border-border rounded-lg shadow-lg overflow-visible p-0">
+          <NavigationMenuContent className="left-1/2 -translate-x-1/2 w-auto max-w-6xl bg-background border border-border rounded-lg shadow-lg overflow-visible p-0 [&[data-state=open]]:bg-background">
             <div className="px-6 py-6">
                 <div className="grid grid-cols-12 gap-6">
                   {/* Main categories - 4 columns */}

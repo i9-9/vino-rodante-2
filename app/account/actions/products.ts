@@ -1,31 +1,40 @@
 "use server"
 
 import { createClient } from '@/lib/supabase/server'
-import { PostgrestError } from '@supabase/supabase-js'
 import { StorageError } from '@supabase/storage-js'
 import type { Database } from '@/lib/database.types'
 import { revalidatePath } from 'next/cache'
-import { cookies } from 'next/headers'
-import type { ActionResponse } from '../types'
-import type { Product } from '../types'
-import { z } from 'zod'
-import { ProductSchema, type ProductFormData } from '../types/product'
+import { ProductSchema } from '../types/product'
 
 // Extender el tipo Product para incluir is_visible
 type DatabaseProduct = Database['public']['Tables']['products']['Row'] & {
   is_visible: boolean
 }
 
-import {
-  validateProduct,
-  validatePrice,
-  validateStock,
-  isValidUrl,
-  extractFormFields,
-  hasChanges
-} from '../utils/validation'
+export interface ActionResponse {
+  success: boolean
+  data?: any
+  error?: string
+  message?: string
+}
 
-type ValidatedProduct = z.infer<typeof ProductSchema>
+// Mapeo de categorías del formulario a valores de la base de datos
+const CATEGORY_MAPPING: Record<string, string> = {
+  'Tinto': 'tinto',
+  'Blanco': 'blanco',
+  'Rosado': 'rosado',
+  'Espumante': 'espumante',
+  'Naranjo': 'naranjo',
+  'Dulce': 'dessert',
+  'Boxes': 'boxes',
+  'Otro': 'otro'
+}
+
+// Función helper interna para convertir categoría del formulario a base de datos
+function mapCategoryToDB(category: string): string {
+  return CATEGORY_MAPPING[category] || category
+}
+
 
 export async function addProduct(formData: FormData) {
   const supabase = await createClient()
@@ -92,67 +101,7 @@ async function verifyAdmin() {
   return user.id
 }
 
-async function uploadImage(file: File, slug: string): Promise<string> {
-  const supabase = await createClient()
 
-  // Validar tipo de archivo
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
-  if (!allowedTypes.includes(file.type)) {
-    throw new Error('Tipo de archivo no permitido. Use JPG, PNG o WebP.')
-  }
-
-  // Validar tamaño (max 5MB)
-  const maxSize = 5 * 1024 * 1024 // 5MB
-  if (file.size > maxSize) {
-    throw new Error('La imagen es demasiado grande. Máximo 5MB.')
-  }
-
-  const fileExt = file.type.split('/')[1]
-  const fileName = `${slug}-${Date.now()}.${fileExt}`
-  const filePath = `products/${fileName}`
-
-  try {
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('product-images')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false
-      })
-
-    if (uploadError) {
-      throw uploadError
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('product-images')
-      .getPublicUrl(filePath)
-
-    return publicUrl
-  } catch (error) {
-    if (error instanceof StorageError) {
-      throw new Error(`Error al subir imagen: ${error.message}`)
-    }
-    throw error
-  }
-}
-
-async function deleteOldImage(url: string) {
-  if (!url || url === '/placeholder.jpg' || !url.includes('product-images')) {
-    return
-  }
-
-  try {
-    const supabase = await createClient()
-    const path = url.split('product-images/')[1]
-    if (!path) return
-
-    await supabase.storage
-      .from('product-images')
-      .remove([path])
-  } catch (error) {
-    console.error('Error deleting old image:', error)
-  }
-}
 
 export async function updateProduct(formData: FormData) {
   const supabase = await createClient()
@@ -191,7 +140,7 @@ export async function updateProduct(formData: FormData) {
   const image = formData.get('image') as string
 
   // Si category o region son 'none', usar string vacío
-  const finalCategory = category === 'none' ? '' : category
+  const finalCategory = category === 'none' ? '' : mapCategoryToDB(category)
   const finalRegion = region === 'none' ? '' : region
 
   // Construir update parcial y evitar sobreescribir imagen si no se envió
@@ -224,21 +173,7 @@ export async function updateProduct(formData: FormData) {
   revalidatePath('/account')
 }
 
-async function getProductById(id: string): Promise<DatabaseProduct | null> {
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('id', id)
-    .single()
 
-  if (error) {
-    console.error('Error fetching product:', error)
-    return null
-  }
-
-  return data as DatabaseProduct
-}
 
 export async function createProduct(formData: FormData): Promise<ActionResponse> {
   const supabase = await createClient()
@@ -255,7 +190,7 @@ export async function createProduct(formData: FormData): Promise<ActionResponse>
       name: formData.get('name'),
       description: formData.get('description'),
       price: Number(formData.get('price')),
-      category: formData.get('category'),
+      category: mapCategoryToDB(formData.get('category') as string),
       region: formData.get('region'),
       stock: Number(formData.get('stock')),
       year: formData.get('year') || '',
@@ -276,7 +211,7 @@ export async function createProduct(formData: FormData): Promise<ActionResponse>
       const fileName = `${validatedData.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.${fileExt}`
       const filePath = `products/${fileName}`
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('product-images')
         .upload(filePath, imageFile)
 
@@ -427,7 +362,7 @@ export async function uploadProductImage(file: File, slug: string) {
   const fileExt = file.name.split('.').pop()
   const fileName = `${slug}-${Date.now()}.${fileExt}`
   const filePath = `products/${fileName}`
-  const { data: uploadData, error: uploadError } = await supabase.storage
+  const { error: uploadError } = await supabase.storage
     .from('product-images')
     .upload(filePath, file)
   if (uploadError) {
