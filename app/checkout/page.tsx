@@ -138,9 +138,11 @@ export default function CheckoutPage() {
     setIsSubmitting(true)
     setError(null)
 
-    // Validate minimum bottles requirement
+    // Validate minimum bottles requirement (only for individual products, not boxes)
+    const hasBoxes = cartItems.some(item => item.is_box || item.category === 'Boxes')
     const totalBottles = cartItems.reduce((total, item) => total + item.quantity, 0)
-    if (totalBottles < 3) {
+    
+    if (!hasBoxes && totalBottles < 3) {
       const plural = totalBottles === 1 ? '' : 's'
       setError(t.checkout?.minimumBottlesNote?.replace('{count}', totalBottles.toString()).replace('{plural}', plural) || `Para compras individuales, el mínimo es de 3 botellas. Actualmente tienes ${totalBottles} botella${plural}.`)
       setIsSubmitting(false)
@@ -454,17 +456,33 @@ export default function CheckoutPage() {
                     {isSubmitting ? (t.checkout?.processing || "Processing...") : (t.checkout?.proceedToPayment || "Proceed to Payment")}
                   </Button>
                   
-                  {cartItems.reduce((total, item) => total + item.quantity, 0) < 3 && (
-                    <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                      <p className="text-sm text-amber-800">
-                        <strong>Nota:</strong> {(() => {
-                          const totalBottles = cartItems.reduce((total, item) => total + item.quantity, 0)
-                          const plural = totalBottles === 1 ? '' : 's'
-                          return t.checkout?.minimumBottlesNote?.replace('{count}', totalBottles.toString()).replace('{plural}', plural) || `Para compras individuales, el mínimo es de 3 botellas. Actualmente tienes ${totalBottles} botella${plural}.`
-                        })()}
-                      </p>
-                    </div>
-                  )}
+                  {(() => {
+                    const hasBoxes = cartItems.some(item => item.is_box || item.category === 'Boxes')
+                    const totalBottles = cartItems.reduce((total, item) => total + item.quantity, 0)
+                    
+                    if (hasBoxes) {
+                      return (
+                        <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                          <p className="text-sm text-green-800">
+                            <strong>✅ Boxes detectados:</strong> No hay mínimo de botellas para boxes
+                          </p>
+                        </div>
+                      )
+                    }
+                    
+                    if (totalBottles < 3) {
+                      const plural = totalBottles === 1 ? '' : 's'
+                      return (
+                        <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                          <p className="text-sm text-amber-800">
+                            <strong>Nota:</strong> {t.checkout?.minimumBottlesNote?.replace('{count}', totalBottles.toString()).replace('{plural}', plural) || `Para compras individuales, el mínimo es de 3 botellas. Actualmente tienes ${totalBottles} botella${plural}.`}
+                          </p>
+                        </div>
+                      )
+                    }
+                    
+                    return null
+                  })()}
                 </form>
               </div>
 
