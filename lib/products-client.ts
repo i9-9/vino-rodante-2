@@ -160,10 +160,6 @@ export async function getProductsByCategory(categorySlug: string): Promise<ApiRe
     // También buscar la versión en inglés por si hay productos mal categorizados
     const englishCategory = categorySlug // ej: "red", "white", etc.
     
-    console.log('🔍 [getProductsByCategory] Searching for categorySlug:', categorySlug)
-    console.log('🔍 [getProductsByCategory] Mapped to spanish:', category)
-    console.log('🔍 [getProductsByCategory] Also searching english:', englishCategory)
-    
     const { data, error } = await supabase
       .from('products')
       .select('*')
@@ -172,14 +168,11 @@ export async function getProductsByCategory(categorySlug: string): Promise<ApiRe
       .order('created_at', { ascending: false })
 
     if (data && !error) {
-      console.log('🔍 [getProductsByCategory] Found products:', data.length)
-      console.log('🔍 [getProductsByCategory] Categories found:', [...new Set(data.map(p => p.category))])
       return { data, error: null }
     }
 
     // Si hay error de autenticación, usar cliente público
     if (error && (error.message?.includes('auth') || error.message?.includes('policy') || (error as any).code === 'PGRST116')) {
-      console.log('🔍 [getProductsByCategory] Auth error, trying public client')
       const publicSupabase = createAdaptiveClient()
       const { data: publicData, error: publicError } = await publicSupabase
         .from('products')
@@ -191,11 +184,6 @@ export async function getProductsByCategory(categorySlug: string): Promise<ApiRe
       if (publicError) {
         console.error('🔍 [getProductsByCategory] Public client error:', publicError)
         return { data: null, error: publicError }
-      }
-
-      if (publicData) {
-        console.log('🔍 [getProductsByCategory] Public client found products:', publicData.length)
-        console.log('🔍 [getProductsByCategory] Categories found:', [...new Set(publicData.map(p => p.category))])
       }
 
       return { data: publicData, error: null }

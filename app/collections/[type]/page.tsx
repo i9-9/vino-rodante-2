@@ -20,8 +20,10 @@ export default function CollectionPage({ params }: { params: Promise<{ type: str
   useEffect(() => {
     async function loadProducts() {
       setLoading(true)
+      
       if (isValid) {
         const { data: filteredProducts, error } = await getProductsByCategory(type)
+        
         if (error) {
           console.error("Error loading products:", error)
           setProducts([])

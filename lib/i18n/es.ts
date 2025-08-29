@@ -341,7 +341,8 @@ Amamos el vino, el trabajo que genera, la vinculación que propone y la música 
     featured: "Destacados",
     newArrivals: "Novedades",
     bestsellers: "Más Vendidos",
-    giftSets: "Sets de Regalo"
+    giftSets: "Sets de Regalo",
+    boxes: "Boxes"
   },
   wineRegions: {
     mendoza: "Mendoza",
@@ -405,6 +406,7 @@ Amamos el vino, el trabajo que genera, la vinculación que propone y la música 
     dessert: "De Postre",
     fortified: "Fortificado",
     naranjo: "Naranjo",
+    boxes: "Boxes",
     cider: "Sidra",
     gin: "Gin"
   },

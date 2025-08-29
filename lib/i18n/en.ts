@@ -347,7 +347,8 @@ export const en = {
     featured: "Featured",
     newArrivals: "New Arrivals",
     bestsellers: "Bestsellers",
-    giftSets: "Gift Sets"
+    giftSets: "Gift Sets",
+    boxes: "Boxes"
   },
   wineRegions: {
     mendoza: "Mendoza",
@@ -411,6 +412,7 @@ export const en = {
     dessert: "Dessert",
     fortified: "Fortified",
     naranjo: "Orange",
+    boxes: "Boxes",
     cider: "Cider",
     gin: "Gin"
   },

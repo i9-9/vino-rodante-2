@@ -7,6 +7,7 @@ export const WINE_TYPES = {
   DESSERT: 'dessert',
   FORTIFIED: 'fortified',
   NARANJO: 'naranjo',
+  BOXES: 'boxes',
   CIDER: 'cider',
   GIN: 'gin',
 } as const;
@@ -168,6 +169,7 @@ export const CATEGORY_SLUG_MAP: Record<string, string> = {
   naranjo: "naranjo",     // /collections/naranjo → busca productos con category="naranjo"
   dessert: "dessert",
   fortified: "fortified",
+  boxes: "boxes",         // /collections/boxes → busca productos con category="boxes"
   cider: "sidra",         // /collections/cider → busca productos con category="sidra"
   gin: "gin",
   // Fallbacks por si vienen directamente en español

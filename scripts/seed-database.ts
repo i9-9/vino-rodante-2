@@ -175,6 +175,49 @@ const products = [
     stock: 6,
     featured: false,
   },
+  // Productos de Boxes
+  {
+    name: "Box Malbec Premium",
+    slug: "box-malbec-premium",
+    description:
+      "Caja elegante con 3 botellas de Malbec Premium de diferentes bodegas de Mendoza. Incluye guía de cata y maridaje.",
+    price: 120.0,
+    image: "/placeholder.svg?height=400&width=400",
+    category: "boxes",
+    year: "2022",
+    region: "Mendoza, Argentina",
+    varietal: "Malbec",
+    stock: 15,
+    featured: true,
+  },
+  {
+    name: "Box Vinos Blancos",
+    slug: "box-vinos-blancos",
+    description:
+      "Selección de 4 vinos blancos premium: Chardonnay, Sauvignon Blanc, Torrontés y Viognier. Perfecto para descubrir nuevos sabores.",
+    price: 95.0,
+    image: "/placeholder.svg?height=400&width=400",
+    category: "boxes",
+    year: "2023",
+    region: "Mendoza, Argentina",
+    varietal: "Blend",
+    stock: 12,
+    featured: true,
+  },
+  {
+    name: "Box Regalo Especial",
+    slug: "box-regalo-especial",
+    description:
+      "Caja de regalo premium con 2 vinos tintos, 1 blanco y 1 espumante. Incluye copas de cristal y guía de cata.",
+    price: 180.0,
+    image: "/placeholder.svg?height=400&width=400",
+    category: "boxes",
+    year: "2023",
+    region: "Argentina",
+    varietal: "Blend",
+    stock: 8,
+    featured: true,
+  },
 ]
 
 async function seedDatabase() {

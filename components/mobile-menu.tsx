@@ -193,6 +193,13 @@ export default function MobileMenu({
                   >
                     {t.megamenu.bestsellers}
                   </Link>
+                  <Link
+                    href="/collections/boxes"
+                    className="block text-muted-foreground hover:text-foreground text-sm transition-colors py-0.5"
+                    onClick={onClose}
+                  >
+                    {t.megamenu.boxes}
+                  </Link>
                 </div>
               </div>
             </div>
