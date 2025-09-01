@@ -7,21 +7,36 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Mail, Phone, MapPin } from "lucide-react"
 import { useTranslations } from "@/lib/providers/translations-provider"
+import { sendContactFormEmail } from "@/lib/contact-actions"
 
 export default function ContactPageContent() {
   const t = useTranslations()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formSubmitted, setFormSubmitted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setError(null)
     
-    // Simular envío de formulario
-    setTimeout(() => {
+    try {
+      const formData = new FormData(e.currentTarget)
+      const result = await sendContactFormEmail(formData)
+      
+      if (result.success) {
+        setFormSubmitted(true)
+        // Reset form
+        e.currentTarget.reset()
+      } else {
+        setError(result.error || 'Error al enviar el mensaje')
+      }
+    } catch (error) {
+      console.error('Error sending contact form:', error)
+      setError('Error al enviar el mensaje. Por favor, inténtalo de nuevo.')
+    } finally {
       setIsSubmitting(false)
-      setFormSubmitted(true)
-    }, 1500)
+    }
   }
 
   return (
@@ -41,6 +56,11 @@ export default function ContactPageContent() {
               <p className="text-green-700">
                 Gracias por contactarnos. Hemos recibido tu mensaje y te responderemos a la brevedad.
               </p>
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4">
+              <h3 className="text-xl font-medium text-red-800 mb-2">Error al enviar</h3>
+              <p className="text-red-700">{error}</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -116,10 +136,10 @@ export default function ContactPageContent() {
               <div>
                 <h3 className="font-medium text-lg">Correo electrónico</h3>
                 <a 
-                  href="mailto:vino@vinorodante.com" 
+                  href="mailto:info@vinorodante.com" 
                   className="text-[#1F1F1F]/70 hover:text-[#A83935] transition-colors cursor-pointer"
                 >
-                  vino@vinorodante.com
+                  info@vinorodante.com
                 </a>
               </div>
             </div>

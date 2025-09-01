@@ -96,9 +96,10 @@ export default function Footer() {
               <li className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-accent flex-shrink-0" />
                 <a 
-                  href="mailto:vino@vinorodante.com" 
+                  href="mailto:info@vinorodante.com" 
+                  className="text-primary-foreground/70 hover:text-primary-foreground transition-colors cursor-pointer"
                 >
-                  vino@vinorodante.com
+                  info@vinorodante.com
                 </a>
               </li>
               <li className="flex items-center gap-3">

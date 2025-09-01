@@ -206,51 +206,8 @@ export async function sendCustomEmail(params: {
 }
 
 // Ejemplo 5: Server Action para enviar email desde un formulario
-export async function sendContactFormEmail(formData: FormData) {
-  'use server'
-  
-  try {
-    const name = formData.get('name') as string
-    const email = formData.get('email') as string
-    const subject = formData.get('subject') as string
-    const message = formData.get('message') as string
-
-    if (!name || !email || !subject || !message) {
-      throw new Error('Todos los campos son requeridos')
-    }
-
-    // Email al admin con el mensaje del contacto
-    const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <title>Nuevo mensaje de contacto</title>
-    </head>
-    <body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
-      <h2>Nuevo mensaje de contacto</h2>
-      <p><strong>Nombre:</strong> ${name}</p>
-      <p><strong>Email:</strong> ${email}</p>
-      <p><strong>Asunto:</strong> ${subject}</p>
-      <p><strong>Mensaje:</strong></p>
-      <div style="background-color:#f5f5f5;padding:15px;border-radius:5px;">
-        ${message}
-      </div>
-    </body>
-    </html>`
-
-    await sendEmail({
-      to: 'info@vinorodante.com',
-      subject: `Contacto: ${subject} - ${name}`,
-      html,
-    })
-
-    return { success: true, message: 'Mensaje enviado exitosamente' }
-  } catch (error: any) {
-    console.error('Error sending contact form email:', error)
-    return { success: false, error: error.message }
-  }
-}
+// NOTA: Esta función se movió a /lib/contact-actions.ts para evitar problemas
+// con Client Components. Puedes ver la implementación real allí.
 
 // Ejemplo 6: Notificar low stock a admin
 export async function sendLowStockAlert(productData: {

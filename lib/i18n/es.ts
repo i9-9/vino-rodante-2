@@ -78,6 +78,7 @@ export const es = {
       shipping: "Envío gratis en CABA",
       fastDelivery: "Entrega rápida",
       curatedSelection: "Selección curada",
+      noPlansAvailable: "No hay planes disponibles",
     },
     featuredWines: {
       title: "Vinos Destacados",

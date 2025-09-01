@@ -100,7 +100,7 @@ export default async function Hero() {
             <div className="col-span-2 row-span-2 flex items-center justify-center">
               <div className="text-center text-gray-400">
                 <Wine size={32} className="mx-auto mb-2" />
-                <p className="text-sm">No hay planes disponibles</p>
+                <p className="text-sm">{t.home.hero.noPlansAvailable}</p>
               </div>
             </div>
           )}

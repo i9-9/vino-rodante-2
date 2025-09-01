@@ -51,6 +51,24 @@ export async function subscribeToNewsletter(email: string) {
       return { error: "Error al suscribirse al boletín" }
     }
 
+    // Enviar email de bienvenida al newsletter
+    try {
+      const { sendEmail, renderNewsletterWelcomeEmail } = await import('@/lib/emails/resend')
+      
+      const html = renderNewsletterWelcomeEmail({ email })
+      
+      await sendEmail({
+        to: email,
+        subject: '🍷 ¡Bienvenido a Vino Rodante!',
+        html,
+      })
+
+      console.log(`Newsletter welcome email sent to: ${email}`)
+    } catch (emailError) {
+      console.error('Error sending newsletter welcome email:', emailError)
+      // No fallar la suscripción si el email falla
+    }
+
     return { success: true }
   } catch (error) {
     console.error("Error subscribing to newsletter:", error)
