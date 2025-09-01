@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from '@/lib/supabase/server'
 import { getPaymentStatus } from "@/lib/mercadopago"
-import { sendEmail, renderOrderSummaryEmail } from "@/lib/emails/resend"
+import { sendEmail, renderCustomerOrderEmail, renderAdminOrderEmail } from "@/lib/emails/resend"
 
 // Validate webhook signature (optional but recommended for production)
 function validateWebhookSignature(request: NextRequest, body: string): boolean {
@@ -177,41 +177,65 @@ export async function POST(request: NextRequest) {
       // shipping = total - subtotal (aproximado)
       const shipping = Math.max(0, (orderWithItems?.total || 0) - subtotal)
 
-      const html = renderOrderSummaryEmail({
-        title: 'Pago confirmado',
-        orderId,
-        subtotal,
-        shipping,
-        total: orderWithItems?.total || 0,
-        items,
-      })
-
       const { data: customer } = await supabase
         .from('customers')
         .select('email, name')
         .eq('id', orderWithItems?.user_id)
         .single()
 
-      const toCustomer = customer?.email
-      const toAdmin = process.env.EMAIL_ADMIN || process.env.EMAIL_FROM || 'vino@vinorodante.com'
+      const customerName = customer?.name || 'Cliente'
+      const customerEmail = customer?.email
+      const toAdmin = 'info@vinorodante.com'
+
+      // Generate customer email HTML
+      const customerEmailHtml = customerEmail ? renderCustomerOrderEmail({
+        customerName,
+        orderId,
+        subtotal,
+        shipping,
+        total: orderWithItems?.total || 0,
+        items,
+        customerEmail,
+      }) : null
+
+      // Generate admin email HTML  
+      const adminEmailHtml = renderAdminOrderEmail({
+        customerName,
+        customerEmail: customerEmail || 'No proporcionado',
+        orderId,
+        subtotal,
+        shipping,
+        total: orderWithItems?.total || 0,
+        items,
+        paymentId,
+      })
 
       // Do not let email failures cause the webhook to fail and trigger long MP retries
       try {
-        const customerPromise = toCustomer
-          ? sendEmail({
-              to: toCustomer,
-              subject: `Vino Rodante · Pago confirmado #${orderId.slice(-8)}`,
-              html,
+        const emailPromises = []
+
+        // Send customer confirmation email
+        if (customerEmail && customerEmailHtml) {
+          emailPromises.push(
+            sendEmail({
+              to: customerEmail,
+              subject: `🍷 ¡Tu pedido está confirmado! - Vino Rodante #${orderId.slice(-8)}`,
+              html: customerEmailHtml,
             })
-          : Promise.resolve()
+          )
+        }
 
-        const adminPromise = sendEmail({
-          to: toAdmin,
-          subject: `Nueva orden pagada #${orderId.slice(-8)}`,
-          html,
-        })
+        // Send admin notification email
+        emailPromises.push(
+          sendEmail({
+            to: toAdmin,
+            subject: `💰 Nueva venta confirmada #${orderId.slice(-8)} - ${customerName}`,
+            html: adminEmailHtml,
+          })
+        )
 
-        await Promise.allSettled([customerPromise, adminPromise])
+        await Promise.allSettled(emailPromises)
+        console.log(`Emails sent for order ${orderId}: customer=${!!customerEmail}, admin=true`)
       } catch (emailError) {
         console.error('Email send error (non-blocking):', emailError)
         // Continue without throwing to ensure a 200 response to MP
