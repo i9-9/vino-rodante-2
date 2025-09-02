@@ -112,11 +112,11 @@ export function BoxForm({ onSubmit, onClose }: BoxFormProps) {
         return
       }
 
-      const maxSize = 2 * 1024 * 1024 // 2MB
+      const maxSize = 10 * 1024 * 1024 // 10MB
       if (file.size > maxSize) {
         toast({
           title: "Error",
-          description: "La imagen es demasiado grande. Máximo 2MB.",
+          description: "La imagen es demasiado grande. Máximo 10MB.",
           variant: "destructive"
         })
         return

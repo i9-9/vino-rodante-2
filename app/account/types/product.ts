@@ -88,7 +88,7 @@ export const BottleProductSchema = BaseProductSchema.extend({
 
 export type ProductFormData = z.infer<typeof ProductSchema>
 
-export const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
+export const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 
 export const ImageSchema = z.object({
@@ -97,7 +97,7 @@ export const ImageSchema = z.object({
     .refine((files) => files?.length === 0 || files?.length === 1, 'La imagen es requerida')
     .refine(
       (files) => files?.length === 0 || files?.[0]?.size <= MAX_FILE_SIZE,
-      'El tamaño máximo es 2MB'
+      'El tamaño máximo es 10MB'
     )
     .refine(
       (files) => files?.length === 0 || ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
