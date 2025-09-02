@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { createClient } from '@/lib/supabase/client'
 import { useTranslations } from "@/lib/providers/translations-provider"
+import { useCart } from "@/lib/hooks/use-cart"
 
 interface OrderDetails {
   id: string
@@ -20,9 +21,11 @@ function PendingContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const t = useTranslations()
+  const { clearCart } = useCart()
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [cartCleared, setCartCleared] = useState(false)
   const supabase = createClient()
 
   const orderId = searchParams.get("orderId")
@@ -50,6 +53,13 @@ function PendingContent() {
         }
 
         setOrderDetails(order)
+        
+        // Clear cart when order is confirmed as pending (payment in process)
+        if (order && order.status === 'pending' && !cartCleared) {
+          console.log("Clearing cart after pending order confirmation")
+          clearCart()
+          setCartCleared(true)
+        }
       } catch (error) {
         console.error("Error:", error)
         setError("Error inesperado")
@@ -59,7 +69,7 @@ function PendingContent() {
     }
 
     fetchOrderDetails()
-  }, [orderId, supabase])
+  }, [orderId, supabase, clearCart, cartCleared])
 
   if (loading) {
     return (

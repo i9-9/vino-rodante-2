@@ -72,7 +72,18 @@ export default function CheckoutPage() {
     // Redirect if cart is empty
     if (cartItems.length === 0) {
       console.log("Redirecting to products: cart is empty")
-      router.push("/products");
+      
+      // Check if user came from a successful payment (has MercadoPago success parameters)
+      const urlParams = new URLSearchParams(window.location.search)
+      const hasSuccessParam = urlParams.has('payment_id') || urlParams.has('collection_id') || urlParams.has('collection_status')
+      
+      if (hasSuccessParam) {
+        // If user has payment success params but empty cart, redirect to account
+        router.push("/account")
+      } else {
+        // Normal empty cart redirect to products
+        router.push("/products")
+      }
       return;
     }
 
