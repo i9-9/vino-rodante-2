@@ -746,23 +746,40 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
         formData.append('image_file', selectedImage)
       }
       
+      let result;
       // Determinar si es crear o editar
       if (selectedProduct?.id) {
-        await updateProduct(formData)
+        formData.append('id', selectedProduct.id)
+        result = await updateProduct(formData)
       } else {
-        await createProduct(formData)
+        result = await createProduct(formData)
       }
       
-      // Solicitar refresh de datos al padre si está disponible
-      if (onRefresh) {
-        await onRefresh()
+      if (result.success) {
+        toast({
+          title: "Éxito",
+          description: selectedProduct?.id ? "Producto actualizado correctamente" : "Producto creado correctamente",
+        })
+        
+        // Solicitar refresh de datos al padre si está disponible
+        if (onRefresh) {
+          await onRefresh()
+        }
+        setIsModalOpen(false)
+        setSelectedProduct(null)
+        setSelectedImage(null)
+        setImagePreview(null)
+      } else {
+        throw new Error(result.error || 'Error desconocido')
       }
-      setIsModalOpen(false)
-      setSelectedProduct(null)
-      setSelectedImage(null)
-      setImagePreview(null)
+      
     } catch (error) {
       console.error('Error processing product:', error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error al procesar el producto",
+        variant: "destructive",
+      })
     }
   }
 

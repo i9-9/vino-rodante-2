@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { WINE_TYPES, WINE_REGIONS, WINE_VARIETALS, getAllWineTypes, getAllWineRegions, getAllWineVarietals, prettyLabel, CATEGORY_SLUG_MAP, REGION_SLUG_MAP } from "@/lib/wine-data"
 import type { WineType, WineVarietal, WineRegion, WineTypeData, WineRegionData, WineVarietalData } from "@/lib/wine-data"
-import { getProducts } from '@/lib/products-client'
+import { getProductsForMenu } from '@/lib/products-client'
 import type { Product } from '@/lib/types'
 import { cn } from "@/lib/utils"
 import Image from "next/image"
@@ -183,7 +183,7 @@ export default function MegaMenu() {
   useEffect(() => {
     if (!hasInitialLoad && !isLoadingProducts) {
       setIsLoadingProducts(true)
-      getProducts()
+      getProductsForMenu()
         .then(({ data, error }) => {
           if (error) {
             setIsErrorProducts(true)

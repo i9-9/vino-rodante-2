@@ -414,7 +414,8 @@ export const en = {
     fortified: "Fortified",
     naranjo: "Orange",
     cider: "Cider",
-    gin: "Gin"
+    gin: "Gin",
+    "other-drinks": "Other Drinks"
   },
   featuredProducts: {
     malbecReserve: "Malbec Reserve 2018",

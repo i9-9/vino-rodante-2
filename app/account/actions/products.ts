@@ -20,14 +20,14 @@ export interface ActionResponse {
 
 // Mapeo de categorías del formulario a valores de la base de datos
 const CATEGORY_MAPPING: Record<string, string> = {
-  'Tinto': 'tinto',
-  'Blanco': 'blanco',
-  'Rosado': 'rosado',
-  'Espumante': 'espumante',
-  'Naranjo': 'naranjo',
-  'Dulce': 'dessert',
-  'Boxes': 'boxes',
-  'Otro': 'otro'
+  'Tinto': 'Tinto',
+  'Blanco': 'Blanco',
+  'Rosado': 'Rosado',
+  'Espumante': 'Espumante',
+  'Naranjo': 'Naranjo',
+  'Dulce': 'Dulce',
+  'Boxes': 'Boxes',
+  'Otras Bebidas': 'Otras Bebidas'
 }
 
 // Función helper interna para convertir categoría del formulario a base de datos
@@ -36,50 +36,7 @@ function mapCategoryToDB(category: string): string {
 }
 
 
-export async function addProduct(formData: FormData) {
-  const supabase = await createClient()
 
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  if (userError || !user) {
-    throw new Error('No autorizado')
-  }
-
-  // Verificar si es admin
-  const { data: customerData } = await supabase
-    .from('customers')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single()
-
-  if (!customerData?.is_admin) {
-    throw new Error('No autorizado - Se requiere ser admin')
-  }
-
-  const product = {
-    name: formData.get('name') as string,
-    description: formData.get('description') as string,
-    price: parseFloat(formData.get('price') as string),
-    category: formData.get('category') as string,
-    stock: parseInt(formData.get('stock') as string),
-    year: formData.get('year') as string,
-    region: formData.get('region') as string,
-    varietal: formData.get('varietal') as string,
-    featured: formData.get('featured') === 'on',
-    slug: (formData.get('name') as string).toLowerCase().replace(/\s+/g, '-'),
-    image: formData.get('image') as string || '/placeholder.jpg',
-    is_visible: true
-  }
-
-  const { error } = await supabase
-    .from('products')
-    .insert(product)
-
-  if (error) {
-    throw new Error(`Error al agregar producto: ${error.message}`)
-  }
-
-  revalidatePath('/account')
-}
 
 async function verifyAdmin() {
   const supabase = await createClient()
@@ -103,79 +60,114 @@ async function verifyAdmin() {
 
 
 
-export async function updateProduct(formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export async function updateProduct(formData: FormData): Promise<ActionResponse> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
-    throw new Error('No autorizado')
+    if (!user) {
+      return { success: false, error: 'No autorizado' }
+    }
+
+    // Verificar si es admin
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+
+    if (!customer?.is_admin) {
+      return { success: false, error: 'No autorizado - Se requiere ser admin' }
+    }
+
+    const id = formData.get('id') as string
+    if (!id) {
+      return { success: false, error: 'ID de producto requerido' }
+    }
+
+    const name = formData.get('name') as string
+    const description = formData.get('description') as string
+    // Normalizar precio por si llega con coma como separador decimal
+    const rawPrice = (formData.get('price') as string) ?? ''
+    const price = Number(rawPrice.replace(',', '.'))
+    // Aceptar solo dígitos en stock
+    const stock = parseInt(((formData.get('stock') as string) ?? '').replace(/[^0-9]/g, ''), 10)
+    const category = formData.get('category') as string
+    const region = formData.get('region') as string
+    const year = formData.get('year') as string
+    const varietal = formData.get('varietal') as string
+    const featured = formData.get('featured') === 'on'
+    const is_visible = formData.get('is_visible') === 'on'
+    const free_shipping = formData.get('free_shipping') === 'on'
+
+    // Si category o region son 'none', usar string vacío
+    const finalCategory = category === 'none' ? '' : mapCategoryToDB(category)
+    const finalRegion = region === 'none' ? '' : region
+    
+    // Para boxes, establecer valores por defecto apropiados
+    const isBox = category === 'Boxes'
+    const finalYear = isBox ? 'N/A' : (year || '')
+    const finalVarietal = isBox ? 'Múltiples' : (varietal || '')
+
+    // Construir update parcial
+    const updateData: Record<string, unknown> = {
+      name,
+      description,
+      price,
+      stock,
+      category: finalCategory,
+      region: finalRegion,
+      year: finalYear,
+      varietal: finalVarietal,
+      featured,
+      is_visible,
+      free_shipping,
+      slug: name.toLowerCase().replace(/\s+/g, '-')
+    }
+
+    // Manejar imagen si se subió una nueva
+    const imageFile = formData.get('image_file') as File
+    if (imageFile?.size > 0) {
+      const fileExt = imageFile.type.split('/')[1]
+      const fileName = `${name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.${fileExt}`
+      const filePath = `products/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, imageFile)
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath)
+
+      updateData.image = publicUrl
+    } else {
+      // Si hay una URL de imagen en el form, usarla
+      const imageUrl = formData.get('image') as string
+      if (imageUrl && imageUrl.trim() !== '') {
+        updateData.image = imageUrl
+      }
+    }
+
+    const { error } = await supabase
+      .from('products')
+      .update(updateData)
+      .eq('id', id)
+
+    if (error) throw error
+
+    revalidatePath('/account')
+    return { success: true, message: 'Producto actualizado correctamente' }
+
+  } catch (error) {
+    console.error('Error updating product:', error)
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error al actualizar producto'
+    }
   }
-
-  // Verificar si es admin
-  const { data: customer } = await supabase
-    .from('customers')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single()
-
-  if (!customer?.is_admin) {
-    throw new Error('No autorizado')
-  }
-
-  const id = formData.get('id') as string
-  const name = formData.get('name') as string
-  const description = formData.get('description') as string
-  // Normalizar precio por si llega con coma como separador decimal
-  const rawPrice = (formData.get('price') as string) ?? ''
-  const price = Number(rawPrice.replace(',', '.'))
-  // Aceptar solo dígitos en stock
-  const stock = parseInt(((formData.get('stock') as string) ?? '').replace(/[^0-9]/g, ''), 10)
-  const category = formData.get('category') as string
-  const region = formData.get('region') as string
-  const year = formData.get('year') as string
-  const varietal = formData.get('varietal') as string
-  const featured = formData.get('featured') === 'on'
-  const is_visible = formData.get('is_visible') === 'on'
-  const free_shipping = formData.get('free_shipping') === 'on'
-  const image = formData.get('image') as string
-
-  // Si category o region son 'none', usar string vacío
-  const finalCategory = category === 'none' ? '' : mapCategoryToDB(category)
-  const finalRegion = region === 'none' ? '' : region
-  
-  // Para boxes, establecer valores por defecto apropiados
-  const isBox = category === 'Boxes'
-  const finalYear = isBox ? 'N/A' : (year || '')
-  const finalVarietal = isBox ? 'Múltiples' : (varietal || '')
-
-  // Construir update parcial y evitar sobreescribir imagen si no se envió
-  const updateData: Record<string, unknown> = {
-    name,
-    description,
-    price,
-    stock,
-    category: finalCategory,
-    region: finalRegion,
-    year: finalYear,
-    varietal: finalVarietal,
-    featured,
-    is_visible,
-    free_shipping,
-  }
-  if (image && image.trim() !== '') {
-    updateData.image = image
-  }
-
-  const { error } = await supabase
-    .from('products')
-    .update(updateData)
-    .eq('id', id)
-
-  if (error) {
-    throw new Error(`Error al actualizar producto: ${error.message}`)
-  }
-
-  revalidatePath('/account')
 }
 
 

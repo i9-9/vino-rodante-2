@@ -408,7 +408,8 @@ Amamos el vino, el trabajo que genera, la vinculación que propone y la música 
     fortified: "Fortificado",
     naranjo: "Naranjo",
     cider: "Sidra",
-    gin: "Gin"
+    gin: "Gin",
+    "other-drinks": "Otras Bebidas"
   },
   featuredProducts: {
     malbecReserve: "Malbec Reserva 2018",

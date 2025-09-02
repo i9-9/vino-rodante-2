@@ -411,4 +411,84 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
     console.error('🔍 [getProductBySlug] Exception:', error)
     return undefined
   }
+}
+
+// Función específica para el mega menú que incluye todas las categorías para filtrado
+export async function getProductsForMenu(): Promise<ApiResponse<Product[]>> {
+  console.log('🔍 [getProductsForMenu] Function called for mega menu')
+  
+  try {
+    const supabase = createClient()
+    
+    const maxRetries = 2
+    const baseDelay = 500 // ms
+    
+    let lastError: any = null
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔍 [getProductsForMenu] Attempt ${attempt}/${maxRetries}`)
+        
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('is_visible', true)
+          // Incluir todas las categorías para el mega menú (incluso boxes para filtrado)
+          .order('created_at', { ascending: false })
+        
+        if (error) {
+          lastError = error
+          console.error(`🔍 [getProductsForMenu] Supabase error (attempt ${attempt}):`, error)
+          
+          // Solo retry en errores de red/CORS
+          if (attempt < maxRetries && (
+            error.message?.includes('Network') ||
+            error.message?.includes('CORS')
+          )) {
+            console.log(`🔄 [getProductsForMenu] Retrying in ${baseDelay * attempt}ms...`)
+            await new Promise(resolve => setTimeout(resolve, baseDelay * attempt))
+            continue
+          }
+          
+          throw error
+        }
+        
+        console.log(`✅ [getProductsForMenu] Success: ${data?.length || 0} products loaded`)
+        return { data: data || [], error: null }
+        
+      } catch (attemptError) {
+        lastError = attemptError
+        console.error(`🔍 [getProductsForMenu] Attempt ${attempt} failed:`, attemptError)
+        
+        if (attempt === maxRetries) {
+          break
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, baseDelay * attempt))
+      }
+    }
+    
+    // Si llegamos aquí, todos los intentos fallaron
+    console.error('🔍 [getProductsForMenu] All attempts failed, trying incognito client')
+    
+    // Fallback al cliente incógnito
+    const incognitoSupabase = createAdaptiveClient()
+    const { data: fallbackData, error: fallbackError } = await incognitoSupabase
+      .from('products')
+      .select('*')
+      .eq('is_visible', true)
+      .order('created_at', { ascending: false })
+    
+    if (fallbackError) {
+      console.error('🔍 [getProductsForMenu] Incognito client also failed:', fallbackError)
+      return { data: null, error: fallbackError }
+    }
+    
+    console.log(`✅ [getProductsForMenu] Incognito success: ${fallbackData?.length || 0} products loaded`)
+    return { data: fallbackData || [], error: null }
+    
+  } catch (error) {
+    console.error('🔍 [getProductsForMenu] Exception:', error)
+    return { data: null, error: error as PostgrestError }
+  }
 } 

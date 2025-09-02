@@ -177,6 +177,9 @@ export default function ProductsClient({ t }: ProductsClientProps) {
               <Button variant={activeCategory === 'dessert' ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveCategory(activeCategory === 'dessert' ? null : 'dessert')}>
                 {t.navigation.dessertWines || "Vinos de Postre"}
               </Button>
+              <Button variant={activeCategory === 'other-drinks' ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveCategory(activeCategory === 'other-drinks' ? null : 'other-drinks')}>
+                {t.wineTypes?.["other-drinks"] || "Otras Bebidas"}
+              </Button>
             </div>
           </div>
 

@@ -8,7 +8,7 @@ export const CATEGORIES = [
   'Naranjo',
   'Dulce',
   'Boxes',
-  'Otro'
+  'Otras Bebidas'
 ] as const
 
 // Lista completa de regiones para formularios CRUD

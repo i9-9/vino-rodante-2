@@ -9,6 +9,7 @@ export const WINE_TYPES = {
   NARANJO: 'naranjo',
   CIDER: 'cider',
   GIN: 'gin',
+  OTHER_DRINKS: 'other-drinks',
 } as const;
 
 // Regiones vinícolas
@@ -166,9 +167,10 @@ export const CATEGORY_SLUG_MAP: Record<string, string> = {
   rose: "rosado",         // /collections/rose → busca productos con category="rosado"
   sparkling: "espumante", // /collections/sparkling → busca productos con category="espumante"
   naranjo: "naranjo",     // /collections/naranjo → busca productos con category="naranjo"
-  dessert: "dessert",
+  dessert: "dulce",       // /collections/dessert → busca productos con category="dulce"
   fortified: "fortified",
   boxes: "Boxes",         // /collections/boxes → busca productos con category="Boxes"
+  "other-drinks": "Otras Bebidas", // /collections/other-drinks → busca productos con category="Otras Bebidas"
   cider: "sidra",         // /collections/cider → busca productos con category="sidra"
   gin: "gin",
   // Fallbacks por si vienen directamente en español
@@ -176,7 +178,9 @@ export const CATEGORY_SLUG_MAP: Record<string, string> = {
   blanco: "blanco",
   rosado: "rosado", 
   espumante: "espumante",
+  dulce: "dulce",
   sidra: "sidra",
+  "otras-bebidas": "Otras Bebidas",
 }
 
 // Mapping de regiones: slug → nombre completo (como se almacena en DB)
