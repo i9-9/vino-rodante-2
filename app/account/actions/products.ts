@@ -182,6 +182,16 @@ export async function createProduct(formData: FormData): Promise<ActionResponse>
   }
 
   try {
+    // Verificar si es admin
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+
+    if (!customer?.is_admin) {
+      return { success: false, error: 'No autorizado - Se requiere ser admin' }
+    }
     // Extraer datos básicos
     const category = formData.get('category') as string
     const isBox = category === 'Boxes'
