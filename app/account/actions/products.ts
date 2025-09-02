@@ -142,6 +142,11 @@ export async function updateProduct(formData: FormData) {
   // Si category o region son 'none', usar string vacío
   const finalCategory = category === 'none' ? '' : mapCategoryToDB(category)
   const finalRegion = region === 'none' ? '' : region
+  
+  // Para boxes, establecer valores por defecto apropiados
+  const isBox = category === 'Boxes'
+  const finalYear = isBox ? 'N/A' : (year || '')
+  const finalVarietal = isBox ? 'Múltiples' : (varietal || '')
 
   // Construir update parcial y evitar sobreescribir imagen si no se envió
   const updateData: Record<string, unknown> = {
@@ -151,8 +156,8 @@ export async function updateProduct(formData: FormData) {
     stock,
     category: finalCategory,
     region: finalRegion,
-    year: year || '',
-    varietal: varietal || '',
+    year: finalYear,
+    varietal: finalVarietal,
     featured,
     is_visible,
     free_shipping,
@@ -185,16 +190,20 @@ export async function createProduct(formData: FormData): Promise<ActionResponse>
   }
 
   try {
+    // Extraer datos básicos
+    const category = formData.get('category') as string
+    const isBox = category === 'Boxes'
+    
     // Extraer y validar datos
     const rawData = {
       name: formData.get('name'),
       description: formData.get('description'),
       price: Number(formData.get('price')),
-      category: mapCategoryToDB(formData.get('category') as string),
+      category: mapCategoryToDB(category),
       region: formData.get('region'),
       stock: Number(formData.get('stock')),
-      year: formData.get('year') || '',
-      varietal: formData.get('varietal') || '',
+      year: isBox ? 'N/A' : (formData.get('year') || ''),
+      varietal: isBox ? 'Múltiples' : (formData.get('varietal') || ''),
       featured: formData.get('featured') === 'on',
       is_visible: formData.get('is_visible') === 'on',
       slug: (formData.get('name') as string)?.toLowerCase().replace(/\s+/g, '-') || '',

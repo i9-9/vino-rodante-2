@@ -26,22 +26,19 @@ export default function ProductsClient({ t }: ProductsClientProps) {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        // Cargar productos normales y boxes
-        const [productsResult, boxesResult] = await Promise.all([
-          getProducts(),
-          getBoxesProducts()
-        ])
+        // Solo cargar productos normales (excluir boxes de la página /productos)
+        const productsResult = await getProducts()
         
         let allProducts: Product[] = []
         
-        // Agregar productos normales
+        // Agregar productos normales, filtrando boxes
         if (productsResult.data) {
-          allProducts.push(...productsResult.data)
-        }
-        
-        // Agregar productos de boxes
-        if (boxesResult.data) {
-          allProducts.push(...boxesResult.data)
+          // Filtrar boxes de la página de productos
+          const nonBoxProducts = productsResult.data.filter(product => 
+            product.category?.toLowerCase() !== 'boxes' && 
+            product.category?.toLowerCase() !== 'box'
+          )
+          allProducts.push(...nonBoxProducts)
         }
         
         setProducts(allProducts)

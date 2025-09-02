@@ -295,7 +295,7 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
   };
 
   // Si es un box, mostrar el formulario específico de boxes
-  if (product.is_box) {
+  if (product.category === 'Boxes') {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -412,28 +412,44 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="year">Año</Label>
-              <Input
-                id="year"
-                name="year"
-                type="number"
-                value={formData.year}
-                onChange={handleInputChange}
-              />
-            </div>
+          {/* Solo mostrar campos año y varietal si NO es un box */}
+          {formData.category !== 'Boxes' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="year">Año *</Label>
+                <Input
+                  id="year"
+                  name="year"
+                  type="number"
+                  value={formData.year}
+                  onChange={handleInputChange}
+                  required={formData.category !== 'Boxes'}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="varietal">Varietal</Label>
-              <Input
-                id="varietal"
-                name="varietal"
-                value={formData.varietal}
-                onChange={handleInputChange}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="varietal">Varietal *</Label>
+                <Input
+                  id="varietal"
+                  name="varietal"
+                  value={formData.varietal}
+                  onChange={handleInputChange}
+                  required={formData.category !== 'Boxes'}
+                />
+              </div>
             </div>
-          </div>
+          )}
+          
+          {/* Información especial para boxes */}
+          {formData.category === 'Boxes' && (
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h4 className="font-medium text-blue-900 mb-2">Producto Box</h4>
+              <p className="text-sm text-blue-700">
+                Los boxes contienen múltiples vinos con diferentes años y varietales. 
+                Los campos específicos se gestionan automáticamente.
+              </p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="image_file">Imagen</Label>

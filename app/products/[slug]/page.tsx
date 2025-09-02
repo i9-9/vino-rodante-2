@@ -59,10 +59,18 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     )
   }
 
-  // Validar campos esenciales
-  const requiredFields = [
-    "name", "slug", "description", "price", "image", "category", "year", "region", "varietal", "stock"
+  // Validar campos esenciales - diferente validación para boxes vs botellas
+  const isBox = product.category?.toLowerCase() === 'boxes' || product.category?.toLowerCase() === 'box'
+  
+  let requiredFields = [
+    "name", "slug", "description", "price", "image", "category", "region", "stock"
   ]
+  
+  // Para productos individuales (no boxes), year y varietal son requeridos
+  if (!isBox) {
+    requiredFields.push("year", "varietal")
+  }
+  
   const missingFields = requiredFields.filter(field => (product as any)[field] === null || (product as any)[field] === undefined || (product as any)[field] === "")
 
   if (missingFields.length > 0) {
@@ -76,12 +84,27 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   // Obtener productos relacionados
   const { data: allProducts } = await getProducts()
-  let related = allProducts?.filter(p => p.id !== product.id && p.varietal === product.varietal) || []
-  if (related.length < 4) {
-    const regionRelated = (allProducts || []).filter(p => p.id !== product.id && p.region === product.region && p.varietal !== product.varietal)
-    related = [...related, ...regionRelated].slice(0, 4)
+  let related: Product[] = []
+  
+  if (isBox) {
+    // Para boxes, mostrar otros boxes o productos de la misma región
+    related = allProducts?.filter(p => p.id !== product.id && p.region === product.region) || []
+    if (related.length < 4) {
+      // Si no hay suficientes de la misma región, mostrar cualquier producto
+      const otherProducts = allProducts?.filter(p => p.id !== product.id) || []
+      related = [...related, ...otherProducts].slice(0, 4)
+    } else {
+      related = related.slice(0, 4)
+    }
   } else {
-    related = related.slice(0, 4)
+    // Para productos individuales, usar la lógica original
+    related = allProducts?.filter(p => p.id !== product.id && p.varietal === product.varietal) || []
+    if (related.length < 4) {
+      const regionRelated = (allProducts || []).filter(p => p.id !== product.id && p.region === product.region && p.varietal !== product.varietal)
+      related = [...related, ...regionRelated].slice(0, 4)
+    } else {
+      related = related.slice(0, 4)
+    }
   }
 
   return (
@@ -101,7 +124,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <div className="flex flex-col">
           <h1 className="text-3xl font-bold text-[#5B0E2D] mb-2">{product.name}</h1>
           <p className="text-lg text-[#1F1F1F]/70 mb-4">
-            {product.year} • {capitalizeWords(product.region)}
+            {isBox ? capitalizeWords(product.region) : `${product.year} • ${capitalizeWords(product.region)}`}
           </p>
 
           <div className="mb-6">
@@ -124,24 +147,34 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <p className="text-[#1F1F1F]/80 mb-6">{product.description}</p>
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h3 className="font-medium text-[#5B0E2D]">{t.products.varietal}</h3>
-                <p className="text-[#1F1F1F]/70">{capitalizeWords(product.varietal)}</p>
-              </div>
+              {!isBox && (
+                <>
+                  <div>
+                    <h3 className="font-medium text-[#5B0E2D]">{t.products.varietal}</h3>
+                    <p className="text-[#1F1F1F]/70">{capitalizeWords(product.varietal)}</p>
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-[#5B0E2D]">{t.products.year}</h3>
+                    <p className="text-[#1F1F1F]/70">{product.year}</p>
+                  </div>
+                </>
+              )}
               <div>
                 <h3 className="font-medium text-[#5B0E2D]">{t.products.region}</h3>
                 <p className="text-[#1F1F1F]/70">{capitalizeWords(product.region)}</p>
               </div>
               <div>
-                <h3 className="font-medium text-[#5B0E2D]">{t.products.year}</h3>
-                <p className="text-[#1F1F1F]/70">{product.year}</p>
-              </div>
-              <div>
                 <h3 className="font-medium text-[#5B0E2D]">{t.products.category}</h3>
                 <p className="text-[#1F1F1F]/70">
-                  {product.category.charAt(0).toUpperCase() + product.category.slice(1)}
+                  {isBox ? 'Box de Vinos' : product.category.charAt(0).toUpperCase() + product.category.slice(1)}
                 </p>
               </div>
+              {isBox && (
+                <div>
+                  <h3 className="font-medium text-[#5B0E2D]">Contenido</h3>
+                  <p className="text-[#1F1F1F]/70">Vinos varietales múltiples</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

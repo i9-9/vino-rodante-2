@@ -37,6 +37,9 @@ function getValidImageUrl(imageUrl: string | null | undefined): string {
 export default function ProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart()
   const t = useTranslations()
+  
+  // Detectar si es un box
+  const isBox = product.category?.toLowerCase() === 'boxes' || product.category?.toLowerCase() === 'box'
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md">
@@ -59,7 +62,10 @@ export default function ProductCard({ product }: { product: Product }) {
           <Link href={`/products/${product.slug}`}>{product.name}</Link>
         </h3>
         <p className="mt-1 text-sm text-gray-500">
-          {product.year} • {capitalizeWords(product.region)}{product.varietal ? ` • ${capitalizeWords(product.varietal)}` : ''}
+          {isBox 
+            ? `Box de Vinos • ${capitalizeWords(product.region)}` 
+            : `${product.year} • ${capitalizeWords(product.region)}${product.varietal ? ` • ${capitalizeWords(product.varietal)}` : ''}`
+          }
         </p>
         <div className="mt-auto pt-4 flex items-center justify-between">
           <p className="font-medium text-[#1F1F1F]">${product.price.toFixed(2)}</p>

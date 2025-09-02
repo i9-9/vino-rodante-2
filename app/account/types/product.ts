@@ -23,7 +23,8 @@ export const REGIONS = [
   'Buenos Aires'
 ] as const
 
-export const ProductSchema = z.object({
+// Schema base para productos
+const BaseProductSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().min(1, 'El nombre es requerido').max(100),
   description: z.string().min(1, 'La descripción es requerida').max(500),
@@ -41,6 +42,37 @@ export const ProductSchema = z.object({
   featured: z.boolean().default(false),
   is_visible: z.boolean().default(true),
   slug: z.string().optional()
+})
+
+// Schema con validación condicional
+export const ProductSchema = BaseProductSchema.refine(
+  (data) => {
+    const isBox = data.category === 'Boxes'
+    
+    // Para boxes, year y varietal son opcionales
+    if (isBox) {
+      return true
+    }
+    
+    // Para productos individuales, year y varietal son requeridos
+    return data.year && data.year.trim() !== '' && data.varietal && data.varietal.trim() !== ''
+  },
+  {
+    message: 'Para productos individuales (no boxes), el año y varietal son requeridos',
+    path: ['year'] // Esto hará que el error aparezca en el campo year
+  }
+)
+
+// Schema específico para boxes (más permisivo)
+export const BoxProductSchema = BaseProductSchema.extend({
+  year: z.string().optional().default('N/A'),
+  varietal: z.string().optional().default('Múltiples'),
+})
+
+// Schema específico para botellas individuales (más estricto)
+export const BottleProductSchema = BaseProductSchema.extend({
+  year: z.string().min(1, 'El año es requerido para productos individuales'),
+  varietal: z.string().min(1, 'El varietal es requerido para productos individuales'),
 })
 
 export type ProductFormData = z.infer<typeof ProductSchema>

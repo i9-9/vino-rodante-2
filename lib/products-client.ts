@@ -32,6 +32,7 @@ export async function getProducts(): Promise<ApiResponse<Product[]>> {
           .from('products')
           .select('*')
           .eq('is_visible', true)
+          .not('category', 'in', '("boxes","Boxes")') // Excluir boxes de productos generales
           .order('created_at', { ascending: false })
         
         if (error) {
@@ -56,6 +57,7 @@ export async function getProducts(): Promise<ApiResponse<Product[]>> {
               .from('products')
               .select('*')
               .eq('is_visible', true)
+              .not('category', 'in', '("boxes","Boxes")') // Excluir boxes de productos generales
               .order('created_at', { ascending: false })
             
             if (publicError) {

@@ -518,7 +518,10 @@ export default function CheckoutPage() {
                         <div className="flex-1">
                           <p className="font-medium">{item.name}</p>
                           <p className="text-sm text-gray-500">
-                            {item.year} • {item.varietal}
+                            {item.category?.toLowerCase() === 'boxes' || item.category?.toLowerCase() === 'box'
+                              ? 'Box de Vinos Varietales'
+                              : `${item.year} • ${item.varietal}`
+                            }
                           </p>
                           <div className="flex justify-between mt-1">
                             <p className="text-sm">{t.common.quantity}: {item.quantity}</p>
