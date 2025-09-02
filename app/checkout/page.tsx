@@ -150,14 +150,16 @@ export default function CheckoutPage() {
     setError(null)
 
     // Validate minimum bottles requirement (only for individual products, not boxes)
-    const hasBoxes = cartItems.some(item => item.is_box || item.category === 'Boxes')
-    const totalBottles = cartItems.reduce((total, item) => total + item.quantity, 0)
+    const hasBoxes = cartItems.some(item => item.is_box || item.category === 'Boxes' || item.category === 'boxes')
     
-    if (!hasBoxes && totalBottles < 3) {
-      const plural = totalBottles === 1 ? '' : 's'
-      setError(t.checkout?.minimumBottlesNote?.replace('{count}', totalBottles.toString()).replace('{plural}', plural) || `Para compras individuales, el mínimo es de 3 botellas. Actualmente tienes ${totalBottles} botella${plural}.`)
-      setIsSubmitting(false)
-      return
+    if (!hasBoxes) {
+      const totalBottles = cartItems.reduce((total, item) => total + item.quantity, 0)
+      if (totalBottles < 3) {
+        const plural = totalBottles === 1 ? '' : 's'
+        setError(t.checkout?.minimumBottlesNote?.replace('{count}', totalBottles.toString()).replace('{plural}', plural) || `Para compras individuales, el mínimo es de 3 botellas. Actualmente tienes ${totalBottles} botella${plural}.`)
+        setIsSubmitting(false)
+        return
+      }
     }
 
     // Validate required fields

@@ -19,6 +19,16 @@ export default function CheckoutClientPage() {
 
   // Función para validar el mínimo de botellas
   const validateCartMinimum = (cartItems: CartItem[]): boolean => {
+    // Check if cart contains boxes (boxes don't have minimum bottle requirement)
+    const hasBoxes = cartItems.some(item => item.is_box || item.category === 'Boxes' || item.category === 'boxes')
+    
+    if (hasBoxes) {
+      // If cart contains boxes, no minimum requirement
+      setCartError(null)
+      return true
+    }
+    
+    // For individual products only, apply 3-bottle minimum
     const totalBottles = cartItems.reduce((total, item) => total + item.quantity, 0)
     if (totalBottles < 3) {
       setCartError(`Para compras individuales, el mínimo es de 3 botellas. Actualmente tienes ${totalBottles} botella${totalBottles === 1 ? '' : 's'}.`)
@@ -186,12 +196,25 @@ export default function CheckoutClientPage() {
 
             {/* Información sobre mínimo de botellas */}
             <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>Mínimo requerido:</strong> 3 botellas para compras individuales
-              </p>
-              <p className="text-sm text-blue-600 mt-1">
-                Total en carrito: {cart.reduce((total, item) => total + item.quantity, 0)} botella{cart.reduce((total, item) => total + item.quantity, 0) === 1 ? '' : 's'}
-              </p>
+              {cart.some(item => item.is_box || item.category === 'Boxes' || item.category === 'boxes') ? (
+                <>
+                  <p className="text-sm text-blue-800">
+                    <strong>Boxes incluidos:</strong> Sin mínimo de botellas requerido
+                  </p>
+                  <p className="text-sm text-blue-600 mt-1">
+                    Los boxes ya incluyen la cantidad perfecta de vinos
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-blue-800">
+                    <strong>Mínimo requerido:</strong> 3 botellas para compras individuales
+                  </p>
+                  <p className="text-sm text-blue-600 mt-1">
+                    Total en carrito: {cart.reduce((total, item) => total + item.quantity, 0)} botella{cart.reduce((total, item) => total + item.quantity, 0) === 1 ? '' : 's'}
+                  </p>
+                </>
+              )}
             </div>
 
             <div className="divide-y">

@@ -195,7 +195,15 @@ export async function clearCart() {
 
 // Función para validar el mínimo de botellas para compras individuales
 export async function validateCartMinimum(cart: CartItem[]): Promise<{ isValid: boolean; error?: string }> {
-  // Calcular el total de botellas en el carrito
+  // Check if cart contains boxes (boxes don't have minimum bottle requirement)
+  const hasBoxes = cart.some(item => item.is_box || item.category === 'Boxes' || item.category === 'boxes')
+  
+  if (hasBoxes) {
+    // If cart contains boxes, no minimum requirement
+    return { isValid: true }
+  }
+  
+  // For individual products only, apply 3-bottle minimum
   const totalBottles = cart.reduce((total, item) => total + item.quantity, 0)
   
   // Si hay menos de 3 botellas, la compra no es válida
