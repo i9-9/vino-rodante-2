@@ -36,6 +36,7 @@ export async function signUpAction(formData: FormData) {
   const email = formData.get("email")?.toString()
   const password = formData.get("password")?.toString()
   const name = formData.get("name")?.toString()
+  const phone = formData.get("phone")?.toString()
   const supabase = await createClient()
   const origin = (await headers()).get("origin")
 
@@ -67,6 +68,7 @@ export async function signUpAction(formData: FormData) {
     .insert({
       email,
       name,
+      phone: phone || null,
     })
 
   if (customerError) {

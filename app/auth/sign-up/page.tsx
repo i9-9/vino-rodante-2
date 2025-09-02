@@ -14,7 +14,7 @@ function SignUpForm() {
   const searchParams = useSearchParams()
   const error = searchParams.get("error")
   const success = searchParams.get("success")
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' })
+  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' })
   const [submitting, setSubmitting] = useState(false)
   const [formTouched, setFormTouched] = useState(false)
   const [passwordStrength, setPasswordStrength] = useState({
@@ -89,6 +89,21 @@ function SignUpForm() {
               className="mt-1"
               disabled={submitting}
             />
+          </div>
+          <div>
+            <Label htmlFor="phone">Teléfono</Label>
+            <Input
+              id="phone"
+              name="phone"
+              type="tel"
+              autoComplete="tel"
+              value={form.phone}
+              onChange={handleInputChange}
+              className="mt-1"
+              disabled={submitting}
+              placeholder="Ej: +54 9 11 1234-5678"
+            />
+            <p className="text-sm text-gray-600 mt-1">Opcional - Te contactaremos para coordinar entregas</p>
           </div>
           <div>
             <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>

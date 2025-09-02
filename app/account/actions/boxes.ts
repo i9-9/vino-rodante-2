@@ -100,7 +100,6 @@ export async function createBox(formData: FormData): Promise<ActionResponse> {
         .insert(boxProductRelations)
 
       if (relationError) {
-        console.error('Error creating box product relations:', relationError)
         // No fallar si no se pueden crear las relaciones, pero registrar el error
       }
     }
@@ -109,7 +108,6 @@ export async function createBox(formData: FormData): Promise<ActionResponse> {
     return { success: true, data: boxData }
 
   } catch (error) {
-    console.error('Error creating box:', error)
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Error desconocido al crear el box' 
@@ -208,7 +206,7 @@ export async function updateBox(boxId: string, formData: FormData): Promise<Acti
           .insert(boxProductRelations)
 
         if (relationError) {
-          console.error('Error updating box product relations:', relationError)
+          // Error updating box product relations
         }
       }
     }
@@ -217,7 +215,6 @@ export async function updateBox(boxId: string, formData: FormData): Promise<Acti
     return { success: true, data: boxData }
 
   } catch (error) {
-    console.error('Error updating box:', error)
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Error desconocido al actualizar el box' 
@@ -264,7 +261,6 @@ export async function deleteBox(boxId: string): Promise<ActionResponse> {
     return { success: true }
 
   } catch (error) {
-    console.error('Error deleting box:', error)
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Error desconocido al eliminar el box' 
@@ -305,7 +301,6 @@ export async function getBoxWithProducts(boxId: string): Promise<Box | null> {
       .eq('box_id', boxId)
 
     if (relationsError) {
-      console.error('Error fetching box products:', relationsError)
       return null
     }
 
@@ -328,7 +323,6 @@ export async function getBoxWithProducts(boxId: string): Promise<Box | null> {
     } as Box
 
   } catch (error) {
-    console.error('Error fetching box:', error)
     return null
   }
 }
@@ -348,7 +342,6 @@ export async function getAllBoxes(): Promise<Box[]> {
 
     return data || []
   } catch (error) {
-    console.error('Error fetching boxes:', error)
     return []
   }
 }

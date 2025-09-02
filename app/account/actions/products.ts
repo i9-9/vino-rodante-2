@@ -1,14 +1,26 @@
 "use server"
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/utils/supabase/server'
 import { StorageError } from '@supabase/storage-js'
-import type { Database } from '@/lib/database.types'
 import { revalidatePath } from 'next/cache'
 import { ProductSchema } from '../types/product'
 
-// Extender el tipo Product para incluir is_visible
-type DatabaseProduct = Database['public']['Tables']['products']['Row'] & {
+// Tipo básico de producto para la base de datos
+type DatabaseProduct = {
+  id: string
+  name: string
+  description: string
+  price: number
+  stock: number
+  category: string
+  region: string
+  year: string
+  varietal: string
+  featured: boolean
   is_visible: boolean
+  image?: string
+  slug: string
+  created_at?: string
 }
 
 export interface ActionResponse {
@@ -162,7 +174,6 @@ export async function updateProduct(formData: FormData): Promise<ActionResponse>
     return { success: true, message: 'Producto actualizado correctamente' }
 
   } catch (error) {
-    console.error('Error updating product:', error)
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Error al actualizar producto'
@@ -208,6 +219,7 @@ export async function createProduct(formData: FormData): Promise<ActionResponse>
       varietal: isBox ? 'Múltiples' : (formData.get('varietal') || ''),
       featured: formData.get('featured') === 'on',
       is_visible: formData.get('is_visible') === 'on',
+      free_shipping: formData.get('free_shipping') === 'on',
       slug: (formData.get('name') as string)?.toLowerCase().replace(/\s+/g, '-') || '',
       image: '/placeholder.svg' // Imagen por defecto
     }
@@ -248,7 +260,6 @@ export async function createProduct(formData: FormData): Promise<ActionResponse>
     return { success: true, data }
 
   } catch (error) {
-    console.error('Error creating product:', error)
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Error al crear producto'
@@ -326,7 +337,6 @@ export async function toggleProductVisibility(
     }
 
   } catch (error) {
-    console.error('Error toggling product visibility:', error)
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Error al cambiar visibilidad del producto' 
@@ -360,7 +370,6 @@ export async function toggleProductFeatured(
     }
 
   } catch (error) {
-    console.error('Error toggling product featured:', error)
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Error al cambiar estado destacado del producto' 
@@ -407,7 +416,6 @@ export async function getAllProducts(): Promise<ActionResponse> {
     }
 
   } catch (error) {
-    console.error('Error getting all products:', error)
     return { 
       success: false, 
       error: 'Error al obtener productos' 

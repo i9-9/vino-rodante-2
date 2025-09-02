@@ -28,6 +28,7 @@ export default function CheckoutPage() {
   const [customerInfo, setCustomerInfo] = useState({
     name: "",
     email: "",
+    phone: "",
     address1: "",
     address2: "",
     city: "",
@@ -394,6 +395,19 @@ export default function CheckoutPage() {
                             className={user ? "bg-muted" : ""}
                             autoComplete="email"
                           />
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                          <Label htmlFor="phone">{t.checkout?.phone || "Teléfono"}</Label>
+                          <Input 
+                            id="phone" 
+                            name="phone" 
+                            type="tel"
+                            value={customerInfo.phone} 
+                            onChange={handleInputChange} 
+                            autoComplete="tel"
+                            placeholder="Ej: +54 9 11 1234-5678"
+                          />
+                          <p className="text-sm text-gray-600">Opcional - Te contactaremos para coordinar la entrega</p>
                         </div>
                       </div>
                     </div>

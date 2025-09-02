@@ -1,23 +1,32 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { ActionResponse } from '../types'
-import type { Database } from '@/lib/database.types'
+// import type { Database } from '@/lib/database.types'
 import { isValidEmail } from '../utils/validation'
 
 
-type CustomerUpdate = Omit<Database['public']['Tables']['customers']['Update'], 'is_admin'>
+type CustomerUpdate = {
+  id?: string
+  name?: string | null
+  email?: string | null
+  phone?: string | null
+  created_at?: string
+}
 
 export async function updateProfile(formData: FormData): Promise<ActionResponse> {
+  console.log('🔄 updateProfile called with:', Object.fromEntries(formData.entries()))
   try {
     const supabase = await createClient()
     
     // 1. Obtener usuario actual
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) {
+      console.log('❌ No user found:', userError)
       return { success: false, error: 'No autorizado' }
     }
+    console.log('✅ User found:', user.id)
 
     // 2. Extraer y validar campos
     const updates: CustomerUpdate = {}
@@ -30,6 +39,12 @@ export async function updateProfile(formData: FormData): Promise<ActionResponse>
     const email = formData.get('email')?.toString().trim()
     if (email && isValidEmail(email)) {
       updates.email = email
+    }
+
+    const phone = formData.get('phone')?.toString().trim()
+    if (phone !== undefined) {
+      // Permitir phone vacío (null) o con contenido válido
+      updates.phone = phone === '' ? null : phone
     }
 
     // 3. Verificar que hay cambios
@@ -60,6 +75,7 @@ export async function updateProfile(formData: FormData): Promise<ActionResponse>
     if (error) throw error
 
     revalidatePath('/account')
+    console.log('✅ Profile updated successfully:', updates)
     
     return { 
       success: true, 

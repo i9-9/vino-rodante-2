@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import Image from 'next/image'
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/hooks/use-toast'
 import { Loader2, Plus, X } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { BoxProduct, CreateBoxSchema } from '../types/box'
@@ -46,6 +46,7 @@ export function BoxForm({ onSubmit, onClose }: BoxFormProps) {
     discount_percentage: 0,
     featured: false,
     is_visible: true,
+    free_shipping: false,
   })
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -73,7 +74,6 @@ export function BoxForm({ onSubmit, onClose }: BoxFormProps) {
       if (error) throw error
       setAvailableProducts(data || [])
     } catch (error) {
-      console.error('Error loading products:', error)
     }
   }
 
@@ -204,6 +204,7 @@ export function BoxForm({ onSubmit, onClose }: BoxFormProps) {
       submitData.set('discount_percentage', formData.discount_percentage.toString())
       submitData.set('featured', formData.featured ? 'on' : 'off')
       submitData.set('is_visible', formData.is_visible ? 'on' : 'off')
+      submitData.set('free_shipping', formData.free_shipping ? 'on' : 'off')
       
       // Productos del box
       submitData.set('box_products', JSON.stringify(boxProducts))
@@ -220,7 +221,6 @@ export function BoxForm({ onSubmit, onClose }: BoxFormProps) {
       })
       onClose()
     } catch (error) {
-      console.error('Error submitting form:', error)
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error al crear el box",
@@ -433,6 +433,14 @@ export function BoxForm({ onSubmit, onClose }: BoxFormProps) {
               onCheckedChange={handleSwitchChange('is_visible')}
             />
             <Label htmlFor="is_visible">Visible</Label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={formData.free_shipping}
+              onCheckedChange={handleSwitchChange('free_shipping')}
+            />
+            <Label htmlFor="free_shipping">Envío gratis</Label>
           </div>
         </div>
 

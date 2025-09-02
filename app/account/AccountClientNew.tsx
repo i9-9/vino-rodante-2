@@ -163,9 +163,7 @@ export default function AccountClientNew({
             {/* Tab Contents */}
             <div className="mt-4 sm:mt-6 flex-1 flex flex-col">
               <TabsContent value="profile" className="space-y-4 m-0">
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <ProfileTab user={user} profile={profile} t={t} />
-                </div>
+                <ProfileTab user={user} profile={profile} t={t} />
               </TabsContent>
 
               <TabsContent value="orders" className="space-y-4 m-0">

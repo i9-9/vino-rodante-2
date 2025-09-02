@@ -49,6 +49,7 @@ export const es = {
     passwordTooShort: "La contraseña debe tener al menos 6 caracteres",
     create: "Crear",
     delete: "Eliminar",
+    saving: "Guardando...",
   },
   navigation: {
     home: "Inicio",
@@ -305,6 +306,12 @@ Amamos el vino, el trabajo que genera, la vinculación que propone y la música 
     state: "Provincia",
     postalCode: "Código Postal",
     country: "País",
+    profileInfo: "Información del Perfil",
+    updateProfile: "Actualiza tu información personal",
+    profileUpdated: "Perfil actualizado correctamente",
+    emailCannotChange: "El email no se puede cambiar",
+    namePlaceholder: "Ingresa tu nombre",
+    phonePlaceholder: "Ingresa tu teléfono",
     errors: {
       updateError: "Error al actualizar",
       createError: "Error al crear",

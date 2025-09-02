@@ -113,6 +113,16 @@ export default function CheckoutClientPage() {
                     <Label htmlFor="email">Email Address</Label>
                     <Input id="email" name="email" type="email" required />
                   </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="phone">Teléfono</Label>
+                    <Input 
+                      id="phone" 
+                      name="phone" 
+                      type="tel"
+                      placeholder="Ej: +54 9 11 1234-5678"
+                    />
+                    <p className="text-sm text-gray-600">Opcional - Te contactaremos para coordinar la entrega</p>
+                  </div>
                 </div>
               </div>
 

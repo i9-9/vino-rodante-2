@@ -52,6 +52,7 @@ const BaseProductSchema = z.object({
   image: z.string().optional(),
   featured: z.boolean().default(false),
   is_visible: z.boolean().default(true),
+  free_shipping: z.boolean().default(false),
   slug: z.string().optional()
 })
 

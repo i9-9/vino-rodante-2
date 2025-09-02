@@ -239,6 +239,7 @@ export async function createOrder(formData: FormData) {
 
   const name = formData.get("name") as string
   const email = formData.get("email") as string
+  const phone = formData.get("phone") as string
   const address1 = formData.get("address1") as string
   const address2 = (formData.get("address2") as string) || null
   const city = formData.get("city") as string
@@ -265,7 +266,7 @@ export async function createOrder(formData: FormData) {
       customerId = user.id
       await supabase
         .from("customers")
-        .upsert({ id: user.id, name, email: user.email })
+        .upsert({ id: user.id, name, email: user.email, phone: phone || null })
     } else {
       const { data: existingCustomer, error: customerFetchError } = await supabase
         .from("customers")
@@ -276,7 +277,7 @@ export async function createOrder(formData: FormData) {
       if (customerFetchError || !existingCustomer) {
         const { data: newCustomer, error: customerCreateError } = await supabase
           .from("customers")
-          .insert([{ name, email }])
+          .insert([{ name, email, phone: phone || null }])
           .select()
           .single()
 

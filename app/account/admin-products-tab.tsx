@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Plus, Pencil, ArrowUpDown, ArrowUp, ArrowDown, Upload } from 'lucide-react'
+import { Plus, Pencil, ArrowUpDown, ArrowUp, ArrowDown, Upload, Trash2 } from 'lucide-react'
 import type { Product } from './types'
 import type { Translations } from '@/lib/i18n/types'
 import {
@@ -11,12 +11,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
+import { Checkbox } from "@/components/ui/checkbox"
 import Image from 'next/image'
-import { updateProduct, createProduct } from './actions/products'
+import { updateProduct, createProduct, deleteProducts } from './actions/products'
 import { CreateProductForm } from './components/CreateProductForm'
 import {
   Table,
@@ -41,9 +52,12 @@ import {
   getSortedRowModel,
   useReactTable,
   type SortingState,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  type RowSelectionState,
 } from '@tanstack/react-table'
 
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/hooks/use-toast'
 import { Loader2 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { CATEGORIES, REGIONS } from './types/product'
@@ -235,7 +249,6 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
       })
       onClose()
     } catch (error) {
-      console.error('Error submitting form:', error)
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error al procesar el producto",
@@ -532,6 +545,12 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
   const [sorting, setSorting] = useState<SortingState>([])
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
   const { toast } = useToast()
 
   const filteredProducts = useMemo(() => 
@@ -549,6 +568,25 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
   )
 
   const columns = useMemo<ColumnDef<Product>[]>(() => [
+    {
+      id: 'select',
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Seleccionar todos"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Seleccionar fila"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
     {
       id: 'image',
       header: 'Imagen',
@@ -688,18 +726,29 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
       id: 'actions',
       header: 'Acciones',
       cell: ({ row }) => (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setSelectedProduct(row.original)
-            setImagePreview(row.original.image || null)
-            setIsModalOpen(true)
-          }}
-        >
-          <Pencil className="h-4 w-4 mr-2" />
-          Editar
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setSelectedProduct(row.original)
+              setImagePreview(row.original.image || null)
+              setIsModalOpen(true)
+            }}
+          >
+            <Pencil className="h-4 w-4 mr-2" />
+            Editar
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => openDeleteDialog(row.original)}
+            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Eliminar
+          </Button>
+        </div>
       ),
       enableSorting: false
     }
@@ -710,11 +759,16 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
     columns,
     state: {
       sorting,
+      rowSelection,
     },
     onSortingChange: setSorting,
+    onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     enableSorting: true,
+    enableRowSelection: true,
   })
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -774,13 +828,100 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
       }
       
     } catch (error) {
-      console.error('Error processing product:', error)
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error al procesar el producto",
         variant: "destructive",
       })
     }
+  }
+
+  const handleDeleteProduct = async () => {
+    if (!productToDelete?.id) return
+
+    setIsDeleting(true)
+    try {
+      await deleteProducts([productToDelete.id])
+      
+      toast({
+        title: "Éxito",
+        description: "Producto eliminado correctamente",
+      })
+      
+      // Solicitar refresh de datos al padre si está disponible
+      if (onRefresh) {
+        await onRefresh()
+      }
+      
+      setDeleteDialogOpen(false)
+      setProductToDelete(null)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error al eliminar el producto",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const openDeleteDialog = (product: Product) => {
+    setProductToDelete(product)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleBulkDelete = async () => {
+    const selectedRows = table.getFilteredSelectedRowModel().rows
+    const selectedIds = selectedRows.map(row => row.original.id)
+
+    if (selectedIds.length === 0) {
+      toast({
+        title: "Error",
+        description: "No hay productos seleccionados para eliminar",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsBulkDeleting(true)
+    try {
+      await deleteProducts(selectedIds)
+      
+      toast({
+        title: "Éxito",
+        description: `${selectedIds.length} producto(s) eliminado(s) correctamente`,
+      })
+      
+      // Solicitar refresh de datos al padre si está disponible
+      if (onRefresh) {
+        await onRefresh()
+      }
+      
+      setBulkDeleteDialogOpen(false)
+      setRowSelection({})
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error al eliminar los productos",
+        variant: "destructive",
+      })
+    } finally {
+      setIsBulkDeleting(false)
+    }
+  }
+
+  const openBulkDeleteDialog = () => {
+    const selectedCount = table.getFilteredSelectedRowModel().rows.length
+    if (selectedCount === 0) {
+      toast({
+        title: "Error",
+        description: "Selecciona al menos un producto para eliminar",
+        variant: "destructive",
+      })
+      return
+    }
+    setBulkDeleteDialogOpen(true)
   }
 
   // Opciones para los selects
@@ -812,18 +953,35 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
           <div className="text-sm text-gray-500">
             {filteredProducts.length} productos
           </div>
+          {table.getFilteredSelectedRowModel().rows.length > 0 && (
+            <div className="text-sm text-blue-600 font-medium">
+              {table.getFilteredSelectedRowModel().rows.length} seleccionado(s)
+            </div>
+          )}
         </div>
-        <Button 
-          onClick={() => {
-            setSelectedProduct(null)
-            setImagePreview(null)
-            setIsModalOpen(true)
-          }}
-          className="bg-[#7B1E1E] hover:bg-[#5E1717] text-white"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Agregar producto
-        </Button>
+        <div className="flex gap-2">
+          {table.getFilteredSelectedRowModel().rows.length > 0 && (
+            <Button 
+              onClick={openBulkDeleteDialog}
+              variant="destructive"
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Eliminar seleccionados ({table.getFilteredSelectedRowModel().rows.length})
+            </Button>
+          )}
+          <Button 
+            onClick={() => {
+              setSelectedProduct(null)
+              setImagePreview(null)
+              setIsModalOpen(true)
+            }}
+            className="bg-[#7B1E1E] hover:bg-[#5E1717] text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Agregar producto
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-md border">
@@ -904,6 +1062,66 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Diálogo de confirmación para eliminar */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará permanentemente el producto{' '}
+              <strong>"{productToDelete?.name}"</strong> y todos sus datos asociados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteProduct}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Eliminando...
+                </>
+              ) : (
+                'Eliminar'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Diálogo de confirmación para eliminación en lote */}
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar productos seleccionados?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminarán permanentemente{' '}
+              <strong>{table.getFilteredSelectedRowModel().rows.length} producto(s)</strong> y todos sus datos asociados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isBulkDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Eliminando...
+                </>
+              ) : (
+                'Eliminar todos'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 } 

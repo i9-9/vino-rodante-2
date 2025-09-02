@@ -8,8 +8,8 @@ import type {
   ToastProps,
 } from "@/components/ui/toast"
 
-const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_LIMIT = 3
+const TOAST_REMOVE_DELAY = 5000
 
 type ToasterToast = ToastProps & {
   id: string
@@ -134,7 +134,9 @@ const listeners: Array<(state: State) => void> = []
 let memoryState: State = { toasts: [] }
 
 function dispatch(action: Action) {
+  console.log('🔄 Toast dispatch:', action.type, 'current toasts:', memoryState.toasts.length)
   memoryState = reducer(memoryState, action)
+  console.log('🔄 Toast after dispatch:', memoryState.toasts.length, 'toasts')
   listeners.forEach((listener) => {
     listener(memoryState)
   })
@@ -144,6 +146,7 @@ type Toast = Omit<ToasterToast, "id">
 
 function toast({ ...props }: Toast) {
   const id = genId()
+  console.log('🍞 Toast created with id:', id, 'props:', props)
 
   const update = (props: ToasterToast) =>
     dispatch({

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { updateProfile } from '../actions/profile'
-import { toast } from 'sonner'
+import { useToast } from '@/hooks/use-toast'
 import type { User } from '@supabase/supabase-js'
 import type { Profile } from '../types'
 
@@ -18,18 +18,38 @@ interface ProfileTabProps {
 
 export function ProfileTab({ user, profile, t }: ProfileTabProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
 
   const handleUpdateProfile = async (formData: FormData) => {
     setIsLoading(true)
     try {
       const result = await updateProfile(formData)
+      
       if (result.error) {
-        toast.error(result.error)
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: result.error,
+        })
+      } else if (result.success) {
+        toast({
+          title: "Éxito",
+          description: result.message || t.account?.profileUpdated || 'Perfil actualizado correctamente',
+        })
       } else {
-        toast.success(t.account.profileUpdated)
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: t.errors?.unknown || 'Error desconocido',
+        })
       }
     } catch (error) {
-      toast.error(t.errors.unknown)
+      console.error('Error updating profile:', error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: t.errors?.unknown || 'Error desconocido',
+      })
     } finally {
       setIsLoading(false)
     }
@@ -48,21 +68,31 @@ export function ProfileTab({ user, profile, t }: ProfileTabProps) {
               <Label htmlFor="email">Email</Label>
               <Input 
                 id="email" 
-                value={user.email} 
+                value={user.email || ''} 
                 disabled 
                 className="bg-muted"
               />
               <p className="text-sm text-muted-foreground">
-                {t.account.emailCannotChange}
+                {t.account?.emailCannotChange || 'El email no se puede cambiar'}
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="name">{t.account.name}</Label>
+              <Label htmlFor="name">{t.account?.name || 'Nombre'}</Label>
               <Input 
                 id="name" 
                 name="name" 
                 defaultValue={profile?.name || ''} 
-                placeholder={t.account.namePlaceholder}
+                placeholder={t.account?.namePlaceholder || 'Ingresa tu nombre'}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">{t.account?.phone || 'Teléfono'}</Label>
+              <Input 
+                id="phone" 
+                name="phone" 
+                type="tel"
+                defaultValue={profile?.phone || ''} 
+                placeholder={t.account?.phonePlaceholder || 'Ingresa tu teléfono'}
               />
             </div>
           </div>

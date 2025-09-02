@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import Image from 'next/image'
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/hooks/use-toast'
 import { Loader2 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { CATEGORIES, REGIONS } from '../types/product'
@@ -37,6 +37,7 @@ export function CreateProductForm({ onSubmit, onClose }: CreateProductFormProps)
     varietal: '',
     featured: false,
     is_visible: true,
+    free_shipping: false,
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -133,6 +134,7 @@ export function CreateProductForm({ onSubmit, onClose }: CreateProductFormProps)
       // Booleans
       submitData.set('featured', formData.featured ? 'on' : 'off')
       submitData.set('is_visible', formData.is_visible ? 'on' : 'off')
+      submitData.set('free_shipping', formData.free_shipping ? 'on' : 'off')
       
       // Si la categoría es Boxes, marcar is_box = true
       if (formData.category === 'Boxes') {
@@ -151,7 +153,6 @@ export function CreateProductForm({ onSubmit, onClose }: CreateProductFormProps)
       })
       onClose()
     } catch (error) {
-      console.error('Error submitting form:', error)
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error al crear el producto",
@@ -329,6 +330,14 @@ export function CreateProductForm({ onSubmit, onClose }: CreateProductFormProps)
           onCheckedChange={handleSwitchChange('is_visible')}
         />
         <Label htmlFor="is_visible">Visible</Label>
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Switch
+          checked={formData.free_shipping}
+          onCheckedChange={handleSwitchChange('free_shipping')}
+        />
+        <Label htmlFor="free_shipping">Envío gratis</Label>
       </div>
 
       <div className="flex justify-end space-x-2">

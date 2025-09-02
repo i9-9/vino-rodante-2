@@ -1,8 +1,8 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { sendEmail, renderOrderSummaryEmail } from '@/lib/emails/resend'
+import { sendEmail, renderCustomerOrderEmail } from '@/lib/emails/resend'
 import type { OrderStatus } from '../types'
 
 interface DbOrderItem {
@@ -199,30 +199,36 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
         .eq('id', orderId)
         .single()
 
-      const items = (order?.order_items || []).map((it: unknown) => ({
-        name: (it as { products?: { name?: string } })?.products?.name || 'Producto',
-        quantity: (it as { quantity: number }).quantity,
-        price: (it as { price: number }).price * (it as { quantity: number }).quantity,
-      }))
-      const subtotal = items.reduce((s: number, it: unknown) => s + (it as { price: number }).price, 0)
-      const shipping = Math.max(0, (order?.total || 0) - subtotal)
-      const html = renderOrderSummaryEmail({
-        title: `Estado actualizado: ${newStatus}`,
-        orderId,
-        subtotal,
-        shipping,
-        total: order?.total || 0,
-        items,
-      })
-
       const { data: customer } = await supabase
         .from('customers')
-        .select('email')
+        .select('name, email')
         .eq('id', order?.user_id)
         .single()
 
-      if (customer?.email) {
-        await sendEmail({ to: customer.email, subject: `Vino Rodante · Pedido ${newStatus} #${orderId.slice(-8)}`, html })
+      if (customer?.email && order) {
+        const items = (order.order_items || []).map((it: unknown) => ({
+          name: (it as { products?: { name?: string } })?.products?.name || 'Producto',
+          quantity: (it as { quantity: number }).quantity,
+          price: (it as { price: number }).price * (it as { quantity: number }).quantity,
+        }))
+        const subtotal = items.reduce((s: number, it: unknown) => s + (it as { price: number }).price, 0)
+        const shipping = Math.max(0, order.total - subtotal)
+        
+        const html = renderCustomerOrderEmail({
+          customerName: customer.name || 'Cliente',
+          orderId,
+          subtotal,
+          shipping,
+          total: order.total,
+          items,
+          customerEmail: customer.email,
+        })
+
+        await sendEmail({ 
+          to: customer.email, 
+          subject: `Vino Rodante · Pedido ${newStatus} #${orderId.slice(-8)}`, 
+          html 
+        })
       }
     } catch (notifyError) {
       console.error('Error sending status update email:', notifyError)
