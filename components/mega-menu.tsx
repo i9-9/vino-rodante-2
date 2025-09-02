@@ -97,22 +97,79 @@ export default function MegaMenu() {
   }))
 
   const finalAvailableTypes = allTypes.filter(type => {
-    if (isErrorProducts || !products || products.length === 0) return true
+    // Si hay error o no hay productos, no mostrar ningún tipo
+    if (isErrorProducts || !products || products.length === 0) return false
+    
     const slug = type.href.split('/').pop() || ''
     const dbCategory = CATEGORY_SLUG_MAP[slug] || slug
-    return products.some(product => product.category === dbCategory)
+    
+    // Verificar si hay productos de esta categoría
+    return products.some(product => {
+      if (!product.category) return false
+      
+      // Comparación exacta con categoría mapeada
+      if (product.category === dbCategory) return true
+      
+      // Comparación con slug original
+      if (product.category === slug) return true
+      
+      // Comparación case-insensitive
+      if (product.category.toLowerCase() === dbCategory.toLowerCase()) return true
+      
+      return false
+    })
   })
 
   const availableRegions = allRegions.filter(region => {
-    if (isErrorProducts || !products || products.length === 0) return true
+    // Si hay error o no hay productos, no mostrar ninguna región
+    if (isErrorProducts || !products || products.length === 0) {
+      return false
+    }
+    
     // Mapear el slug de la región al nombre completo como se almacena en DB
     const dbRegionName = REGION_SLUG_MAP[region.slug] || region.slug
-    return products.some(product => product.region === dbRegionName)
+    
+    // Verificar si hay productos en esta región con comparación flexible
+    const hasProducts = products.some(product => {
+      if (!product.region) return false
+      
+      // Comparación exacta
+      if (product.region === dbRegionName) return true
+      
+      // Comparación case-insensitive
+      if (product.region.toLowerCase() === dbRegionName.toLowerCase()) return true
+      
+      // Comparación por slug original
+      if (product.region === region.slug) return true
+      
+      // Comparación con el nombre de la región
+      if (product.region === region.name) return true
+      
+      return false
+    })
+    
+    return hasProducts
   })
 
   const availableVarietals = allVarietals.filter(varietal => {
-    if (isErrorProducts || !products || products.length === 0) return true
-    return products.some(product => product.varietal === varietal.slug)
+    // Si hay error o no hay productos, no mostrar ningún varietal
+    if (isErrorProducts || !products || products.length === 0) return false
+    
+    // Verificar si hay productos con este varietal
+    return products.some(product => {
+      if (!product.varietal) return false
+      
+      // Comparación exacta con slug
+      if (product.varietal === varietal.slug) return true
+      
+      // Comparación con nombre del varietal
+      if (product.varietal === varietal.name) return true
+      
+      // Comparación case-insensitive
+      if (product.varietal.toLowerCase() === varietal.slug.toLowerCase()) return true
+      
+      return false
+    })
   })
 
   const closeWeeklyWineMenu = () => {
