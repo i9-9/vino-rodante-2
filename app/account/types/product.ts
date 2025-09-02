@@ -11,16 +11,27 @@ export const CATEGORIES = [
   'Otro'
 ] as const
 
+// Lista completa de regiones para formularios CRUD
 export const REGIONS = [
   'Mendoza',
-  'San Juan',
+  'San Juan', 
   'La Rioja',
   'Salta',
   'Catamarca',
+  'Jujuy',
+  'Tucumán',
   'Neuquén',
   'Río Negro',
   'Córdoba',
-  'Buenos Aires'
+  'Buenos Aires',
+  'Entre Ríos',
+  'Chapadmalal',
+  'Valle de Uco',
+  'Valle del Pedernal',
+  'Valle Calchaquí',
+  'Valle de Famatina',
+  'Valle del Río Colorado',
+  'Múltiples' // Para boxes
 ] as const
 
 // Schema base para productos

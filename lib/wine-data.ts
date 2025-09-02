@@ -177,4 +177,31 @@ export const CATEGORY_SLUG_MAP: Record<string, string> = {
   rosado: "rosado", 
   espumante: "espumante",
   sidra: "sidra",
-} 
+}
+
+// Mapping de regiones: slug → nombre completo (como se almacena en DB)
+export const REGION_SLUG_MAP: Record<string, string> = {
+  'mendoza': 'Mendoza',
+  'san-juan': 'San Juan',
+  'la-rioja': 'La Rioja',
+  'catamarca': 'Catamarca',
+  'salta': 'Salta',
+  'jujuy': 'Jujuy',
+  'tucuman': 'Tucumán',
+  'rio-negro': 'Río Negro',
+  'neuquen': 'Neuquén',
+  'buenos-aires': 'Buenos Aires',
+  'cordoba': 'Córdoba',
+  'entre-rios': 'Entre Ríos',
+  'chapadmalal': 'Chapadmalal',
+  'valle-de-uco': 'Valle de Uco',
+  'valle-del-pedernal': 'Valle del Pedernal',
+  'valle-calchaqui': 'Valle Calchaquí',
+  'valle-de-famatina': 'Valle de Famatina',
+  'valle-del-rio-colorado': 'Valle del Río Colorado',
+}
+
+// Mapping inverso: nombre completo → slug
+export const REGION_NAME_MAP: Record<string, string> = Object.fromEntries(
+  Object.entries(REGION_SLUG_MAP).map(([slug, name]) => [name, slug])
+) 

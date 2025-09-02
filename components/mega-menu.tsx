@@ -5,7 +5,7 @@ import { useTranslations } from "@/lib/providers/translations-provider"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { WINE_TYPES, WINE_REGIONS, WINE_VARIETALS, getAllWineTypes, getAllWineRegions, getAllWineVarietals, prettyLabel, CATEGORY_SLUG_MAP } from "@/lib/wine-data"
+import { WINE_TYPES, WINE_REGIONS, WINE_VARIETALS, getAllWineTypes, getAllWineRegions, getAllWineVarietals, prettyLabel, CATEGORY_SLUG_MAP, REGION_SLUG_MAP } from "@/lib/wine-data"
 import type { WineType, WineVarietal, WineRegion, WineTypeData, WineRegionData, WineVarietalData } from "@/lib/wine-data"
 import { getProducts } from '@/lib/products-client'
 import type { Product } from '@/lib/types'
@@ -105,7 +105,9 @@ export default function MegaMenu() {
 
   const availableRegions = allRegions.filter(region => {
     if (isErrorProducts || !products || products.length === 0) return true
-    return products.some(product => product.region === region.slug)
+    // Mapear el slug de la región al nombre completo como se almacena en DB
+    const dbRegionName = REGION_SLUG_MAP[region.slug] || region.slug
+    return products.some(product => product.region === dbRegionName)
   })
 
   const availableVarietals = allVarietals.filter(varietal => {

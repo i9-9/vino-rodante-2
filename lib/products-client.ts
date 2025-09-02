@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/client'
 import { createAdaptiveClient } from '@/lib/supabase/client-incognito'
 import { PostgrestError } from '@supabase/supabase-js'
 import { StorageError } from '@supabase/storage-js'
-import { CATEGORY_SLUG_MAP } from './wine-data'
+import { CATEGORY_SLUG_MAP, REGION_SLUG_MAP } from './wine-data'
 import type { Product } from '@/lib/types'
 
 export interface ApiResponse<T> {
@@ -243,12 +243,15 @@ export async function getProductsByCategory(categorySlug: string): Promise<ApiRe
 
 export async function getProductsByRegion(region: string): Promise<ApiResponse<Product[]>> {
   try {
+    // Convertir slug de región al nombre completo como se almacena en DB
+    const dbRegionName = REGION_SLUG_MAP[region] || region
+    
     // Intentar primero con el cliente autenticado
     const supabase = createClient()
     const { data, error } = await supabase
       .from('products')
       .select('*')
-      .eq('region', region)
+      .eq('region', dbRegionName)
       .eq('is_visible', true)
       .order('created_at', { ascending: false })
 
@@ -263,7 +266,7 @@ export async function getProductsByRegion(region: string): Promise<ApiResponse<P
       const { data: publicData, error: publicError } = await publicSupabase
         .from('products')
         .select('*')
-        .eq('region', region)
+        .eq('region', dbRegionName)
         .eq('is_visible', true)
         .order('created_at', { ascending: false })
 
