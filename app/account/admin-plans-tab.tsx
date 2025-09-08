@@ -271,7 +271,7 @@ const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>, type: '
 
   try {
     setLoading(true)
-    const result = await uploadPlanImage(file)
+    const result = await uploadPlanImage(file, type)
     
     if (!result.success || !result.url) {
       throw new Error(result.error || 'Error al subir la imagen')
@@ -423,6 +423,9 @@ return (
             </div>
             <div>
               <Label>Banner (opcional)</Label>
+              <p className="text-sm text-muted-foreground mb-2">
+                Para banners de alta calidad: máximo 50MB, formatos JPG/PNG/WebP
+              </p>
               <div className="flex flex-col gap-2">
                 {formData.banner_image && (
                   <div className="relative w-full h-40">

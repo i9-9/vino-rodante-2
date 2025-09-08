@@ -52,21 +52,24 @@ const nextConfig = {
         protocol: 'https',
         hostname: '**',
       },
-    ],
-    dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    domains: ['vino-rodante.s3.sa-east-1.amazonaws.com', 'drive.google.com'],
-    remotePatterns: [
       {
         protocol: 'https',
         hostname: '**.supabase.co',
       },
     ],
+    dangerouslyAllowSVG: true,
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    domains: ['vino-rodante.s3.sa-east-1.amazonaws.com', 'drive.google.com'],
+    // Optimizaciones para alta calidad
+    formats: ['image/webp', 'image/avif'],
+    minimumCacheTTL: 60,
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
   experimental: {
     serverActions: {
-      bodySizeLimit: '20mb'
+      bodySizeLimit: '50mb' // Aumentado para banners de alta resolución
     }
   },
 }

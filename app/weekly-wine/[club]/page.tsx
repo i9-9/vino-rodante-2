@@ -1,5 +1,6 @@
 import { getSubscriptionPlansByClub, getSubscriptionPlanProducts } from '@/lib/subscriptions-client'
 import Image from "next/image"
+import { SubscriptionBanner } from '@/components/ui/banner-image'
 import ClubTabs from "./ClubTabs"
 import SubscriptionSelector from "./SubscriptionSelector"
 import { Accordion } from "@/components/ui/accordion"
@@ -91,22 +92,13 @@ export default async function ClubPage({ params }: { params: Promise<{ club: str
 
   return (
     <div className="min-h-screen">
-      {/* Banner hero */}
-      <section className="w-full relative">
-        <div className="relative h-[70vh] w-full overflow-hidden">
-          <div className="absolute inset-0">
-            <Image
-              src={displayPlan.banner_image || clubInfo.image}
-              alt={displayPlan.name}
-              fill
-              priority
-              sizes="100vw"
-              quality={75}
-              className="object-cover object-center"
-            />
-          </div>
-        </div>
-      </section>
+      {/* Banner hero optimizado */}
+      <SubscriptionBanner
+        bannerImage={displayPlan.banner_image || clubInfo.image}
+        fallbackImage={clubInfo.image}
+        planName={displayPlan.name}
+        height="h-[70vh]"
+      />
 
       {/* Grid principal: producto destacado + detalles */}
       <div className="container mx-auto px-6 md:px-8 lg:px-12 py-12">

@@ -178,7 +178,7 @@ export async function getAllSubscriptionPlans() {
   }
 }
 
-export async function uploadPlanImage(file: File) {
+export async function uploadPlanImage(file: File, type: 'main' | 'banner' = 'main') {
   try {
     const supabase = await createClient()
     
@@ -202,22 +202,30 @@ export async function uploadPlanImage(file: File) {
       return { success: false, error: 'Tipo de archivo no permitido. Use JPG, PNG o WebP.' }
     }
 
-    // Validar tamaño (max 20MB)
-    const maxSize = 20 * 1024 * 1024 // 20MB
+    // Límites diferentes según el tipo de imagen
+    const maxSize = type === 'banner' 
+      ? 50 * 1024 * 1024 // 50MB para banners (alta resolución)
+      : 20 * 1024 * 1024 // 20MB para imágenes principales
+    
     if (file.size > maxSize) {
-      return { success: false, error: 'La imagen es demasiado grande. Máximo 20MB.' }
+      const maxSizeMB = type === 'banner' ? '50MB' : '20MB'
+      return { success: false, error: `La imagen es demasiado grande. Máximo ${maxSizeMB}.` }
     }
 
-    // Generar un nombre único para el archivo
+    // Generar un nombre único para el archivo con prefijo según tipo
     const fileExt = file.name.split('.').pop()
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+    const prefix = type === 'banner' ? 'banner' : 'main'
+    const fileName = `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
     const filePath = fileName
+
+    // Configuración de cache optimizada para banners
+    const cacheControl = type === 'banner' ? '31536000' : '3600' // 1 año para banners, 1 hora para main
 
     // Subir el archivo
     const { error } = await supabase.storage
       .from('subscription-plans')
       .upload(filePath, file, {
-        cacheControl: '3600',
+        cacheControl,
         upsert: false
       })
 
