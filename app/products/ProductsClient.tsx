@@ -59,8 +59,8 @@ export default function ProductsClient({ t }: ProductsClientProps) {
   useEffect(() => {
     let result = [...products]
     if (activeCategory) {
-      const dbCategory = CATEGORY_SLUG_MAP[activeCategory] || activeCategory
-      result = result.filter((p) => p.category === dbCategory)
+      const dbCategories = CATEGORY_SLUG_MAP[activeCategory] || [activeCategory]
+      result = result.filter((p) => dbCategories.includes(p.category))
     }
     if (activePrice) {
       result = result.filter((p) => p.price >= activePrice[0] && p.price < activePrice[1])

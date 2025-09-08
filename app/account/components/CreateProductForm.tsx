@@ -17,7 +17,7 @@ import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
-import { CATEGORIES, REGIONS } from '../types/product'
+import { CATEGORIES, REGIONS, VARIETALS } from '../types/product'
 import { BoxForm } from './BoxForm'
 
 interface CreateProductFormProps {
@@ -38,11 +38,75 @@ export function CreateProductForm({ onSubmit, onClose }: CreateProductFormProps)
     featured: false,
     is_visible: true,
     free_shipping: false,
+    is_box: false,
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedWines, setSelectedWines] = useState<Array<{id: string, name: string, quantity: number}>>([])
+  const [availableWines, setAvailableWines] = useState<any[]>([])
+  const [wineSearchTerm, setWineSearchTerm] = useState('')
   const { toast } = useToast()
+  const supabase = createClient()
+
+  // Cargar vinos disponibles cuando es un box
+  useEffect(() => {
+    if (formData.is_box) {
+      loadAvailableWines()
+    }
+  }, [formData.is_box])
+
+  const loadAvailableWines = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name, price, image, varietal, year, region')
+        .eq('is_visible', true)
+        .neq('category', 'Boxes')
+        .order('name')
+
+      if (error) throw error
+      setAvailableWines(data || [])
+    } catch (error) {
+      console.error('Error loading wines:', error)
+    }
+  }
+
+  const addWineToBox = (wine: any) => {
+    const existingWine = selectedWines.find(w => w.id === wine.id)
+    if (existingWine) {
+      setSelectedWines(prev => prev.map(w => 
+        w.id === wine.id ? { ...w, quantity: w.quantity + 1 } : w
+      ))
+    } else {
+      setSelectedWines(prev => [...prev, { id: wine.id, name: wine.name, quantity: 1 }])
+    }
+  }
+
+  const removeWineFromBox = (wineId: string) => {
+    setSelectedWines(prev => prev.filter(w => w.id !== wineId))
+  }
+
+  const updateWineQuantity = (wineId: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeWineFromBox(wineId)
+    } else {
+      setSelectedWines(prev => prev.map(w => 
+        w.id === wineId ? { ...w, quantity } : w
+      ))
+    }
+  }
+
+  // Filtrar vinos basado en el término de búsqueda
+  const filteredWines = availableWines.filter(wine => {
+    const searchLower = wineSearchTerm.toLowerCase()
+    return (
+      wine.name.toLowerCase().includes(searchLower) ||
+      wine.varietal.toLowerCase().includes(searchLower) ||
+      wine.region.toLowerCase().includes(searchLower) ||
+      wine.year.toLowerCase().includes(searchLower)
+    )
+  })
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -135,22 +199,20 @@ export function CreateProductForm({ onSubmit, onClose }: CreateProductFormProps)
       submitData.set('featured', formData.featured ? 'on' : 'off')
       submitData.set('is_visible', formData.is_visible ? 'on' : 'off')
       submitData.set('free_shipping', formData.free_shipping ? 'on' : 'off')
-      
-      // Si la categoría es Boxes, marcar is_box = true
-      if (formData.category === 'Boxes') {
-        submitData.set('is_box', 'true')
-      }
+      submitData.set('is_box', formData.is_box ? 'on' : 'off')
       
       // Si hay una imagen, agregarla
       if (selectedFile) {
         submitData.set('image_file', selectedFile)
       }
+
+      // Si es un box, agregar los vinos seleccionados
+      if (formData.is_box && selectedWines.length > 0) {
+        submitData.set('box_wines', JSON.stringify(selectedWines))
+      }
       
       await onSubmit(submitData)
-      toast({
-        title: "Éxito",
-        description: "Producto creado correctamente",
-      })
+      // Toast de éxito manejado por el componente padre
       onClose()
     } catch (error) {
       toast({
@@ -238,7 +300,11 @@ export function CreateProductForm({ onSubmit, onClose }: CreateProductFormProps)
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="category">Categoría *</Label>
-          <Select value={formData.category} onValueChange={handleSelectChange('category')}>
+          <Select 
+            value={formData.category} 
+            onValueChange={handleSelectChange('category')}
+            disabled={formData.is_box}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -254,7 +320,11 @@ export function CreateProductForm({ onSubmit, onClose }: CreateProductFormProps)
 
         <div className="space-y-2">
           <Label htmlFor="region">Región *</Label>
-          <Select value={formData.region} onValueChange={handleSelectChange('region')}>
+          <Select 
+            value={formData.region} 
+            onValueChange={handleSelectChange('region')}
+            disabled={formData.is_box}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -278,18 +348,28 @@ export function CreateProductForm({ onSubmit, onClose }: CreateProductFormProps)
             value={formData.year}
             onChange={handleInputChange}
             placeholder="2020"
+            disabled={formData.is_box}
           />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="varietal">Varietal</Label>
-          <Input
-            id="varietal"
-            name="varietal"
+          <Select
             value={formData.varietal}
-            onChange={handleInputChange}
-            placeholder="Malbec"
-          />
+            onValueChange={(value) => setFormData(prev => ({ ...prev, varietal: value }))}
+            disabled={formData.is_box}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecciona un varietal" />
+            </SelectTrigger>
+            <SelectContent>
+              {VARIETALS.map((varietal) => (
+                <SelectItem key={varietal} value={varietal}>
+                  {varietal}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -316,29 +396,149 @@ export function CreateProductForm({ onSubmit, onClose }: CreateProductFormProps)
         </div>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Switch
-          checked={formData.featured}
-          onCheckedChange={handleSwitchChange('featured')}
-        />
-        <Label htmlFor="featured">Destacado</Label>
+      {/* Toggles en grilla */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="flex items-center space-x-2">
+          <Switch
+            checked={formData.featured}
+            onCheckedChange={handleSwitchChange('featured')}
+          />
+          <Label htmlFor="featured">Destacado</Label>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Switch
+            checked={formData.is_visible}
+            onCheckedChange={handleSwitchChange('is_visible')}
+          />
+          <Label htmlFor="is_visible">Visible</Label>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Switch
+            checked={formData.free_shipping}
+            onCheckedChange={handleSwitchChange('free_shipping')}
+          />
+          <Label htmlFor="free_shipping">Envío gratis</Label>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Switch
+            checked={formData.is_box}
+            onCheckedChange={handleSwitchChange('is_box')}
+          />
+          <Label htmlFor="is_box">Es un Box</Label>
+        </div>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Switch
-          checked={formData.is_visible}
-          onCheckedChange={handleSwitchChange('is_visible')}
-        />
-        <Label htmlFor="is_visible">Visible</Label>
-      </div>
+      {/* Selector de vinos para boxes */}
+      {formData.is_box && (
+        <div className="space-y-4">
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <h4 className="font-medium text-blue-900 mb-2">Vinos del Box</h4>
+            <p className="text-sm text-blue-700 mb-4">
+              Selecciona los vinos individuales que incluirá este box.
+            </p>
+            
+            {/* Lista de vinos disponibles */}
+            <div className="space-y-2">
+              <Label>Vinos Disponibles</Label>
+              
+              {/* Campo de búsqueda */}
+              <div className="relative">
+                <Input
+                  type="text"
+                  placeholder="Buscar por nombre, varietal, región o año..."
+                  value={wineSearchTerm}
+                  onChange={(e) => setWineSearchTerm(e.target.value)}
+                  className="pr-8"
+                />
+                {wineSearchTerm && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                    onClick={() => setWineSearchTerm('')}
+                  >
+                    ×
+                  </Button>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
+                {filteredWines.length > 0 ? (
+                  filteredWines.map((wine) => (
+                    <div key={wine.id} className="flex items-center justify-between p-2 border rounded">
+                      <div className="flex-1">
+                        <span className="font-medium">{wine.name}</span>
+                        <span className="text-sm text-gray-500 ml-2">
+                          {wine.varietal} - {wine.year} - {wine.region}
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => addWineToBox(wine)}
+                      >
+                        Agregar
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 text-center text-gray-500">
+                    {wineSearchTerm ? 
+                      `No se encontraron vinos que coincidan con "${wineSearchTerm}"` :
+                      'No hay vinos disponibles'
+                    }
+                  </div>
+                )}
+              </div>
+            </div>
 
-      <div className="flex items-center space-x-2">
-        <Switch
-          checked={formData.free_shipping}
-          onCheckedChange={handleSwitchChange('free_shipping')}
-        />
-        <Label htmlFor="free_shipping">Envío gratis</Label>
-      </div>
+            {/* Vinos seleccionados */}
+            {selectedWines.length > 0 && (
+              <div className="mt-4">
+                <Label>Vinos Seleccionados</Label>
+                <div className="space-y-2">
+                  {selectedWines.map((wine) => (
+                    <div key={wine.id} className="flex items-center justify-between p-2 bg-white border rounded">
+                      <span className="font-medium">{wine.name}</span>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => updateWineQuantity(wine.id, wine.quantity - 1)}
+                        >
+                          -
+                        </Button>
+                        <span className="w-8 text-center">{wine.quantity}</span>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => updateWineQuantity(wine.id, wine.quantity + 1)}
+                        >
+                          +
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => removeWineFromBox(wine.id)}
+                        >
+                          Eliminar
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-end space-x-2">
         <Button

@@ -1,0 +1,195 @@
+/* Estilos para Product Gallery con Zoom */
+
+/* Scrollbar personalizado */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Animaciones de zoom */
+@keyframes zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-in.zoom-in {
+  animation: zoom-in 0.3s ease-out;
+}
+
+/* Efectos de hover mejorados */
+.group:hover .group-hover\:opacity-100 {
+  opacity: 1;
+}
+
+.group:hover .group-hover\:scale-105 {
+  transform: scale(1.05);
+}
+
+/* Transiciones suaves */
+.transition-all {
+  transition: all 0.2s ease-in-out;
+}
+
+.transition-transform {
+  transition: transform 0.2s ease-in-out;
+}
+
+/* Efectos de botones */
+.hover\:scale-110:hover {
+  transform: scale(1.1);
+}
+
+.hover\:scale-102:hover {
+  transform: scale(1.02);
+}
+
+/* Backdrop blur para indicadores */
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+}
+
+/* Efectos de sombra mejorados */
+.shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Responsive mejorado */
+@media (max-width: 768px) {
+  .group:hover .group-hover\:opacity-100 {
+    opacity: 1; /* Mostrar siempre en móvil */
+  }
+  
+  .group:hover .group-hover\:scale-105 {
+    transform: none; /* Sin escala en móvil */
+  }
+}
+
+/* Mejoras de accesibilidad */
+button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Efectos de transición para thumbnails */
+.transition-transform.duration-200:hover\:scale-110:hover {
+  transform: scale(1.1);
+}
+
+/* Indicadores de navegación */
+.indicators {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
+}
+
+.indicator {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.indicator.active {
+  background-color: white;
+}
+
+.indicator:not(.active) {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.indicator:not(.active):hover {
+  background-color: rgba(255, 255, 255, 0.75);
+}
+
+/* Contador de imágenes */
+.image-counter {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 0.875rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  backdrop-filter: blur(4px);
+}
+
+/* Botones de navegación */
+.nav-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  padding: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease-in-out;
+  opacity: 0;
+  z-index: 20;
+}
+
+.nav-button:hover {
+  background-color: white;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.group:hover .nav-button {
+  opacity: 1;
+}
+
+.nav-button.prev {
+  left: 1rem;
+}
+
+.nav-button.next {
+  right: 1rem;
+}
+
+/* Thumbnails */
+.thumbnail {
+  flex-shrink: 0;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 2px solid #e5e7eb;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.thumbnail:hover {
+  border-color: #9ca3af;
+  transform: scale(1.02);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.thumbnail.active {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  transform: scale(1.05);
+}
+
+@media (min-width: 1024px) {
+  .thumbnail {
+    width: 5rem;
+    height: 5rem;
+  }
+}

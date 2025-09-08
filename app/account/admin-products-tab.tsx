@@ -60,7 +60,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { Loader2 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
-import { CATEGORIES, REGIONS } from './types/product'
+import { CATEGORIES, REGIONS, VARIETALS } from './types/product'
 import { BoxForm } from './components/BoxForm'
 
 interface AdminProductsTabProps {
@@ -93,10 +93,14 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
     featured: product.featured || false,
     is_visible: product.is_visible || false,
     free_shipping: (product as { free_shipping?: boolean }).free_shipping || false,
+    is_box: (product as { is_box?: boolean }).is_box || false,
   });
   const [imagePreview, setImagePreview] = useState<string | null>(product.image || null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedWines, setSelectedWines] = useState<Array<{id: string, name: string, quantity: number}>>([])
+  const [availableWines, setAvailableWines] = useState<any[]>([])
+  const [wineSearchTerm, setWineSearchTerm] = useState('')
   const { toast } = useToast()
   const supabase = createClient()
 
@@ -114,11 +118,35 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
       featured: product.featured || false,
       is_visible: product.is_visible || false,
       free_shipping: (product as { free_shipping?: boolean }).free_shipping || false,
+      is_box: (product as { is_box?: boolean }).is_box || false,
     });
     setImagePreview(product.image || null)
     setSelectedFile(null)
     setIsSubmitting(false)
   }, [product])
+
+  // Cargar vinos disponibles cuando es un box
+  useEffect(() => {
+    if (formData.is_box) {
+      loadAvailableWines()
+    }
+  }, [formData.is_box])
+
+  const loadAvailableWines = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name, price, image, varietal, year, region')
+        .eq('is_visible', true)
+        .neq('category', 'Boxes')
+        .order('name')
+
+      if (error) throw error
+      setAvailableWines(data || [])
+    } catch (error) {
+      console.error('Error loading wines:', error)
+    }
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -134,6 +162,42 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
       [name]: checked
     }));
   };
+
+  const addWineToBox = (wine: any) => {
+    const existingWine = selectedWines.find(w => w.id === wine.id)
+    if (existingWine) {
+      setSelectedWines(prev => prev.map(w => 
+        w.id === wine.id ? { ...w, quantity: w.quantity + 1 } : w
+      ))
+    } else {
+      setSelectedWines(prev => [...prev, { id: wine.id, name: wine.name, quantity: 1 }])
+    }
+  }
+
+  const removeWineFromBox = (wineId: string) => {
+    setSelectedWines(prev => prev.filter(w => w.id !== wineId))
+  }
+
+  const updateWineQuantity = (wineId: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeWineFromBox(wineId)
+    } else {
+      setSelectedWines(prev => prev.map(w => 
+        w.id === wineId ? { ...w, quantity } : w
+      ))
+    }
+  }
+
+  // Filtrar vinos basado en el término de búsqueda
+  const filteredWines = availableWines.filter(wine => {
+    const searchLower = wineSearchTerm.toLowerCase()
+    return (
+      wine.name.toLowerCase().includes(searchLower) ||
+      wine.varietal.toLowerCase().includes(searchLower) ||
+      wine.region.toLowerCase().includes(searchLower) ||
+      wine.year.toLowerCase().includes(searchLower)
+    )
+  })
 
   const handleSelectChange = (name: string) => (value: string) => {
     setFormData(prev => ({
@@ -230,6 +294,7 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
       // Booleans
       submitData.set('featured', formData.featured ? 'on' : 'off')
       submitData.set('is_visible', formData.is_visible ? 'on' : 'off')
+      submitData.set('is_box', formData.is_box ? 'on' : 'off')
 
       // Si es edición, agregar el ID del producto
       if (product.id) {
@@ -241,12 +306,13 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
         const imageUrl = await uploadImage(selectedFile)
         submitData.set('image', imageUrl)
       }
+
+      // Si es un box, agregar los vinos seleccionados
+      if (formData.is_box && selectedWines.length > 0) {
+        submitData.set('box_wines', JSON.stringify(selectedWines))
+      }
       
       await onSubmit(submitData)
-      toast({
-        title: "Éxito",
-        description: product.id ? "Producto actualizado correctamente" : "Producto creado correctamente",
-      })
       onClose()
     } catch (error) {
       toast({
@@ -311,7 +377,7 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
   if (product.category === 'Boxes') {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Box</DialogTitle>
           </DialogHeader>
@@ -327,7 +393,7 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{product.id ? 'Editar Producto' : 'Crear Nuevo Producto'}</DialogTitle>
         </DialogHeader>
@@ -388,6 +454,7 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
                 name="category"
                 value={formData.category}
                 onValueChange={handleSelectChange('category')}
+                disabled={formData.is_box}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar categoría" />
@@ -409,6 +476,7 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
                 name="region"
                 value={formData.region}
                 onValueChange={handleSelectChange('region')}
+                disabled={formData.is_box}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar región" />
@@ -426,7 +494,7 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
           </div>
 
           {/* Solo mostrar campos año y varietal si NO es un box */}
-          {formData.category !== 'Boxes' && (
+          {!formData.is_box && formData.category !== 'Boxes' && (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="year">Año *</Label>
@@ -442,25 +510,132 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
 
               <div className="space-y-2">
                 <Label htmlFor="varietal">Varietal *</Label>
-                <Input
-                  id="varietal"
-                  name="varietal"
+                <Select
                   value={formData.varietal}
-                  onChange={handleInputChange}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, varietal: value }))}
                   required={formData.category !== 'Boxes'}
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un varietal" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VARIETALS.map((varietal) => (
+                      <SelectItem key={varietal} value={varietal}>
+                        {varietal}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}
           
-          {/* Información especial para boxes */}
-          {formData.category === 'Boxes' && (
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-medium text-blue-900 mb-2">Producto Box</h4>
-              <p className="text-sm text-blue-700">
-                Los boxes contienen múltiples vinos con diferentes años y varietales. 
-                Los campos específicos se gestionan automáticamente.
-              </p>
+          {/* Selector de vinos para boxes */}
+          {formData.is_box && (
+            <div className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-900 mb-2">Vinos del Box</h4>
+                <p className="text-sm text-blue-700 mb-4">
+                  Selecciona los vinos individuales que incluirá este box.
+                </p>
+                
+                {/* Lista de vinos disponibles */}
+                <div className="space-y-2">
+                  <Label>Vinos Disponibles</Label>
+                  
+                  {/* Campo de búsqueda */}
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      placeholder="Buscar por nombre, varietal, región o año..."
+                      value={wineSearchTerm}
+                      onChange={(e) => setWineSearchTerm(e.target.value)}
+                      className="pr-8"
+                    />
+                    {wineSearchTerm && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                        onClick={() => setWineSearchTerm('')}
+                      >
+                        ×
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
+                    {filteredWines.length > 0 ? (
+                      filteredWines.map((wine) => (
+                        <div key={wine.id} className="flex items-center justify-between p-2 border rounded">
+                          <div className="flex-1">
+                            <span className="font-medium">{wine.name}</span>
+                            <span className="text-sm text-gray-500 ml-2">
+                              {wine.varietal} - {wine.year} - {wine.region}
+                            </span>
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => addWineToBox(wine)}
+                          >
+                            Agregar
+                          </Button>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-gray-500">
+                        {wineSearchTerm ? 
+                          `No se encontraron vinos que coincidan con "${wineSearchTerm}"` :
+                          'No hay vinos disponibles'
+                        }
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Vinos seleccionados */}
+                {selectedWines.length > 0 && (
+                  <div className="mt-4">
+                    <Label>Vinos Seleccionados</Label>
+                    <div className="space-y-2">
+                      {selectedWines.map((wine) => (
+                        <div key={wine.id} className="flex items-center justify-between p-2 bg-white border rounded">
+                          <span className="font-medium">{wine.name}</span>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateWineQuantity(wine.id, wine.quantity - 1)}
+                            >
+                              -
+                            </Button>
+                            <span className="w-8 text-center">{wine.quantity}</span>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateWineQuantity(wine.id, wine.quantity + 1)}
+                            >
+                              +
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => removeWineFromBox(wine.id)}
+                            >
+                              Eliminar
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -479,34 +654,47 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="featured"
-              name="featured"
-              checked={formData.featured}
-              onCheckedChange={handleSwitchChange('featured')}
-            />
-            <Label htmlFor="featured">Destacado</Label>
-          </div>
+          {/* Toggles en grilla */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="featured"
+                name="featured"
+                checked={formData.featured}
+                onCheckedChange={handleSwitchChange('featured')}
+              />
+              <Label htmlFor="featured">Destacado</Label>
+            </div>
 
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="is_visible"
-              name="is_visible"
-              checked={formData.is_visible}
-              onCheckedChange={handleSwitchChange('is_visible')}
-            />
-            <Label htmlFor="is_visible">Visible</Label>
-          </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="is_visible"
+                name="is_visible"
+                checked={formData.is_visible}
+                onCheckedChange={handleSwitchChange('is_visible')}
+              />
+              <Label htmlFor="is_visible">Visible</Label>
+            </div>
 
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="free_shipping"
-              name="free_shipping"
-              checked={!!(formData as any).free_shipping}
-              onCheckedChange={handleSwitchChange('free_shipping')}
-            />
-            <Label htmlFor="free_shipping">Envío gratis</Label>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="free_shipping"
+                name="free_shipping"
+                checked={!!(formData as any).free_shipping}
+                onCheckedChange={handleSwitchChange('free_shipping')}
+              />
+              <Label htmlFor="free_shipping">Envío gratis</Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="is_box"
+                name="is_box"
+                checked={formData.is_box}
+                onCheckedChange={handleSwitchChange('is_box')}
+              />
+              <Label htmlFor="is_box">Es un Box</Label>
+            </div>
           </div>
 
           <div className="flex justify-end space-x-2">
@@ -769,6 +957,11 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
     getPaginationRowModel: getPaginationRowModel(),
     enableSorting: true,
     enableRowSelection: true,
+    initialState: {
+      pagination: {
+        pageSize: 20, // Mostrar 20 productos por página
+      },
+    },
   })
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1027,6 +1220,43 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
         </Table>
       </div>
 
+      {/* Controles de paginación */}
+      <div className="flex items-center justify-between px-2 py-4">
+        <div className="flex items-center space-x-2">
+          <p className="text-sm font-medium">
+            Mostrando {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} a{' '}
+            {Math.min(
+              (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+              table.getFilteredRowModel().rows.length
+            )}{' '}
+            de {table.getFilteredRowModel().rows.length} productos
+          </p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            Anterior
+          </Button>
+          <div className="flex items-center space-x-1">
+            <span className="text-sm font-medium">
+              Página {table.getState().pagination.pageIndex + 1} de {table.getPageCount()}
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Siguiente
+          </Button>
+        </div>
+      </div>
+
       {selectedProduct ? (
         <EditProductDialog
           product={selectedProduct}
@@ -1046,7 +1276,7 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
           setSelectedImage(null)
           setImagePreview(null)
         }}>
-          <DialogContent>
+          <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Crear Nuevo Producto</DialogTitle>
             </DialogHeader>

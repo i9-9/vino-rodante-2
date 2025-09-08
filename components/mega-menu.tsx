@@ -101,22 +101,22 @@ export default function MegaMenu() {
     if (isErrorProducts || !products || products.length === 0) return false
     
     const slug = type.href.split('/').pop() || ''
-    const dbCategory = CATEGORY_SLUG_MAP[slug] || slug
+    const dbCategories = CATEGORY_SLUG_MAP[slug] || [slug]
     
     // Verificar si hay productos de esta categoría
     return products.some(product => {
       if (!product.category) return false
       
-      // Comparación exacta con categoría mapeada
-      if (product.category === dbCategory) return true
-      
-      // Comparación con slug original
-      if (product.category === slug) return true
-      
-      // Comparación case-insensitive
-      if (product.category.toLowerCase() === dbCategory.toLowerCase()) return true
-      
-      return false
+      // Verificar si la categoría del producto coincide con alguna de las categorías mapeadas
+      return dbCategories.some(dbCategory => {
+        // Comparación exacta
+        if (product.category === dbCategory) return true
+        
+        // Comparación case-insensitive
+        if (product.category.toLowerCase() === dbCategory.toLowerCase()) return true
+        
+        return false
+      })
     })
   })
 

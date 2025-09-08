@@ -79,7 +79,6 @@ export default function AdminProductsTabLazy({ t }: AdminProductsTabLazyProps) {
           .from('products')
           .select('*', { count: 'exact' })
           .order('created_at', { ascending: false })
-          .limit(100) // Límite inicial para performance
 
         if (!isMounted) return
 

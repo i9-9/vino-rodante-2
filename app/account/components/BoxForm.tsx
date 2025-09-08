@@ -215,10 +215,7 @@ export function BoxForm({ onSubmit, onClose }: BoxFormProps) {
       }
       
       await onSubmit(submitData)
-      toast({
-        title: "Éxito",
-        description: "Box creado correctamente",
-      })
+      // Toast de éxito manejado por el componente padre
       onClose()
     } catch (error) {
       toast({

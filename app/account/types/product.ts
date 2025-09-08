@@ -34,6 +34,34 @@ export const REGIONS = [
   'Múltiples' // Para boxes
 ] as const
 
+// Lista completa de varietales para formularios CRUD
+export const VARIETALS = [
+  'Malbec',
+  'Cabernet Sauvignon',
+  'Merlot',
+  'Syrah',
+  'Bonarda',
+  'Tempranillo',
+  'Pinot Noir',
+  'Cabernet Franc',
+  'Sangiovese',
+  'Chardonnay',
+  'Sauvignon Blanc',
+  'Torrontés',
+  'Riesling',
+  'Pinot Grigio',
+  'Viognier',
+  'Semillón',
+  'Chenin Blanc',
+  'Gewürztraminer',
+  'Moscato',
+  'Prosecco',
+  'Champagne',
+  'Cava',
+  'Blend',
+  'Múltiples' // Para boxes
+] as const
+
 // Schema base para productos
 const BaseProductSchema = z.object({
   id: z.string().uuid().optional(),
@@ -48,11 +76,14 @@ const BaseProductSchema = z.object({
     errorMap: () => ({ message: 'Región inválida' })
   }),
   year: z.string().optional().default(''),
-  varietal: z.string().optional().default(''),
+  varietal: z.enum(VARIETALS, {
+    errorMap: () => ({ message: 'Varietal inválido' })
+  }),
   image: z.string().optional(),
   featured: z.boolean().default(false),
   is_visible: z.boolean().default(true),
   free_shipping: z.boolean().default(false),
+  is_box: z.boolean().default(false),
   slug: z.string().optional()
 })
 

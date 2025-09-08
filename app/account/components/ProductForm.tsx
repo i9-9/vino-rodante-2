@@ -85,7 +85,7 @@ export function ProductForm({ product, onSubmit, isSubmitting = false }: Product
 
     try {
       await onSubmit(data, imageFile)
-      toast.success('Producto guardado exitosamente')
+      // Toast de éxito manejado por el componente padre
     } catch (error) {
       toast.error('Error al guardar el producto')
     }
@@ -98,7 +98,7 @@ export function ProductForm({ product, onSubmit, isSubmitting = false }: Product
       await onSubmit(pendingData.data, pendingData.imageFile)
       setNeedsConfirmation(false)
       setPendingData(null)
-      toast.success('Producto guardado exitosamente')
+      // Toast de éxito manejado por el componente padre
     } catch (error) {
       toast.error('Error al guardar el producto')
     }

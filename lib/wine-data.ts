@@ -160,27 +160,27 @@ export function prettyLabel(slug: string) {
 }
 
 // Mapping de slug (URL) a valor real en la base de datos
-export const CATEGORY_SLUG_MAP: Record<string, string> = {
-  // Mapeo URL → DB: Los productos en DB están en español
-  red: "tinto",           // /collections/red → busca productos con category="tinto"
-  white: "blanco",        // /collections/white → busca productos con category="blanco"
-  rose: "rosado",         // /collections/rose → busca productos con category="rosado"
-  sparkling: "espumante", // /collections/sparkling → busca productos con category="espumante"
-  naranjo: "naranjo",     // /collections/naranjo → busca productos con category="naranjo"
-  dessert: "dulce",       // /collections/dessert → busca productos con category="dulce"
-  fortified: "fortified",
-  boxes: "Boxes",         // /collections/boxes → busca productos con category="Boxes"
-  "other-drinks": "Otras Bebidas", // /collections/other-drinks → busca productos con category="Otras Bebidas"
-  cider: "sidra",         // /collections/cider → busca productos con category="sidra"
-  gin: "gin",
+export const CATEGORY_SLUG_MAP: Record<string, string[]> = {
+  // Mapeo URL → DB: Los productos en DB pueden estar en mayúsculas o minúsculas
+  red: ["Tinto", "tinto"],           // /collections/red → busca productos con category="Tinto" o "tinto"
+  white: ["Blanco", "blanco"],       // /collections/white → busca productos con category="Blanco" o "blanco"
+  rose: ["Rosado", "rosado"],        // /collections/rose → busca productos con category="Rosado" o "rosado"
+  sparkling: ["Espumante", "espumante"], // /collections/sparkling → busca productos con category="Espumante" o "espumante"
+  naranjo: ["Naranjo", "naranjo"],   // /collections/naranjo → busca productos con category="Naranjo" o "naranjo"
+  dessert: ["Dulce", "dulce"],       // /collections/dessert → busca productos con category="Dulce" o "dulce"
+  fortified: ["fortified"],
+  boxes: ["Boxes", "boxes"],         // /collections/boxes → busca productos con category="Boxes" o "boxes"
+  "other-drinks": ["Otras Bebidas", "otras bebidas"], // /collections/other-drinks → busca productos con category="Otras Bebidas" o "otras bebidas"
+  cider: ["Sidra", "sidra"],         // /collections/cider → busca productos con category="Sidra" o "sidra"
+  gin: ["Gin", "gin"],
   // Fallbacks por si vienen directamente en español
-  tinto: "tinto",
-  blanco: "blanco",
-  rosado: "rosado", 
-  espumante: "espumante",
-  dulce: "dulce",
-  sidra: "sidra",
-  "otras-bebidas": "Otras Bebidas",
+  tinto: ["Tinto", "tinto"],
+  blanco: ["Blanco", "blanco"],
+  rosado: ["Rosado", "rosado"], 
+  espumante: ["Espumante", "espumante"],
+  dulce: ["Dulce", "dulce"],
+  sidra: ["Sidra", "sidra"],
+  "otras-bebidas": ["Otras Bebidas", "otras bebidas"],
 }
 
 // Mapping de regiones: slug → nombre completo (como se almacena en DB)

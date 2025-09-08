@@ -197,13 +197,11 @@ export async function getProductsByCategory(categorySlug: string): Promise<ApiRe
     // Intentar primero con el cliente autenticado
     const supabase = createClient()
     
-    // Mapeo para buscar tanto en español como en inglés
-    const category = CATEGORY_SLUG_MAP[categorySlug] || categorySlug // ej: "red" → "tinto"
+    // Mapeo para buscar tanto en español como en inglés, con soporte para mayúsculas y minúsculas
+    const categories = CATEGORY_SLUG_MAP[categorySlug] || [categorySlug] // ej: "red" → ["Tinto", "tinto"]
     
-    // Para boxes, buscar tanto "Boxes" como "boxes"
-    const searchCategories = categorySlug === 'boxes' 
-      ? ['Boxes', 'boxes'] 
-      : [category, categorySlug]
+    // Usar las categorías del mapeo o fallback al slug original
+    const searchCategories = categories
     
     const { data, error } = await supabase
       .from('products')

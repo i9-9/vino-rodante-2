@@ -7,6 +7,7 @@ import { getTranslations } from "@/lib/get-translations"
 import AddToCartButton from "@/components/add-to-cart-button"
 import type { Product } from "@/lib/types"
 import ProductCard from '@/components/product-card'
+import { SimpleProductZoom } from '@/components/simple-product-zoom'
 
 export const dynamic = "force-dynamic";
 
@@ -110,16 +111,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   return (
     <div className="container px-4 py-12">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-        <div className="relative aspect-square overflow-hidden rounded-lg bg-gray-100">
-          <Image
-            src={product.image || "/placeholder.svg"}
-            alt={product.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, 50vw"
-            priority
-          />
-        </div>
+        <SimpleProductZoom
+          src={product.image || "/placeholder.svg"}
+          alt={product.name}
+        />
 
         <div className="flex flex-col">
           <h1 className="text-3xl font-bold text-[#5B0E2D] mb-2">{product.name}</h1>

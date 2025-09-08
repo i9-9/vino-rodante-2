@@ -111,6 +111,7 @@ export async function updateProduct(formData: FormData): Promise<ActionResponse>
     const featured = formData.get('featured') === 'on'
     const is_visible = formData.get('is_visible') === 'on'
     const free_shipping = formData.get('free_shipping') === 'on'
+    const is_box = formData.get('is_box') === 'on'
 
     // Si category o region son 'none', usar string vacío
     const finalCategory = category === 'none' ? '' : mapCategoryToDB(category)
@@ -134,6 +135,7 @@ export async function updateProduct(formData: FormData): Promise<ActionResponse>
       featured,
       is_visible,
       free_shipping,
+      is_box,
       slug: name.toLowerCase().replace(/\s+/g, '-')
     }
 
@@ -220,6 +222,7 @@ export async function createProduct(formData: FormData): Promise<ActionResponse>
       featured: formData.get('featured') === 'on',
       is_visible: formData.get('is_visible') === 'on',
       free_shipping: formData.get('free_shipping') === 'on',
+      is_box: formData.get('is_box') === 'on',
       slug: (formData.get('name') as string)?.toLowerCase().replace(/\s+/g, '-') || '',
       image: '/placeholder.svg' // Imagen por defecto
     }
