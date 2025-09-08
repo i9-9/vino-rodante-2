@@ -2,7 +2,6 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { z } from 'zod'
 import type { 
   SubscriptionPlan, 
   UserSubscription, 
@@ -215,7 +214,7 @@ export async function uploadPlanImage(file: File) {
     const filePath = fileName
 
     // Subir el archivo
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('subscription-plans')
       .upload(filePath, file, {
         cacheControl: '3600',
@@ -319,7 +318,7 @@ function isValidUrl(urlString: string): boolean {
   try {
     new URL(urlString)
     return true
-  } catch (err) {
+  } catch {
     return false
   }
 }
@@ -651,7 +650,7 @@ export async function changeSubscriptionPlan(
   newFrequency?: SubscriptionFrequency
 ) {
   try {
-    const { isAdmin } = await verifySubscriptionAccess(subscriptionId)
+    await verifySubscriptionAccess(subscriptionId)
     const supabase = await createClient()
 
     // Verify new plan exists and is active
@@ -883,22 +882,6 @@ export async function updateSubscriptionFrequency(subscriptionId: string, freque
     if (subError) throw subError
     if (!subscription) throw new Error('Suscripción no encontrada')
 
-    // Determinar el nuevo precio basado en la frecuencia
-    let newPrice = 0
-    switch (frequency) {
-      case 'weekly':
-        newPrice = subscription.subscription_plan.price_weekly
-        break
-      case 'biweekly':
-        newPrice = subscription.subscription_plan.price_biweekly
-        break
-      case 'monthly':
-        newPrice = subscription.subscription_plan.price_monthly
-        break
-      case 'quarterly':
-        newPrice = subscription.subscription_plan.price_quarterly
-        break
-    }
 
     // Calcular la próxima fecha de entrega basada en la nueva frecuencia
     const { data: nextDate } = await supabase

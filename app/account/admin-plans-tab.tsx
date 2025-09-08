@@ -32,7 +32,7 @@ const formatPrice = (priceInPesos: number | null): string => {
   }).format(priceInPesos)
 }
 
-export function AdminPlansTab({ plans: initialPlans, users, t }: AdminPlansTabProps) {
+export function AdminPlansTab({ plans: initialPlans, users }: AdminPlansTabProps) {
   const [plans, setPlans] = useState(initialPlans)
   const [showModal, setShowModal] = useState(false)
   const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null)

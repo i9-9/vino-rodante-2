@@ -14,7 +14,7 @@ export interface CreatePreferenceOptions {
   }
   orderId: string
   shipping?: number
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   expires?: boolean
   expirationDateFrom?: string
   expirationDateTo?: string

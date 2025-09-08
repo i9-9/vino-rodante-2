@@ -25,6 +25,6 @@ export type AuthContextType = {
   isInitialized: boolean
   initError: string | null
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
-  signUp: (email: string, password: string, name: string) => Promise<{ data: any, error: AuthError | null }>
+  signUp: (email: string, password: string, name: string) => Promise<{ data: unknown, error: AuthError | null }>
   signOut: () => Promise<void>
 } 

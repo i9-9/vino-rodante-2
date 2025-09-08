@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { getProducts, getProductsByRegion } from '@/lib/products-client'
 import type { Product } from '@/lib/types'
 
@@ -10,7 +10,7 @@ export function useProducts() {
   
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<any>(null)
+  const [error, setError] = useState<unknown>(null)
 
   useEffect(() => {
     console.log('🔍 [useProducts] useEffect running')
@@ -122,7 +122,7 @@ export function useProducts() {
 export function useProductsByRegion(region: string) {
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<any>(null)
+  const [error, setError] = useState<unknown>(null)
 
   useEffect(() => {
     if (!region) {
@@ -188,7 +188,7 @@ export function useProductsByRegion(region: string) {
 export function useFeaturedProducts() {
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<any>(null)
+  const [error, setError] = useState<unknown>(null)
 
   useEffect(() => {
     const fetchFeaturedProducts = async () => {

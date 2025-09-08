@@ -6,7 +6,7 @@ interface CacheEntry<T> {
 }
 
 class SupabaseCache {
-  private cache: Map<string, CacheEntry<any>>
+  private cache: Map<string, CacheEntry<unknown>>
   private defaultTTL: number
 
   constructor(defaultTTL = 5 * 60 * 1000) { // 5 minutos por defecto

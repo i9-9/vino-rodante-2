@@ -2,8 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { Mail, Phone, MapPin, Instagram, Twitter } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Mail, Phone, MapPin, Instagram } from "lucide-react"
 import { NewsletterForm } from "@/components/ui/newsletter-form"
 import { useTranslations } from "@/lib/providers/translations-provider"
 

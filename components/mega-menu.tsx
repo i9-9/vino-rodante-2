@@ -5,14 +5,12 @@ import { useTranslations } from "@/lib/providers/translations-provider"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { WINE_TYPES, WINE_REGIONS, WINE_VARIETALS, getAllWineTypes, getAllWineRegions, getAllWineVarietals, prettyLabel, CATEGORY_SLUG_MAP, REGION_SLUG_MAP } from "@/lib/wine-data"
-import type { WineType, WineVarietal, WineRegion, WineTypeData, WineRegionData, WineVarietalData } from "@/lib/wine-data"
+import { WINE_VARIETALS, getAllWineTypes, getAllWineRegions, getAllWineVarietals, prettyLabel, CATEGORY_SLUG_MAP, REGION_SLUG_MAP } from "@/lib/wine-data"
 import { getProductsForMenu } from '@/lib/products-client'
 import type { Product } from '@/lib/types'
-import { cn } from "@/lib/utils"
 import Image from "next/image"
 
-const RED_VARIETALS: WineVarietal[] = [
+const RED_VARIETALS = [
   WINE_VARIETALS.MALBEC,
   WINE_VARIETALS.CABERNET_SAUVIGNON,
   WINE_VARIETALS.BONARDA,
@@ -25,7 +23,7 @@ const RED_VARIETALS: WineVarietal[] = [
   WINE_VARIETALS.PINOT_NOIR,
 ]
 
-const WHITE_VARIETALS: WineVarietal[] = [
+const WHITE_VARIETALS = [
   WINE_VARIETALS.CHARDONNAY,
   WINE_VARIETALS.SAUVIGNON_BLANC,
   WINE_VARIETALS.PEDRO_GIMENEZ,
@@ -38,7 +36,7 @@ const WHITE_VARIETALS: WineVarietal[] = [
   WINE_VARIETALS.TORRONTES_RIOJANO,
 ]
 
-const ORANGE_VARIETALS: WineVarietal[] = [
+const ORANGE_VARIETALS = [
   WINE_VARIETALS.ORANGE_WINE,
 ]
 

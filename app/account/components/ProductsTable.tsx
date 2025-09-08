@@ -88,7 +88,7 @@ export function ProductsTable({ products, onEdit, onDelete, isLoading = false }:
       setSelectedProducts(new Set())
       setShowDeleteConfirm(false)
       toast.success('Productos eliminados exitosamente')
-    } catch (error) {
+    } catch {
       toast.error('Error al eliminar los productos')
     }
   }

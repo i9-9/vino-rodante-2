@@ -304,7 +304,7 @@ export default function AdminOrdersTab({ orders, t }: AdminOrdersTabProps) {
   )
 }
 
-function EmptyOrdersState({ searchTerm, selectedStatus, t }: { searchTerm: string, selectedStatus: OrderStatus | null, t: any }) {
+function EmptyOrdersState({ searchTerm, selectedStatus }: { searchTerm: string, selectedStatus: OrderStatus | null }) {
   return (
     <Card>
       <CardContent className="py-6">

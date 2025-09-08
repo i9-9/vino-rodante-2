@@ -25,8 +25,6 @@ export function ProductImageZoom({
     if (!containerRef.current) return
 
     const rect = containerRef.current.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
 
     setMousePosition({ 
       x: e.clientX, 

@@ -11,7 +11,6 @@ import { calculateShipping } from "./shipping-utils"
 
 // Get the authenticated user from the server
 async function getUser() {
-  const cookieStore = await nextCookies()
   const supabase = await createClient()
   const {
     data: { session },

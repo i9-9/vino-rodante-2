@@ -9,7 +9,6 @@ interface AdminSubscriptionsTabLazyProps {
   t: unknown
 }
 
-type AdminSubscriptionsTabProps = AdminSubscriptionsTabLazyProps
 
 export default function AdminSubscriptionsTabLazy({ t }: AdminSubscriptionsTabLazyProps) {
   const [loading, setLoading] = useState(true)

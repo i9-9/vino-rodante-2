@@ -22,7 +22,7 @@ export default function NewArrivalsPage() {
           getBoxesProducts()
         ])
         
-        let allProducts: Product[] = []
+        const allProducts: Product[] = []
         
         // Agregar productos normales
         if (productsResult.data) {

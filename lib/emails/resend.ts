@@ -21,7 +21,7 @@ export async function sendEmail({ to, subject, html, text, from }: SendEmailPara
   const fromAddress = from || process.env.EMAIL_FROM || 'Vino Rodante <info@vinorodante.com>'
 
   // Use the raw API to avoid React requirement
-  return resend.emails.send({ from: fromAddress, to, subject, html, text } as any)
+  return resend.emails.send({ from: fromAddress, to, subject, html, text })
 }
 
 export function renderCustomerOrderEmail(params: {
@@ -263,7 +263,7 @@ export function renderSubscriptionEmail(params: {
   subscriptionId: string
   isFirstPayment?: boolean
 }) {
-  const { customerName, customerEmail, planName, frequency, amount, nextDeliveryDate, subscriptionId, isFirstPayment = false } = params
+  const { customerName, planName, frequency, amount, nextDeliveryDate, subscriptionId, isFirstPayment = false } = params
   const currency = (n: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n)
   
   const title = isFirstPayment ? '¡Bienvenido a tu suscripción!' : '¡Tu suscripción se ha renovado!'

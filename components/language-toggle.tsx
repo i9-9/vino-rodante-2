@@ -13,7 +13,7 @@ const languageNames: Record<Locale, { native: string }> = {
 const LanguageToggle: React.FC = () => {
   const locale = 'en' as Locale;
 
-  const handleLocaleChange = (newLocale: Locale) => {
+  const handleLocaleChange = () => {
     // Implement the logic to change the locale
   };
 

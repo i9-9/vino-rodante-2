@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { cookies } from 'next/headers';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import type { 
-  SubscriptionFrequency, 
-  MercadoPagoPreApprovalPayload 
+  SubscriptionFrequency
 } from '@/types/subscription';
 import { 
   calculateSubscriptionPrice,

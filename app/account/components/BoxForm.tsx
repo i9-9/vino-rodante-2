@@ -17,7 +17,6 @@ import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, Plus, X } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
-import { BoxProduct, CreateBoxSchema } from '../types/box'
 
 interface BoxFormProps {
   onSubmit: (formData: FormData) => Promise<void>

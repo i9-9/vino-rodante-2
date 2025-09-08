@@ -22,7 +22,7 @@ export async function getProducts(): Promise<ApiResponse<Product[]>> {
     const maxRetries = 2
     const baseDelay = 500 // ms
     
-    let lastError: any = null
+    let lastError: unknown = null
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -421,7 +421,7 @@ export async function getProductsForMenu(): Promise<ApiResponse<Product[]>> {
     const maxRetries = 2
     const baseDelay = 500 // ms
     
-    let lastError: any = null
+    let lastError: unknown = null
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {

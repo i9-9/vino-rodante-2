@@ -4,11 +4,11 @@ import { useState } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Pause, Play, X, RefreshCw, Calendar } from 'lucide-react'
+import { Pause, Play, X, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { formatCurrency, formatPrice } from '@/lib/utils'
+import { formatPrice } from '@/lib/utils'
 import { SubscriptionActionModal } from '@/components/ui/subscription-action-modal'
 import type { UserSubscription, SubscriptionPlan } from '../types'
 import type { Translations } from '@/lib/i18n/types'
@@ -19,7 +19,6 @@ import {
   changeSubscriptionPlan,
   changeSubscriptionFrequency
 } from '../actions/subscriptions'
-import { formatFrequency } from '@/utils/subscription-helpers'
 
 interface SubscriptionCardProps {
   subscription: UserSubscription
@@ -27,7 +26,7 @@ interface SubscriptionCardProps {
   t: Translations
 }
 
-function SubscriptionCard({ subscription, onStatusChange, t }: SubscriptionCardProps) {
+function SubscriptionCard({ subscription, onStatusChange }: SubscriptionCardProps) {
   const [isLoading, setIsLoading] = useState(false)
   
   const statusColors = {
@@ -52,7 +51,7 @@ function SubscriptionCard({ subscription, onStatusChange, t }: SubscriptionCardP
         ? t.account.subscriptionPaused 
         : t.account.subscriptionCancelled
       )
-    } catch (error) {
+    } catch {
       toast.error(t.errors.updateError)
     } finally {
       setIsLoading(false)
@@ -133,7 +132,7 @@ interface AvailablePlanCardProps {
   t: Translations
 }
 
-function AvailablePlanCard({ plan, onSubscribe, t }: AvailablePlanCardProps) {
+function AvailablePlanCard({ plan, onSubscribe }: AvailablePlanCardProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [selectedFrequency, setSelectedFrequency] = useState<'weekly' | 'biweekly' | 'monthly'>('monthly')
 
@@ -142,7 +141,7 @@ function AvailablePlanCard({ plan, onSubscribe, t }: AvailablePlanCardProps) {
     try {
       await onSubscribe(plan.id, selectedFrequency)
       toast.success(t.account.subscriptionCreated)
-    } catch (error) {
+    } catch {
       toast.error(t.errors.createError)
     } finally {
       setIsLoading(false)

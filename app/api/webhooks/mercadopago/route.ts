@@ -4,7 +4,7 @@ import { getPaymentStatus } from "@/lib/mercadopago"
 import { sendEmail, renderCustomerOrderEmail, renderAdminOrderEmail } from "@/lib/emails/resend"
 
 // Validate webhook signature (optional but recommended for production)
-function validateWebhookSignature(request: NextRequest, body: string): boolean {
+function validateWebhookSignature(): boolean {
   // In production, you should validate the webhook signature
   // For now, we'll skip this for development
   return true
@@ -106,32 +106,25 @@ export async function POST(request: NextRequest) {
     // Update order status based on payment status
     const orderId = paymentData.external_reference
     let orderStatus = "pending"
-    let orderNotes = ""
 
     switch (paymentData.status) {
       case "approved":
         orderStatus = "paid"
-        orderNotes = `Payment approved. Payment ID: ${paymentId}`
         break
       case "rejected":
         orderStatus = "cancelled"
-        orderNotes = `Payment rejected. Payment ID: ${paymentId}`
         break
       case "refunded":
         orderStatus = "refunded"
-        orderNotes = `Payment refunded. Payment ID: ${paymentId}`
         break
       case "in_process":
         orderStatus = "pending"
-        orderNotes = `Payment in process. Payment ID: ${paymentId}`
         break
       case "pending":
         orderStatus = "pending"
-        orderNotes = `Payment pending. Payment ID: ${paymentId}`
         break
       default:
         orderStatus = "pending"
-        orderNotes = `Payment status: ${paymentData.status}. Payment ID: ${paymentId}`
     }
 
     console.log("Updating order status:", {

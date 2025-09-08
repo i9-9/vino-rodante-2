@@ -322,7 +322,7 @@ export async function getBoxWithProducts(boxId: string): Promise<Box | null> {
       total_wines: boxProducts.length
     } as Box
 
-  } catch (error) {
+  } catch {
     return null
   }
 }
@@ -341,7 +341,7 @@ export async function getAllBoxes(): Promise<Box[]> {
     if (error) throw error
 
     return data || []
-  } catch (error) {
+  } catch {
     return []
   }
 }

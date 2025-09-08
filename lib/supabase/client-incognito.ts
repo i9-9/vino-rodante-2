@@ -36,7 +36,7 @@ export function createAdaptiveClient() {
     const testKey = '__supabase_test__'
     localStorage.setItem(testKey, 'test')
     localStorage.removeItem(testKey)
-  } catch (e) {
+  } catch {
     isIncognito = true
   }
   

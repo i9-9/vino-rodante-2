@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { createClient } from '@/utils/supabase/client'
-import type { UserSubscription, Customer } from './types'
+import type { UserSubscription } from './types'
 import type { Translations } from '@/lib/i18n/types'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { MoreHorizontal } from 'lucide-react'
@@ -51,7 +51,7 @@ const getStatusBadge = (status: string) => {
   return variants[status as keyof typeof variants] || <Badge>{status}</Badge>
 }
 
-export function AdminSubscriptionsTab({ t }: AdminSubscriptionsTabProps) {
+export function AdminSubscriptionsTab({ }: AdminSubscriptionsTabProps) {
   const [loading, setLoading] = useState(true)
   const [subscriptions, setSubscriptions] = useState<UserSubscription[]>([])
 

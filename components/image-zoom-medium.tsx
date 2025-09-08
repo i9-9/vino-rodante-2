@@ -17,8 +17,6 @@ export function ProductImageZoom({
   className,
   highResSrc
 }: ProductImageZoomProps) {
-  // Usar imagen de alta resolución si está disponible
-  const zoomImageSrc = highResSrc || src
 
   return (
     <div className={cn("relative aspect-square overflow-hidden rounded-lg bg-gray-100 group", className)}>

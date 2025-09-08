@@ -5,10 +5,9 @@ import { createClient } from '@/utils/supabase/client'
 import { SubscriptionsTab } from '@/app/account/components/SubscriptionsTab'
 import Spinner from '@/components/ui/Spinner'
 import type { UserSubscription, SubscriptionPlan } from '@/app/account/types'
-import type { Translations } from '@/lib/i18n/types'
 import { useTranslations } from '@/lib/providers/translations-provider'
 
-export function SubscriptionsDashboard({ isAdmin = false }: { isAdmin?: boolean }) {
+export function SubscriptionsDashboard({ }: { isAdmin?: boolean }) {
   const [loading, setLoading] = useState(true)
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([])
   const [userSubscriptions, setUserSubscriptions] = useState<UserSubscription[]>([])

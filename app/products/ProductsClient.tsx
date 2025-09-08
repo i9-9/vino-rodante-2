@@ -1,12 +1,11 @@
 "use client"
 
-import { getProducts, getBoxesProducts } from '@/lib/products-client'
+import { getProducts } from '@/lib/products-client'
 import type { Product } from '@/lib/types'
 import ProductCard from "@/components/product-card"
 import { Button } from "@/components/ui/button"
 import { useRouter } from 'next/navigation'
-import { useEffect, useState, useMemo } from 'react'
-import { Slider } from "@/components/ui/slider"
+import { useEffect, useState } from 'react'
 import { CATEGORY_SLUG_MAP } from "@/lib/wine-data"
 
 interface ProductsClientProps {
@@ -29,7 +28,7 @@ export default function ProductsClient({ t }: ProductsClientProps) {
         // Solo cargar productos normales (excluir boxes de la página /productos)
         const productsResult = await getProducts()
         
-        let allProducts: Product[] = []
+        const allProducts: Product[] = []
         
         // Agregar productos normales, filtrando boxes
         if (productsResult.data) {
@@ -123,20 +122,6 @@ export default function ProductsClient({ t }: ProductsClientProps) {
     return varietal
   }
 
-  // Función para navegar a la colección de categoría
-  function navigateToCategory(type: string) {
-    router.push(`/collections/${type}`)
-  }
-
-  // Función para navegar a la colección de región
-  function navigateToRegion(region: string) {
-    router.push(`/collections/region/${region}`)
-  }
-
-  // Función para navegar a la colección de varietal
-  function navigateToVarietal(varietal: string) {
-    router.push(`/collections/varietal/${varietal}`)
-  }
 
   if (loading) {
     return <div className="container px-6 md:px-8 lg:px-12 py-12">Loading...</div>

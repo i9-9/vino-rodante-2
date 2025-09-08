@@ -10,7 +10,6 @@ import { useTranslations } from "@/lib/providers/translations-provider"
 import { sendContactFormEmail } from "@/lib/contact-actions"
 
 export default function ContactPageContent() {
-  const t = useTranslations()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formSubmitted, setFormSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Plus, Pencil, ArrowUpDown, ArrowUp, ArrowDown, Upload, Trash2 } from 'lucide-react'
+import { Plus, Pencil, ArrowUpDown, ArrowUp, ArrowDown, Trash2 } from 'lucide-react'
 import type { Product } from './types'
 import type { Translations } from '@/lib/i18n/types'
 import {

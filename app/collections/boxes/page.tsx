@@ -7,7 +7,6 @@ import { useEffect, useState } from "react"
 import type { Product } from "@/lib/types"
 
 export default function BoxesCollectionPage() {
-  const t = useTranslations()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

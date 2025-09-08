@@ -1,9 +1,5 @@
 import { getSubscriptionPlansByClub, getSubscriptionPlanProducts } from '@/lib/subscriptions-client'
 import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
-import { formatCurrency } from "@/lib/utils"
 import ClubTabs from "./ClubTabs"
 import SubscriptionSelector from "./SubscriptionSelector"
 import { Accordion } from "@/components/ui/accordion"

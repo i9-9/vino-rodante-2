@@ -3,7 +3,6 @@ import { createPreference } from "@/lib/mercadopago"
 import { v4 as uuidv4 } from "uuid"
 import { calculateShipping } from "@/lib/shipping-utils"
 import { createClient } from '@/lib/supabase/server'
-import { cookies } from "next/headers"
 
 export async function POST(request: NextRequest) {
   try {

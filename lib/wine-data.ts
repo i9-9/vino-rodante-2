@@ -110,7 +110,7 @@ export function isValidWineVarietal(varietal: string): varietal is WineVarietal 
 }
 
 // Función para obtener datos de un tipo de vino
-export function getWineTypeData(type: WineType, t: any): WineTypeData {
+export function getWineTypeData(type: WineType, t: unknown): WineTypeData {
   return {
     id: type,
     name: t.wineTypes[type] || type,
@@ -119,7 +119,7 @@ export function getWineTypeData(type: WineType, t: any): WineTypeData {
 }
 
 // Función para obtener datos de una región
-export function getWineRegionData(region: WineRegion, t: any): WineRegionData {
+export function getWineRegionData(region: WineRegion, t: unknown): WineRegionData {
   return {
     id: region,
     name: t.wineRegions[region] || region,
@@ -128,7 +128,7 @@ export function getWineRegionData(region: WineRegion, t: any): WineRegionData {
 }
 
 // Función para obtener datos de un varietal
-export function getWineVarietalData(varietal: WineVarietal, t: any): WineVarietalData {
+export function getWineVarietalData(varietal: WineVarietal, t: unknown): WineVarietalData {
   return {
     id: varietal,
     name: t.wineVarietals[varietal] || varietal,
@@ -137,17 +137,17 @@ export function getWineVarietalData(varietal: WineVarietal, t: any): WineVarieta
 }
 
 // Función para obtener todos los tipos de vino
-export function getAllWineTypes(t: any): WineTypeData[] {
+export function getAllWineTypes(t: unknown): WineTypeData[] {
   return Object.values(WINE_TYPES).map(type => getWineTypeData(type, t));
 }
 
 // Función para obtener todas las regiones
-export function getAllWineRegions(t: any): WineRegionData[] {
+export function getAllWineRegions(t: unknown): WineRegionData[] {
   return Object.values(WINE_REGIONS).map(region => getWineRegionData(region, t));
 }
 
 // Función para obtener todos los varietales
-export function getAllWineVarietals(t: any): WineVarietalData[] {
+export function getAllWineVarietals(t: unknown): WineVarietalData[] {
   return Object.values(WINE_VARIETALS).map(varietal => getWineVarietalData(varietal, t));
 }
 

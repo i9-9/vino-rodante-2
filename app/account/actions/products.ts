@@ -1,7 +1,6 @@
 "use server"
 
 import { createClient } from '@/utils/supabase/server'
-import { StorageError } from '@supabase/storage-js'
 import { revalidatePath } from 'next/cache'
 import { ProductSchema } from '../types/product'
 

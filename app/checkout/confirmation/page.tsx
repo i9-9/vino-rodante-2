@@ -21,7 +21,6 @@ interface OrderDetails {
 function ConfirmationContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const t = useTranslations()
   const { clearCart } = useCart()
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null)
   const [loading, setLoading] = useState(true)

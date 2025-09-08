@@ -173,5 +173,5 @@ export interface Translations {
     signOutError: string
     [key: string]: string
   }
-  [key: string]: any
+  [key: string]: unknown
 } 

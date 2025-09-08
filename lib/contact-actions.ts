@@ -63,8 +63,8 @@ export async function sendContactFormEmail(formData: FormData) {
     })
 
     return { success: true, message: 'Mensaje enviado exitosamente' }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error sending contact form email:', error)
-    return { success: false, error: error.message }
+    return { success: false, error: error instanceof Error ? error.message : 'Error desconocido' }
   }
 }

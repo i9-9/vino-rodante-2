@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import Image from "next/image"
 import { getAvailablePlans } from '@/app/account/actions/subscriptions'
-import type { SubscriptionPlan } from '@/app/account/types'
 import { Truck, Clock, Wine } from "lucide-react"
 import { getTranslations } from '@/lib/get-translations'
 

@@ -53,7 +53,7 @@ export default function AccountClientNew({
   userRole,
   t
 }: AccountClientProps) {
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('profile')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 

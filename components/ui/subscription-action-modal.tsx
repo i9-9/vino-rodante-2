@@ -5,27 +5,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from './button'
 import { Textarea } from './textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select'
-import { Loader2 } from 'lucide-react'
 import type { SubscriptionActionModalProps } from '@/app/account/types'
 import { Label } from '@/components/ui/label'
 import { formatPrice } from '@/lib/utils'
 import { formatFrequency } from '@/utils/subscription-helpers'
 
-const ACTION_TITLES = {
-  'pause': 'Pausar suscripción',
-  'cancel': 'Cancelar suscripción',
-  'reactivate': 'Reactivar suscripción',
-  'change-plan': 'Cambiar plan',
-  'change-frequency': 'Cambiar Frecuencia de Entrega'
-} as const
 
-const ACTION_DESCRIPTIONS = {
-  'pause': 'Tu suscripción quedará pausada temporalmente. Podrás reactivarla cuando lo desees.',
-  'cancel': 'Tu suscripción será cancelada definitivamente. Esta acción no se puede deshacer.',
-  'reactivate': '¿Deseas reactivar tu suscripción? Se reanudará con la misma frecuencia.',
-  'change-plan': 'Selecciona el nuevo plan al que deseas cambiar.',
-  'change-frequency': 'Selecciona la nueva frecuencia de entrega para tu suscripción.'
-} as const
 
 export function SubscriptionActionModal({
   isOpen,

@@ -2,7 +2,6 @@ import { Suspense } from "react"
 import Hero from "@/components/hero"
 import ProductShowcase from "@/components/product-showcase"
 import AboutUs from "@/components/about-us"
-import WineClubsShowcase from "@/components/wine-clubs-showcase"
 import { getFeaturedProducts } from '@/lib/products-client'
 
 // Forzar renderizado dinámico para páginas que dependen de datos de Supabase

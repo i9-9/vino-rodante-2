@@ -16,7 +16,6 @@ export function ProductImageZoom({
   alt, 
   className,
   highResSrc,
-  zoomLevel = 2.5
 }: ProductImageZoomProps) {
   // Usar imagen de alta resolución si está disponible, sino usar la misma imagen pero con parámetros de calidad
   const zoomImageSrc = highResSrc || src

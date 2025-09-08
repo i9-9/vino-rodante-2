@@ -146,7 +146,7 @@ interface ProductGalleryProps {
 
 export const ProductGallery = ({ images, productName, className = '' }: ProductGalleryProps) => {
   const [currentImage, setCurrentImage] = useState(0)
-  const { isMobile, isTouch, isDesktop } = useDeviceDetection()
+  const { isDesktop } = useDeviceDetection()
   
   // Debug: mostrar las imágenes que recibimos
   console.log('ProductGallery images:', images)

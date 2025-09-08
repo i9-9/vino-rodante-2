@@ -5,7 +5,7 @@ import { getProductsByVarietal } from "@/lib/products-client"
 import ProductCard from "@/components/product-card"
 import { useEffect, useState, use } from "react"
 import type { Product } from "@/lib/types"
-import { WINE_VARIETALS, isValidWineVarietal, getWineVarietalData } from "@/lib/wine-data"
+import { isValidWineVarietal, getWineVarietalData } from "@/lib/wine-data"
 
 export default function VarietalPage({ params }: { params: Promise<{ varietal: string }> }) {
   const t = useTranslations()

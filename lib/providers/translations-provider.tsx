@@ -48,7 +48,7 @@ export interface Translations {
   language: {
     [key: string]: string
   }
-  [key: string]: any
+  [key: string]: unknown
 }
 
 interface TranslationsContextType {

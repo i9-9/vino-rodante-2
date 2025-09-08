@@ -36,7 +36,7 @@ export function NewsletterForm({ className }: { className?: string }) {
           variant: "destructive",
         })
       }
-    } catch (error) {
+    } catch {
       toast({
         title: t.common.error,
         description: t.newsletter.error,

@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 
 export default function ClearSessionPage() {
   const [status, setStatus] = useState('Limpiando sesión...')
-  const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {

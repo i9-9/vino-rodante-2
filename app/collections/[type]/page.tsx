@@ -1,11 +1,11 @@
 "use client"
 
 import { useTranslations } from "@/lib/providers/translations-provider"
-import { getProducts, getProductsByCategory } from "@/lib/products-client"
+import { getProductsByCategory } from "@/lib/products-client"
 import ProductCard from "@/components/product-card"
 import { useEffect, useState, use } from "react"
 import type { Product } from "@/lib/types"
-import { WINE_TYPES, isValidWineType, getWineTypeData } from "@/lib/wine-data"
+import { isValidWineType, getWineTypeData } from "@/lib/wine-data"
 
 export default function CollectionPage({ params }: { params: Promise<{ type: string }> }) {
   const t = useTranslations()

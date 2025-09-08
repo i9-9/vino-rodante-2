@@ -8,7 +8,6 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import type { CartItem } from "@/lib/types"
 import { formatCurrency } from "@/lib/utils"
 import { useAuth } from "@/lib/providers/auth-provider"
 import { createClient } from '@/lib/supabase/client'
@@ -16,7 +15,6 @@ import { useTranslations } from "@/lib/providers/translations-provider"
 import { MercadoPagoCheckout } from "@/components/ui/mercado-pago-checkout"
 import { useToast } from "@/components/ui/use-toast"
 import { useCart } from "@/lib/hooks/use-cart"
-import SupabaseGuard from "@/components/SupabaseGuard"
 import { calculateShipping, getShippingZone } from "@/lib/shipping-utils"
 
 export default function CheckoutPage() {

@@ -1,8 +1,4 @@
 import { getProductBySlug, getProducts } from '@/lib/products-client'
-import { Button } from "@/components/ui/button"
-import Image from "next/image"
-import { notFound } from "next/navigation"
-import { addToCart } from "@/lib/actions"
 import { getTranslations } from "@/lib/get-translations"
 import AddToCartButton from "@/components/add-to-cart-button"
 import type { Product } from "@/lib/types"
@@ -63,7 +59,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   // Validar campos esenciales - diferente validación para boxes vs botellas
   const isBox = product.category?.toLowerCase() === 'boxes' || product.category?.toLowerCase() === 'box'
   
-  let requiredFields = [
+  const requiredFields = [
     "name", "slug", "description", "price", "image", "category", "region", "stock"
   ]
   

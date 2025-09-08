@@ -16,7 +16,7 @@ function serializeData<T>(data: T): T {
 async function validateSupabaseConnection(supabase: Awaited<ReturnType<typeof createClient>>) {
   try {
     // Intentar una consulta simple para verificar la conexión
-    const { data, error } = await supabase.from('orders').select('id').limit(1)
+    const { error } = await supabase.from('orders').select('id').limit(1)
     if (error) {
       console.error('🚫 [DB Connection] Failed to validate connection:', {
         error,

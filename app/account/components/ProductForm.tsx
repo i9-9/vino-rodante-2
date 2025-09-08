@@ -2,7 +2,7 @@
 
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ProductSchema, ProductFormData, ImageSchema } from '../types/product'
+import { ProductSchema, ProductFormData } from '../types/product'
 import { useImageCompression } from '../hooks/useImageCompression'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,7 +41,6 @@ export function ProductForm({ product, onSubmit, isSubmitting = false }: Product
     handleSubmit,
     formState: { errors, isDirty },
     control,
-    watch,
   } = useForm<ProductFormData>({
     resolver: zodResolver(ProductSchema),
     defaultValues: product || {
@@ -61,7 +60,7 @@ export function ProductForm({ product, onSubmit, isSubmitting = false }: Product
         setImagePreview(reader.result as string)
       }
       reader.readAsDataURL(compressedFile)
-    } catch (error) {
+    } catch {
       toast.error('Error al procesar la imagen')
     }
   }
@@ -86,7 +85,7 @@ export function ProductForm({ product, onSubmit, isSubmitting = false }: Product
     try {
       await onSubmit(data, imageFile)
       // Toast de éxito manejado por el componente padre
-    } catch (error) {
+    } catch {
       toast.error('Error al guardar el producto')
     }
   }

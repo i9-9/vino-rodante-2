@@ -23,7 +23,7 @@ import {
 
 // Componente para el menú de usuario
 function UserMenuContent() {
-  const { user, signOut, isInitialized, initError } = useAuth()
+  const { user, signOut, isInitialized } = useAuth()
   const t = useTranslations()
 
   if (!isInitialized) {
