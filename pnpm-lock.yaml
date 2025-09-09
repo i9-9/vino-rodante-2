@@ -135,8 +135,8 @@ importers:
         specifier: ^0.454.0
         version: 0.454.0(react@19.1.0)
       mercadopago:
-        specifier: ^2.7.0
-        version: 2.7.0(encoding@0.1.13)
+        specifier: ^2.8.0
+        version: 2.8.0(encoding@0.1.13)
       next:
         specifier: 15.2.4
         version: 15.2.4(@babel/core@7.28.3)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -3693,8 +3693,8 @@ packages:
   memoize-one@5.2.1:
     resolution: {integrity: sha512-zYiwtZUcYyXKo/np96AGZAckk+FWWsUdJ3cHGGmld7+AhvcWmQyGCYUh1hc4Q/pkOhb65dQR/pqCyK0cOaHz4Q==}
 
-  mercadopago@2.7.0:
-    resolution: {integrity: sha512-B8r3Cr2tOV+zgAhNsr2fSGOSCSqO5b0tMzeHpZog9wR4ywjKcd/ef4PxsV/kr8cyqyuTeC8wTWS2G5/sPVEnSA==}
+  mercadopago@2.8.0:
+    resolution: {integrity: sha512-TInH/yGB1JqWaJv41Ske75ryqsN1ffTPMThSTEpt+sDsFDAG8ecahTLw41Az1VuL0gwa+qOHp9SfTyU27Smwew==}
 
   merge-stream@2.0.0:
     resolution: {integrity: sha512-abv/qOcuPfk3URPfDzmZU1LKmuw8kT+0nIHvKrKgFrwifol/doWcdA4ZqsWQ8ENrFKkd67Mfpo/LovbIUsbt3w==}
@@ -8607,7 +8607,7 @@ snapshots:
 
   memoize-one@5.2.1: {}
 
-  mercadopago@2.7.0(encoding@0.1.13):
+  mercadopago@2.8.0(encoding@0.1.13):
     dependencies:
       node-fetch: 2.7.0(encoding@0.1.13)
       uuid: 9.0.1
