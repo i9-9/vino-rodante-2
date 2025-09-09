@@ -35,19 +35,19 @@ interface BoxProductItem {
   region?: string
 }
 
-export function BoxForm({ onSubmit, onClose }: BoxFormProps) {
+export function BoxForm({ onSubmit, onClose, initialData }: BoxFormProps) {
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    price: '',
-    stock: '',
-    total_wines: 3,
-    discount_percentage: 0,
-    featured: false,
-    is_visible: true,
-    free_shipping: false,
+    name: initialData?.name || '',
+    description: initialData?.description || '',
+    price: initialData?.price ? String(initialData.price) : '',
+    stock: initialData?.stock ? String(initialData.stock) : '',
+    total_wines: initialData?.total_wines || 3,
+    discount_percentage: initialData?.discount_percentage || 0,
+    featured: initialData?.featured || false,
+    is_visible: initialData?.is_visible !== false,
+    free_shipping: initialData?.free_shipping || false,
   })
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image || null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [boxProducts, setBoxProducts] = useState<BoxProductItem[]>([])
@@ -56,10 +56,13 @@ export function BoxForm({ onSubmit, onClose }: BoxFormProps) {
   const { toast } = useToast()
   const supabase = createClient()
 
-  // Cargar productos disponibles
+  // Cargar productos disponibles y productos del box existente
   useEffect(() => {
     loadAvailableProducts()
-  }, [])
+    if (initialData?.id) {
+      loadBoxProducts()
+    }
+  }, [initialData?.id])
 
   const loadAvailableProducts = async () => {
     try {
@@ -73,6 +76,47 @@ export function BoxForm({ onSubmit, onClose }: BoxFormProps) {
       if (error) throw error
       setAvailableProducts(data || [])
     } catch (error) {
+      console.error('Error loading available products:', error)
+    }
+  }
+
+  const loadBoxProducts = async () => {
+    if (!initialData?.id) return
+    
+    try {
+      const { data, error } = await supabase
+        .from('box_product_relations')
+        .select(`
+          product_id,
+          quantity,
+          products:product_id (
+            id,
+            name,
+            price,
+            image,
+            varietal,
+            year,
+            region
+          )
+        `)
+        .eq('box_id', initialData.id)
+
+      if (error) throw error
+
+      const formattedProducts = data?.map((relation: any) => ({
+        product_id: relation.product_id,
+        quantity: relation.quantity,
+        name: relation.products?.name || '',
+        price: relation.products?.price || 0,
+        image: relation.products?.image || '',
+        varietal: relation.products?.varietal || '',
+        year: relation.products?.year || '',
+        region: relation.products?.region || ''
+      })) || []
+
+      setBoxProducts(formattedProducts)
+    } catch (error) {
+      console.error('Error loading box products:', error)
     }
   }
 
@@ -230,7 +274,9 @@ export function BoxForm({ onSubmit, onClose }: BoxFormProps) {
   return (
     <div className="space-y-6">
       <div className="border-b pb-4">
-        <h3 className="text-lg font-semibold">Crear Box de Vinos</h3>
+        <h3 className="text-lg font-semibold">
+          {initialData?.id ? 'Editar Box de Vinos' : 'Crear Box de Vinos'}
+        </h3>
         <p className="text-sm text-muted-foreground">
           Agrupa múltiples vinos en un solo paquete con descuento
         </p>
@@ -457,7 +503,7 @@ export function BoxForm({ onSubmit, onClose }: BoxFormProps) {
             {isSubmitting && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Crear Box
+            {initialData?.id ? 'Actualizar Box' : 'Crear Box'}
           </Button>
         </div>
       </form>

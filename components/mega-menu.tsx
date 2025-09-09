@@ -202,28 +202,28 @@ export default function MegaMenu() {
     {
       name: "Club Tinto",
       slug: "tinto",
-      image: "/images/club/tinto.jpg",
+      image: "/images/weekly-wine/tinto1.jpg",
       description: "Descubrí una selección cuidadosamente elegida de vinos tintos de las mejores bodegas de Argentina.",
       href: "/weekly-wine/tinto",
     },
     {
       name: "Club Blanco",
       slug: "blanco",
-      image: "/images/club/blanco.jpg",
+      image: "/images/weekly-wine/blanco2.jpg",
       description: "Explorá nuestra curada selección de vinos blancos, perfectos para cada ocasión.",
       href: "/weekly-wine/blanco",
     },
     {
       name: "Club Mixto",
       slug: "mixto",
-      image: "/images/club/mixto.jpg",
+      image: "/images/weekly-wine/mixto3.jpg",
       description: "Una combinación perfecta de tintos y blancos para disfrutar de la mejor experiencia enológica.",
       href: "/weekly-wine/mixto",
     },
     {
       name: "Club Naranjo",
       slug: "naranjo",
-      image: "/images/club/naranjo.jpg",
+      image: "/images/weekly-wine/naranjo1.jpg",
       description: "Descubrí el mundo de los vinos naranjos, una experiencia única y diferente.",
       href: "/weekly-wine/naranjo",
     },
@@ -274,7 +274,7 @@ export default function MegaMenu() {
                           onClick={closeWeeklyWineMenu}
                           className="block select-none rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground shadow group"
                         >
-                          <div className="relative w-full h-32 mb-2 rounded overflow-hidden">
+                          <div className="relative w-full aspect-square mb-2 rounded overflow-hidden">
                             <Image
                               src={club.image}
                               alt={club.name}

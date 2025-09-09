@@ -9,6 +9,7 @@ import "../styles/product-gallery.css"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import WhatsappButton from "@/components/whatsapp-button"
+import MarqueeBanner from "@/components/marquee-banner"
 import { CartProvider } from "@/lib/providers/cart-provider"
 import { AuthProvider } from "@/lib/providers/auth-provider"
 import { TranslationsProvider } from "@/lib/providers/translations-provider"
@@ -107,6 +108,7 @@ export default function RootLayout({
           <AuthProvider>
             <CartProvider>
               <div className="flex min-h-screen flex-col">
+                <MarqueeBanner />
                 <Header />
                 <div className="flex-1">{children}</div>
                 <Footer />

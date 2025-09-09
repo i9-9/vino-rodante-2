@@ -126,10 +126,12 @@ export default async function ClubPage({ params }: { params: Promise<{ club: str
             <div className="mb-6">
               <SubscriptionSelector plans={plans} />
             </div>
-            
-            {/* Tabs funcionales */}
-            <ClubTabs plan={displayPlan} products={planProducts} clubInfo={clubInfo} />
           </div>
+        </div>
+
+        {/* Tabs funcionales - Full width */}
+        <div className="w-full">
+          <ClubTabs plan={displayPlan} products={planProducts} clubInfo={clubInfo} />
         </div>
 
 

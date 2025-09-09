@@ -4,6 +4,7 @@ import AddToCartButton from "@/components/add-to-cart-button"
 import type { Product } from "@/lib/types"
 import ProductCard from '@/components/product-card'
 import { SimpleProductZoom } from '@/components/simple-product-zoom'
+import { ProductDiscountBadge } from '@/components/ProductDiscountBadge'
 
 export const dynamic = "force-dynamic";
 
@@ -46,8 +47,28 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const { slug } = await params
   const product = await getProductBySlug(slug)
   const t = await getTranslations()
+  
+  // Obtener descuentos activos y aplicarlos al producto
+  let productWithDiscounts = product
+  if (product) {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/discounts/active`, {
+        cache: 'no-store'
+      })
+      if (response.ok) {
+        const { discounts } = await response.json()
+        if (discounts && discounts.length > 0) {
+          const { applyDiscountsToProducts } = await import('@/lib/discount-utils')
+          const productsWithDiscounts = applyDiscountsToProducts([product], discounts)
+          productWithDiscounts = productsWithDiscounts[0] || product
+        }
+      }
+    } catch (error) {
+      console.error('Error loading discounts for product:', error)
+    }
+  }
 
-  if (!product) {
+  if (!productWithDiscounts) {
     return (
       <div className="container py-12 text-center">
         <h1 className="text-2xl font-bold mb-4">{t.products.title || "Producto no encontrado"}</h1>
@@ -57,7 +78,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   }
 
   // Validar campos esenciales - diferente validación para boxes vs botellas
-  const isBox = product.category?.toLowerCase() === 'boxes' || product.category?.toLowerCase() === 'box'
+  const isBox = productWithDiscounts.category?.toLowerCase() === 'boxes' || productWithDiscounts.category?.toLowerCase() === 'box'
   
   const requiredFields = [
     "name", "slug", "description", "price", "image", "category", "region", "stock"
@@ -68,7 +89,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     requiredFields.push("year", "varietal")
   }
   
-  const missingFields = requiredFields.filter(field => (product as any)[field] === null || (product as any)[field] === undefined || (product as any)[field] === "")
+  const missingFields = requiredFields.filter(field => (productWithDiscounts as any)[field] === null || (productWithDiscounts as any)[field] === undefined || (productWithDiscounts as any)[field] === "")
 
   if (missingFields.length > 0) {
     return (
@@ -83,49 +104,70 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const { data: allProducts } = await getProducts()
   let related: Product[] = []
   
-  if (isBox) {
-    // Para boxes, mostrar otros boxes o productos de la misma región
-    related = allProducts?.filter(p => p.id !== product.id && p.region === product.region) || []
-    if (related.length < 4) {
-      // Si no hay suficientes de la misma región, mostrar cualquier producto
-      const otherProducts = allProducts?.filter(p => p.id !== product.id) || []
-      related = [...related, ...otherProducts].slice(0, 4)
-    } else {
-      related = related.slice(0, 4)
-    }
-  } else {
-    // Para productos individuales, usar la lógica original
-    related = allProducts?.filter(p => p.id !== product.id && p.varietal === product.varietal) || []
-    if (related.length < 4) {
-      const regionRelated = (allProducts || []).filter(p => p.id !== product.id && p.region === product.region && p.varietal !== product.varietal)
-      related = [...related, ...regionRelated].slice(0, 4)
-    } else {
-      related = related.slice(0, 4)
-    }
+  if (!product) {
+    return (
+      <div className="container py-12 text-center">
+        <h1 className="text-2xl font-bold mb-4">Producto no encontrado</h1>
+        <p className="text-gray-500">El producto que buscas no existe o no está disponible.</p>
+      </div>
+    )
   }
+  
+  console.log('🔍 [ProductPage] Product details:', {
+    id: productWithDiscounts.id,
+    name: productWithDiscounts.name,
+    varietal: productWithDiscounts.varietal,
+    region: productWithDiscounts.region,
+    category: productWithDiscounts.category,
+    isBox
+  })
+  
+  console.log('🔍 [ProductPage] All products count:', allProducts?.length || 0)
+  
+  // Simplificar la lógica: siempre mostrar productos relacionados
+  if (allProducts && allProducts.length > 1) {
+    // Filtrar el producto actual y tomar los primeros 4
+    related = allProducts
+      .filter(p => p.id !== productWithDiscounts.id)
+      .slice(0, 4)
+    console.log('🔍 [ProductPage] Related products found:', related.length)
+  } else {
+    console.log('🔍 [ProductPage] No products available for related section')
+  }
+  
+  console.log('🔍 [ProductPage] Final related products:', related.length)
 
   return (
     <div className="container px-4 py-12">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         <SimpleProductZoom
-          src={product.image || "/placeholder.svg"}
-          alt={product.name}
+          src={productWithDiscounts.image || "/placeholder.svg"}
+          alt={productWithDiscounts.name}
         />
 
         <div className="flex flex-col">
-          <h1 className="text-3xl font-bold text-[#5B0E2D] mb-2">{product.name}</h1>
+          <h1 className="text-3xl font-bold text-[#5B0E2D] mb-2">{productWithDiscounts.name}</h1>
           <p className="text-lg text-[#1F1F1F]/70 mb-4">
-            {isBox ? capitalizeWords(product.region) : `${product.year} • ${capitalizeWords(product.region)}`}
+            {isBox ? capitalizeWords(productWithDiscounts.region) : `${productWithDiscounts.year} • ${capitalizeWords(productWithDiscounts.region)}`}
           </p>
 
           <div className="mb-6">
-            <p className="text-2xl font-bold mb-4">${product.price.toFixed(2)}</p>
-            <AddToCartButton product={product} label={t.products.addToCart} />
+            {/* Mostrar precio con descuento si existe */}
+            {productWithDiscounts.discount ? (
+              <div className="mb-4">
+                <ProductDiscountBadge product={productWithDiscounts} size="lg" />
+              </div>
+            ) : (
+              <div className="mb-4">
+                <p className="text-2xl font-bold">${productWithDiscounts.price.toFixed(2)}</p>
+              </div>
+            )}
+            <AddToCartButton product={productWithDiscounts} label={t.products.addToCart} />
 
             <div className="flex items-center text-sm text-[#1F1F1F]/70 mb-4 mt-10">
               <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
               <span>
-                {product.stock > 0 
+                {productWithDiscounts.stock > 0 
                   ? t.products.inStock
                   : t.products.outOfStock
                 }
@@ -135,29 +177,29 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
           <div className="border-t pt-6">
             <h2 className="text-xl font-semibold mb-3">{t.products.description}</h2>
-            <p className="text-[#1F1F1F]/80 mb-6">{product.description}</p>
+            <p className="text-[#1F1F1F]/80 mb-6">{productWithDiscounts.description}</p>
 
             <div className="grid grid-cols-2 gap-4">
               {!isBox && (
                 <>
                   <div>
                     <h3 className="font-medium text-[#5B0E2D]">{t.products.varietal}</h3>
-                    <p className="text-[#1F1F1F]/70">{capitalizeWords(product.varietal)}</p>
+                    <p className="text-[#1F1F1F]/70">{capitalizeWords(productWithDiscounts.varietal)}</p>
                   </div>
                   <div>
                     <h3 className="font-medium text-[#5B0E2D]">{t.products.year}</h3>
-                    <p className="text-[#1F1F1F]/70">{product.year}</p>
+                    <p className="text-[#1F1F1F]/70">{productWithDiscounts.year}</p>
                   </div>
                 </>
               )}
               <div>
                 <h3 className="font-medium text-[#5B0E2D]">{t.products.region}</h3>
-                <p className="text-[#1F1F1F]/70">{capitalizeWords(product.region)}</p>
+                <p className="text-[#1F1F1F]/70">{capitalizeWords(productWithDiscounts.region)}</p>
               </div>
               <div>
                 <h3 className="font-medium text-[#5B0E2D]">{t.products.category}</h3>
                 <p className="text-[#1F1F1F]/70">
-                  {isBox ? 'Box de Vinos' : product.category.charAt(0).toUpperCase() + product.category.slice(1)}
+                  {isBox ? 'Box de Vinos' : productWithDiscounts.category.charAt(0).toUpperCase() + productWithDiscounts.category.slice(1)}
                 </p>
               </div>
               {isBox && (

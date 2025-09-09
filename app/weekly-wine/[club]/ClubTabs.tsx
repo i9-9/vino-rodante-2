@@ -60,14 +60,14 @@ export default function ClubTabs({ plan, products, clubInfo }: ClubTabsProps) {
   ]
 
   return (
-    <div className="mt-6">
+    <div className="mt-6 mb-12 w-full">
       {/* Tab Navigation */}
-      <div className="flex gap-4 border-b mb-4">
+      <div className="flex gap-4 border-b mb-6">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`py-2 px-4 font-medium border-b-2 transition-colors ${
+            className={`py-3 px-6 font-medium border-b-2 transition-colors ${
               activeTab === tab.id
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -79,7 +79,7 @@ export default function ClubTabs({ plan, products, clubInfo }: ClubTabsProps) {
       </div>
 
       {/* Tab Content */}
-      <div className="relative min-h-[200px] overflow-hidden">
+      <div className="relative min-h-fit">
         <AnimatePresence mode="wait">
           {activeTab === "description" && (
             <motion.div
@@ -88,16 +88,11 @@ export default function ClubTabs({ plan, products, clubInfo }: ClubTabsProps) {
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="space-y-4 absolute w-full"
+              className="space-y-4"
             >
               <p className="text-muted-foreground leading-relaxed">
-                {plan.description}
+                {clubInfo.description}
               </p>
-              {plan.tagline && (
-                <p className="text-sm italic text-muted-foreground">
-                  {plan.tagline}
-                </p>
-              )}
             </motion.div>
           )}
 
@@ -108,7 +103,7 @@ export default function ClubTabs({ plan, products, clubInfo }: ClubTabsProps) {
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="space-y-6 absolute w-full"
+              className="space-y-6"
             >
               <div>
                 <h4 className="font-semibold mb-3">Sobre este club</h4>
@@ -129,23 +124,6 @@ export default function ClubTabs({ plan, products, clubInfo }: ClubTabsProps) {
                 </ul>
               </div>
 
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <h4 className="font-semibold mb-2">Información de entrega</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Botellas por entrega:</span>
-                    <span className="font-medium">{plan.wines_per_delivery || 'Variable'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Tipo de club:</span>
-                    <span className="font-medium capitalize">{plan.club}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Envío:</span>
-                    <span className="font-medium text-green-600">Gratis en CABA y GBA</span>
-                  </div>
-                </div>
-              </div>
             </motion.div>
           )}
 
@@ -156,7 +134,7 @@ export default function ClubTabs({ plan, products, clubInfo }: ClubTabsProps) {
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="space-y-6 absolute w-full"
+              className="space-y-6"
             >
               {products && products.length > 0 ? (
                 <>

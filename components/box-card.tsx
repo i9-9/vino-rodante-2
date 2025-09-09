@@ -7,6 +7,9 @@ import Link from "next/link"
 import { useCart } from "@/lib/hooks/use-cart"
 import { useTranslations } from "@/lib/providers/translations-provider"
 import { ProductDiscountBadge } from "./ProductDiscountBadge"
+import { useState, useEffect } from "react"
+import { getBoxProducts } from "@/lib/products-client"
+import BoxProducts from "./box-products"
 
 function capitalizeWords(str: string) {
   return str
@@ -16,32 +19,56 @@ function capitalizeWords(str: string) {
 }
 
 function getValidImageUrl(imageUrl: string | null | undefined): string {
-  // Check if the image URL is valid
   if (!imageUrl || imageUrl.trim() === '') {
     return "/placeholder.svg"
   }
   
   try {
-    // For relative URLs, assume they're valid
     if (imageUrl.startsWith('/')) {
       return imageUrl
     }
     
-    // For absolute URLs, validate them
     new URL(imageUrl)
     return imageUrl
   } catch {
-    // If URL is invalid, return placeholder
     return "/placeholder.svg"
   }
 }
 
-export default function ProductCard({ product }: { product: Product }) {
+interface BoxProduct {
+  product_id: string
+  quantity: number
+  id: string
+  name: string
+  price: number
+  image: string
+  varietal: string
+  year: string
+  region: string
+  description: string
+}
+
+export default function BoxCard({ product }: { product: Product }) {
   const { addToCart } = useCart()
   const t = useTranslations()
-  
-  // Detectar si es un box
-  const isBox = product.category?.toLowerCase() === 'boxes' || product.category?.toLowerCase() === 'box'
+  const [boxProducts, setBoxProducts] = useState<BoxProduct[]>([])
+  const [loading, setLoading] = useState(false)
+  const [showProducts, setShowProducts] = useState(false)
+
+  // Cargar productos del box cuando se muestre
+  useEffect(() => {
+    if (showProducts && boxProducts.length === 0) {
+      setLoading(true)
+      getBoxProducts(product.id)
+        .then(({ data, error }) => {
+          if (data && !error) {
+            setBoxProducts(data)
+          }
+        })
+        .catch(console.error)
+        .finally(() => setLoading(false))
+    }
+  }, [showProducts, product.id, boxProducts.length])
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md">
@@ -64,11 +91,32 @@ export default function ProductCard({ product }: { product: Product }) {
           <Link href={`/products/${product.slug}`}>{product.name}</Link>
         </h3>
         <p className="mt-1 text-sm text-gray-500">
-          {isBox 
-            ? `Box de Vinos • ${capitalizeWords(product.region)}` 
-            : `${product.year} • ${capitalizeWords(product.region)}${product.varietal ? ` • ${capitalizeWords(product.varietal)}` : ''}`
-          }
+          Box de Vinos • {capitalizeWords(product.region)}
         </p>
+        
+        {/* Botón para mostrar/ocultar productos */}
+        <div className="mt-2">
+          <button
+            onClick={() => setShowProducts(!showProducts)}
+            className="text-xs text-primary hover:text-primary/80 font-medium"
+          >
+            {showProducts ? 'Ocultar vinos' : 'Ver vinos incluidos'}
+          </button>
+        </div>
+
+        {/* Productos del box */}
+        {showProducts && (
+          <div className="mt-4 pt-4 border-t">
+            {loading ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">Cargando vinos...</p>
+              </div>
+            ) : (
+              <BoxProducts products={boxProducts} boxName={product.name} />
+            )}
+          </div>
+        )}
+
         <div className="mt-auto pt-4 space-y-2">
           <div className="flex items-center justify-between">
             <div className="text-right">

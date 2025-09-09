@@ -100,7 +100,9 @@ export async function createBox(formData: FormData): Promise<ActionResponse> {
         .insert(boxProductRelations)
 
       if (relationError) {
-        // No fallar si no se pueden crear las relaciones, pero registrar el error
+        console.error('Error creating box product relations:', relationError)
+        // No fallar la creación del box, pero registrar el error
+        // El box se crea pero sin productos asociados
       }
     }
 
@@ -206,7 +208,8 @@ export async function updateBox(boxId: string, formData: FormData): Promise<Acti
           .insert(boxProductRelations)
 
         if (relationError) {
-          // Error updating box product relations
+          console.error('Error updating box product relations:', relationError)
+          // No fallar la actualización del box, pero registrar el error
         }
       }
     }

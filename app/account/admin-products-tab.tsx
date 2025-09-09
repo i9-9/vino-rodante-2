@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Plus, Pencil, ArrowUpDown, ArrowUp, ArrowDown, Trash2, Eye, EyeOff } from 'lucide-react'
+import { Plus, Pencil, ArrowUpDown, ArrowUp, ArrowDown, Trash2, Eye, EyeOff, Tag } from 'lucide-react'
 import type { Product } from './types'
 import type { Translations } from '@/lib/i18n/types'
 import {
@@ -62,6 +62,7 @@ import { Loader2 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { CATEGORIES, REGIONS, VARIETALS } from './types/product'
 import { BoxForm } from './components/BoxForm'
+import { ProductDiscountBadge } from './components/ProductDiscountBadge'
 
 interface AdminProductsTabProps {
   products: Product[]
@@ -872,7 +873,14 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
           )}
         </Button>
       ),
-      cell: ({ row }) => `$${row.original.price.toFixed(2)}`
+      cell: ({ row }) => (
+        <div className="space-y-2">
+          <div className="font-medium">
+            ${row.original.price.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+          </div>
+          <ProductDiscountBadge product={row.original} />
+        </div>
+      )
     },
     {
       accessorKey: 'stock',
@@ -965,6 +973,18 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
           >
             <Pencil className="h-4 w-4 mr-2" />
             Editar
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              // TODO: Abrir modal de gestión de descuentos
+              console.log('Gestionar descuentos para:', row.original.name)
+            }}
+            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+          >
+            <Tag className="h-4 w-4 mr-2" />
+            Descuentos
           </Button>
           <Button
             variant="outline"

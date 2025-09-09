@@ -16,13 +16,14 @@ import { MercadoPagoCheckout } from "@/components/ui/mercado-pago-checkout"
 import { useToast } from "@/components/ui/use-toast"
 import { useCart } from "@/lib/hooks/use-cart"
 import { calculateShipping, getShippingZone } from "@/lib/shipping-utils"
+import { OrderSummary } from "@/components/checkout/OrderSummary"
 
 export default function CheckoutPage() {
   const router = useRouter()
   const t = useTranslations()
   const { toast } = useToast()
   const { user, isInitialized, initError } = useAuth()
-  const { cartItems, subtotal, clearCart } = useCart()
+  const { cartItems, subtotal, totalSavings, finalTotal, clearCart } = useCart()
   const [customerInfo, setCustomerInfo] = useState({
     name: "",
     email: "",
@@ -54,7 +55,7 @@ export default function CheckoutPage() {
   const allFreeShipping = cartItems.length > 0 && cartItems.every((it) => (it as any).free_shipping === true)
   // Calcular envío basado en código postal si está disponible
   const shipping = allFreeShipping ? 0 : calculateShipping(customerInfo.postalCode, 15000)
-  const total = subtotal + shipping
+  const total = finalTotal + shipping
   
   // Obtener información de la zona de envío para mostrar al usuario
   const shippingZone = getShippingZone(customerInfo.postalCode)
@@ -504,61 +505,14 @@ export default function CheckoutPage() {
               </div>
 
               <div className="lg:col-span-1">
-                <div className="border rounded-lg p-6 sticky top-20">
-                  <h2 className="text-xl font-semibold mb-4">{t.checkout?.orderSummary || "Order Summary"}</h2>
-
-                  <div className="divide-y">
-                    {cartItems.map((item) => (
-                      <div key={item.id} className="py-3 flex gap-3">
-                        <div className="w-16 h-16 rounded border overflow-hidden flex-shrink-0">
-                          <Image
-                            src={item.image || "/placeholder.svg"}
-                            alt={item.name}
-                            width={64}
-                            height={64}
-                            className="object-cover w-full h-full"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium">{item.name}</p>
-                          <p className="text-sm text-gray-500">
-                            {item.category?.toLowerCase() === 'boxes' || item.category?.toLowerCase() === 'box'
-                              ? 'Box de Vinos Varietales'
-                              : `${item.year} • ${item.varietal}`
-                            }
-                          </p>
-                          <div className="flex justify-between mt-1">
-                            <p className="text-sm">{t.common.quantity}: {item.quantity}</p>
-                            <p className="font-medium">{formatCurrency(item.price * item.quantity)}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="border-t mt-4 pt-4 space-y-2">
-                    <div className="flex justify-between">
-                      <p>{t.checkout?.subtotal || "Subtotal"}</p>
-                      <p>{formatCurrency(subtotal)}</p>
-                    </div>
-                    <div className="flex justify-between">
-                      <div>
-                        <p>{t.checkout?.shipping || "Shipping"}</p>
-                        {shippingZone && (
-                          <p className="text-xs text-gray-500">
-                            {shippingZone.name}
-                            {shipping === 0 && " - Envío gratis"}
-                          </p>
-                        )}
-                      </div>
-                      <p>{formatCurrency(shipping)}</p>
-                    </div>
-                    <div className="flex justify-between font-bold text-lg pt-2 border-t">
-                      <p>{t.checkout?.total || "Total"}</p>
-                      <p>{formatCurrency(total)}</p>
-                    </div>
-                  </div>
-                </div>
+                <OrderSummary
+                  cartItems={cartItems}
+                  subtotal={subtotal}
+                  totalSavings={totalSavings}
+                  finalTotal={finalTotal}
+                  shipping={shipping}
+                  t={t}
+                />
               </div>
             </div>
           ) : (

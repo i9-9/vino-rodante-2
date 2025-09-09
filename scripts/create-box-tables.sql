@@ -33,6 +33,16 @@ CREATE POLICY "Admins can view all box product relations" ON box_product_relatio
         )
     );
 
+-- Policy para que usuarios públicos puedan leer relaciones de boxes visibles
+CREATE POLICY "Public can view box product relations for visible boxes" ON box_product_relations
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM products 
+            WHERE products.id = box_product_relations.box_id 
+            AND products.is_visible = true
+        )
+    );
+
 -- Policy para que solo admins puedan insertar relaciones
 CREATE POLICY "Admins can insert box product relations" ON box_product_relations
     FOR INSERT WITH CHECK (

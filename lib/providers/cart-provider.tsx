@@ -4,6 +4,7 @@ import type React from "react"
 
 import { createContext, useCallback, useEffect, useState } from "react"
 import type { CartItem, Product } from "../types"
+import { useDiscounts } from "../hooks/use-discounts"
 
 interface CartContextType {
   cartItems: CartItem[]
@@ -13,6 +14,9 @@ interface CartContextType {
   removeFromCart: (productId: string) => void
   updateCartItemQuantity: (productId: string, quantity: number) => void
   clearCart: () => void
+  // Discount-related properties
+  totalSavings: number
+  finalTotal: number
 }
 
 export const CartContext = createContext<CartContextType | null>(null)
@@ -21,6 +25,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [subtotal, setSubtotal] = useState(0)
   const [itemCount, setItemCount] = useState(0)
+  const [totalSavings, setTotalSavings] = useState(0)
+  const [finalTotal, setFinalTotal] = useState(0)
+  
+  // Hook para manejar descuentos
+  const { applyDiscountsToCart } = useDiscounts()
 
   // Load cart from cookies on client side
   const loadCart = useCallback(() => {
@@ -57,13 +66,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Calculate subtotal and item count whenever cart changes
   useEffect(() => {
+    // Aplicar descuentos a los productos del carrito
+    const itemsWithDiscounts = applyDiscountsToCart(cartItems)
+    
+    // Calcular subtotal original (sin descuentos)
     const newSubtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
+    
+    // Calcular subtotal con descuentos aplicados
+    const discountedSubtotal = itemsWithDiscounts.reduce((total, item) => {
+      const itemPrice = item.discount ? item.discount.final_price : item.price
+      return total + itemPrice * item.quantity
+    }, 0)
+    
+    // Calcular ahorros totales
+    const newTotalSavings = newSubtotal - discountedSubtotal
+    
+    // Calcular total final
+    const newFinalTotal = discountedSubtotal
 
     const newItemCount = cartItems.reduce((count, item) => count + item.quantity, 0)
 
     setSubtotal(newSubtotal)
     setItemCount(newItemCount)
-  }, [cartItems])
+    setTotalSavings(newTotalSavings)
+    setFinalTotal(newFinalTotal)
+  }, [cartItems, applyDiscountsToCart])
 
   // Client-side cart functions
   const addToCart = useCallback((product: Product) => {
@@ -146,7 +173,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         addToCart, 
         removeFromCart, 
         updateCartItemQuantity,
-        clearCart
+        clearCart,
+        totalSavings,
+        finalTotal
       }}
     >
         {children}

@@ -40,6 +40,7 @@ export interface Translations {
     subscriptions: string
     adminOrders: string
     adminProducts: string
+    adminDiscounts: string
     adminSubscriptions: string
     adminPlans: string
     name: string

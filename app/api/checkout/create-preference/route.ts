@@ -3,6 +3,7 @@ import { createPreference } from "@/lib/mercadopago"
 import { v4 as uuidv4 } from "uuid"
 import { calculateShipping } from "@/lib/shipping-utils"
 import { createClient } from '@/lib/supabase/server'
+import { applyDiscountsToProducts } from '@/lib/discount-utils'
 
 export async function POST(request: NextRequest) {
   try {
@@ -69,9 +70,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Obtener descuentos activos
+    const { data: discounts, error: discountsError } = await supabase
+      .from('discounts')
+      .select('*')
+      .eq('is_active', true)
+      .gte('end_date', new Date().toISOString())
+      .lte('start_date', new Date().toISOString())
+
+    // Aplicar descuentos a los items
+    const itemsWithDiscounts = discounts && discounts.length > 0 
+      ? applyDiscountsToProducts(items, discounts)
+      : items
+
     // Create a temporary order
     const orderId = uuidv4()
     const subtotal = items.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0)
+    const discountedSubtotal = itemsWithDiscounts.reduce((sum: number, item: any) => {
+      const itemPrice = item.discount ? item.discount.final_price : item.price
+      return sum + itemPrice * item.quantity
+    }, 0)
     const allFreeShipping = items.length > 0 && items.every((it: any) => it.free_shipping === true)
     
     // Calcular envío basado en código postal del cliente si está disponible
@@ -86,7 +104,7 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    const total = subtotal + shippingCost
+    const total = discountedSubtotal + shippingCost
 
     const { error: orderError } = await supabase.from("orders").insert([
       {
@@ -106,11 +124,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert order items immediately so panels can show details
-    const orderItemsPayload = items.map((it: any) => ({
+    const orderItemsPayload = itemsWithDiscounts.map((it: any) => ({
       order_id: orderId,
       product_id: it.id,
       quantity: it.quantity,
-      price: it.price,
+      price: it.discount ? it.discount.final_price : it.price,
     }))
 
     const { error: orderItemsError } = await supabase
@@ -123,9 +141,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Mercado Pago preference with enhanced options
-    console.log('[MP] Incoming items', items.map((it: any) => ({ id: it.id, name: it.name, price: it.price, quantity: it.quantity })))
+    console.log('[MP] Incoming items', itemsWithDiscounts.map((it: any) => ({ 
+      id: it.id, 
+      name: it.name, 
+      price: it.discount ? it.discount.final_price : it.price, 
+      quantity: it.quantity,
+      discount: it.discount ? `${it.discount.name} (${it.discount.discount_type === 'percentage' ? `${it.discount.discount_value}%` : `$${it.discount.discount_value}`})` : null
+    })))
     const preference = await createPreference({
-      items,
+      items: itemsWithDiscounts,
       customer,
       orderId,
       shipping: shippingCost,
@@ -143,6 +167,8 @@ export async function POST(request: NextRequest) {
       preferenceId: preference.id,
       orderId,
       subtotal,
+      discountedSubtotal,
+      savings: subtotal - discountedSubtotal,
       shipping: shippingCost,
       total,
       timestamp: new Date().toISOString(),

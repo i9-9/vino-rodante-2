@@ -18,6 +18,14 @@ export interface Product {
 
 export interface CartItem extends Product {
   quantity: number
+  discount?: {
+    id: string
+    name: string
+    discount_type: 'percentage' | 'fixed_amount'
+    discount_value: number
+    final_price: number
+    savings: number
+  }
 }
 
 export interface OrderItem {

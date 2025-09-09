@@ -91,7 +91,7 @@ export async function getProducts(): Promise<ApiResponse<Product[]>> {
       }
     }
     
-    return { data: null, error: lastError }
+    return { data: null, error: lastError as PostgrestError | StorageError | null }
   } catch (error) {
     console.error('🔍 [getProducts] Exception:', error)
     return { data: null, error: error as any }
@@ -188,6 +188,83 @@ export async function getBoxesProducts(): Promise<ApiResponse<Product[]>> {
     return { data, error }
   } catch (error) {
     console.error('🔍 [getBoxesProducts] Exception:', error)
+    return { data: null, error: error as any }
+  }
+}
+
+// Función para obtener los productos individuales de un box
+export async function getBoxProducts(boxId: string): Promise<ApiResponse<any[]>> {
+  try {
+    const supabase = createClient()
+    
+    const { data, error } = await supabase
+      .from('box_product_relations')
+      .select(`
+        product_id,
+        quantity,
+        products:product_id (
+          id,
+          name,
+          price,
+          image,
+          varietal,
+          year,
+          region,
+          description
+        )
+      `)
+      .eq('box_id', boxId)
+
+    if (data && !error) {
+      // Formatear los datos para que sean más fáciles de usar
+      const formattedData = data.map(relation => ({
+        product_id: relation.product_id,
+        quantity: relation.quantity,
+        ...relation.products
+      }))
+      
+      return { data: formattedData, error: null }
+    }
+
+    // Si hay error de autenticación, usar cliente público
+    if (error && (error.message?.includes('auth') || error.message?.includes('policy') || (error as any).code === 'PGRST116')) {
+      const publicSupabase = createAdaptiveClient()
+      const { data: publicData, error: publicError } = await publicSupabase
+        .from('box_product_relations')
+        .select(`
+          product_id,
+          quantity,
+          products:product_id (
+            id,
+            name,
+            price,
+            image,
+            varietal,
+            year,
+            region,
+            description
+          )
+        `)
+        .eq('box_id', boxId)
+
+      if (publicError) {
+        console.error('🔍 [getBoxProducts] Public client error:', publicError)
+        return { data: null, error: publicError }
+      }
+
+      // Formatear los datos para que sean más fáciles de usar
+      const formattedData = publicData?.map(relation => ({
+        product_id: relation.product_id,
+        quantity: relation.quantity,
+        ...relation.products
+      })) || []
+
+      return { data: formattedData, error: null }
+    }
+
+    return { data, error }
+  } catch (error) {
+    console.error('🔍 [getBoxProducts] Exception:', error)
     return { data: null, error: error as any }
   }
 }
@@ -367,12 +444,17 @@ export async function searchProducts(query: string): Promise<ApiResponse<Product
 
 export async function getProductBySlug(slug: string): Promise<Product | undefined> {
   try {
+    // Decodificar el slug para manejar caracteres especiales como tildes
+    const decodedSlug = decodeURIComponent(slug)
+    console.log('🔍 [getProductBySlug] Original slug:', slug)
+    console.log('🔍 [getProductBySlug] Decoded slug:', decodedSlug)
+    
     // Intentar primero con el cliente autenticado
     const supabase = createClient()
     const { data, error } = await supabase
       .from('products')
       .select('*')
-      .eq('slug', slug)
+      .eq('slug', decodedSlug)
       .eq('is_visible', true)
       .single()
 
@@ -387,12 +469,18 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
       const { data: publicData, error: publicError } = await publicSupabase
         .from('products')
         .select('*')
-        .eq('slug', slug)
+        .eq('slug', decodedSlug)
         .eq('is_visible', true)
         .single()
 
       if (publicError) {
-        console.error('🔍 [getProductBySlug] Public client error:', publicError)
+        console.error('🔍 [getProductBySlug] Public client error:', {
+          message: publicError.message || 'Unknown error',
+          code: publicError.code || 'No code',
+          details: publicError.details || 'No details',
+          hint: publicError.hint || 'No hint',
+          fullError: publicError
+        })
         return undefined
       }
 

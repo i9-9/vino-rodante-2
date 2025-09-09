@@ -296,6 +296,7 @@ Amamos el vino, el trabajo que genera, la vinculación que propone y la música 
     subscriptions: "Suscripciones",
     adminOrders: "Pedidos (Admin)",
     adminProducts: "Productos (Admin)",
+    adminDiscounts: "Descuentos (Admin)",
     adminSubscriptions: "Suscripciones (Admin)",
     adminPlans: "Clubes/Planes (Admin)",
     name: "Nombre",

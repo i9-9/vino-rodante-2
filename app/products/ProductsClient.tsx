@@ -68,15 +68,38 @@ export default function ProductsClient({ t }: ProductsClientProps) {
       result = result.filter((p) => p.region === activeRegion)
     }
     if (activeVarietal) {
-      result = result.filter((p) => p.varietal === activeVarietal)
+      result = result.filter((p) => {
+        if (!p.varietal) return false
+        // Normalizar el varietal del producto para comparar
+        const normalizedProductVarietal = p.varietal
+          .toLowerCase()
+          .replace(/á/g, 'a')
+          .replace(/é/g, 'e')
+          .replace(/í/g, 'i')
+          .replace(/ó/g, 'o')
+          .replace(/ú/g, 'u')
+          .replace(/ñ/g, 'n')
+        return normalizedProductVarietal === activeVarietal
+      })
     }
     setFilteredProducts(result)
   }, [activeCategory, activePrice, activeRegion, activeVarietal, products])
 
   // Obtener regiones únicas de los productos
   const uniqueRegions = products ? Array.from(new Set(products.map((p: Product) => p.region))).filter(Boolean) : []
-  // Obtener varietales únicos de los productos
-  const uniqueVarietals = products ? Array.from(new Set(products.map((p: Product) => p.varietal))).filter(Boolean) : []
+  // Obtener varietales únicos de los productos, normalizando tildes para evitar duplicados
+  const uniqueVarietals = products ? Array.from(new Set(products.map((p: Product) => {
+    if (!p.varietal) return null
+    // Normalizar tildes para evitar duplicados como "torrontes" y "torrontés"
+    return p.varietal
+      .toLowerCase()
+      .replace(/á/g, 'a')
+      .replace(/é/g, 'e')
+      .replace(/í/g, 'i')
+      .replace(/ó/g, 'o')
+      .replace(/ú/g, 'u')
+      .replace(/ñ/g, 'n')
+  }))).filter(Boolean) : []
 
   // Mapeo de regiones a traducción si existe
   function getRegionLabel(region: string) {
@@ -97,7 +120,8 @@ export default function ProductsClient({ t }: ProductsClientProps) {
         return t.wineRegions[key as keyof typeof t.wineRegions]
       }
     }
-    return region
+    // Si no encuentra traducción, capitalizar la primera letra
+    return region.charAt(0).toUpperCase() + region.slice(1)
   }
 
   // Mapeo de varietales a traducción si existe
@@ -119,7 +143,8 @@ export default function ProductsClient({ t }: ProductsClientProps) {
         return t.wineVarietals[key as keyof typeof t.wineVarietals]
       }
     }
-    return varietal
+    // Si no encuentra traducción, capitalizar la primera letra
+    return varietal.charAt(0).toUpperCase() + varietal.slice(1)
   }
 
 

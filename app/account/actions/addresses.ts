@@ -67,6 +67,20 @@ export async function createAddress(formData: FormData): Promise<ActionResponse>
 
     const validatedData = addressSchema.parse(rawData)
 
+    // Verificar si ya existe una dirección idéntica
+    const { data: existingAddresses } = await supabase
+      .from('addresses')
+      .select('id')
+      .eq('customer_id', user.id)
+      .eq('line1', validatedData.line1)
+      .eq('city', validatedData.city)
+      .eq('state', validatedData.state)
+      .eq('postal_code', validatedData.postal_code)
+
+    if (existingAddresses && existingAddresses.length > 0) {
+      return { success: false, error: 'Ya existe una dirección idéntica' }
+    }
+
     const { error: insertError } = await supabase
       .from('addresses')
       .insert({

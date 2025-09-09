@@ -31,19 +31,139 @@ export interface ActionResponse {
 
 // Mapeo de categorías del formulario a valores de la base de datos
 const CATEGORY_MAPPING: Record<string, string> = {
+  // Tintos
   'Tinto': 'Tinto',
+  'tinto': 'Tinto',
+  'TINTO': 'Tinto',
+  'Tintos': 'Tinto',
+  'tintos': 'Tinto',
+  
+  // Blancos
   'Blanco': 'Blanco',
+  'blanco': 'Blanco',
+  'BLANCO': 'Blanco',
+  'Blancos': 'Blanco',
+  'blancos': 'Blanco',
+  
+  // Rosados
   'Rosado': 'Rosado',
+  'rosado': 'Rosado',
+  'ROSADO': 'Rosado',
+  'Rosados': 'Rosado',
+  'rosados': 'Rosado',
+  
+  // Naranja/Naranjo
+  'Naranja': 'Naranja',
+  'naranja': 'Naranja',
+  'NARANJA': 'Naranja',
+  'Naranjo': 'Naranja', // Unificar a "Naranja"
+  'naranjo': 'Naranja',
+  'NARANJO': 'Naranja',
+  
+  // Espumantes
   'Espumante': 'Espumante',
-  'Naranjo': 'Naranjo',
+  'espumante': 'Espumante',
+  'ESPUMANTE': 'Espumante',
+  'Espumantes': 'Espumante',
+  'espumantes': 'Espumante',
+  
+  // Dulces
   'Dulce': 'Dulce',
+  'dulce': 'Dulce',
+  'DULCE': 'Dulce',
+  'Dulces': 'Dulce',
+  'dulces': 'Dulce',
+  
+  // Boxes
   'Boxes': 'Boxes',
-  'Otras Bebidas': 'Otras Bebidas'
+  'boxes': 'Boxes',
+  'BOXES': 'Boxes',
+  'Box': 'Boxes',
+  'box': 'Boxes',
+  
+  // Otras Bebidas
+  'Otras Bebidas': 'Otras Bebidas',
+  'otras bebidas': 'Otras Bebidas',
+  'OTRAS BEBIDAS': 'Otras Bebidas',
+  'Otras': 'Otras Bebidas',
+  'otras': 'Otras Bebidas'
 }
 
 // Función helper interna para convertir categoría del formulario a base de datos
 function mapCategoryToDB(category: string): string {
   return CATEGORY_MAPPING[category] || category
+}
+
+// Función para normalizar varietales (evitar duplicados por tildes/mayúsculas)
+function normalizeVarietal(varietal: string): string {
+  if (!varietal) return ''
+  
+  // Normalizar tildes y convertir a lowercase para comparar
+  const normalized = varietal
+    .toLowerCase()
+    .replace(/á/g, 'a')
+    .replace(/é/g, 'e')
+    .replace(/í/g, 'i')
+    .replace(/ó/g, 'o')
+    .replace(/ú/g, 'u')
+    .replace(/ñ/g, 'n')
+    .trim()
+  
+  // Mapeo de variantes comunes a formato estándar
+  const varietalMapping: Record<string, string> = {
+    'torrontes': 'Torrontés',
+    'torrontés': 'Torrontés',
+    'malbec': 'Malbec',
+    'cabernet sauvignon': 'Cabernet Sauvignon',
+    'cabernet-sauvignon': 'Cabernet Sauvignon',
+    'chardonnay': 'Chardonnay',
+    'sauvignon blanc': 'Sauvignon Blanc',
+    'sauvignon-blanc': 'Sauvignon Blanc',
+    'pinot noir': 'Pinot Noir',
+    'pinot-noir': 'Pinot Noir',
+    'merlot': 'Merlot',
+    'syrah': 'Syrah',
+    'tempranillo': 'Tempranillo',
+    'bonarda': 'Bonarda'
+  }
+  
+  return varietalMapping[normalized] || varietal.charAt(0).toUpperCase() + varietal.slice(1).toLowerCase()
+}
+
+// Función para normalizar regiones (evitar duplicados por tildes/mayúsculas)
+function normalizeRegion(region: string): string {
+  if (!region) return ''
+  
+  // Normalizar tildes y convertir a lowercase para comparar
+  const normalized = region
+    .toLowerCase()
+    .replace(/á/g, 'a')
+    .replace(/é/g, 'e')
+    .replace(/í/g, 'i')
+    .replace(/ó/g, 'o')
+    .replace(/ú/g, 'u')
+    .replace(/ñ/g, 'n')
+    .trim()
+  
+  // Mapeo de variantes comunes a formato estándar
+  const regionMapping: Record<string, string> = {
+    'mendoza': 'Mendoza',
+    'san juan': 'San Juan',
+    'san-juan': 'San Juan',
+    'salta': 'Salta',
+    'la rioja': 'La Rioja',
+    'la-rioja': 'La Rioja',
+    'rioja': 'La Rioja',
+    'patagonia': 'Patagonia',
+    'neuquen': 'Neuquén',
+    'neuquén': 'Neuquén',
+    'rio negro': 'Río Negro',
+    'rio-negro': 'Río Negro',
+    'buenos aires': 'Buenos Aires',
+    'buenos-aires': 'Buenos Aires'
+  }
+  
+  return regionMapping[normalized] || region.charAt(0).toUpperCase() + region.slice(1).toLowerCase()
 }
 
 
@@ -114,12 +234,12 @@ export async function updateProduct(formData: FormData): Promise<ActionResponse>
 
     // Si category o region son 'none', usar string vacío
     const finalCategory = category === 'none' ? '' : mapCategoryToDB(category)
-    const finalRegion = region === 'none' ? '' : region
+    const finalRegion = region === 'none' ? '' : normalizeRegion(region)
     
     // Para boxes, establecer valores por defecto apropiados
     const isBox = category === 'Boxes'
     const finalYear = isBox ? 'N/A' : (year || '')
-    const finalVarietal = isBox ? 'Múltiples' : (varietal || '')
+    const finalVarietal = isBox ? 'Múltiples' : normalizeVarietal(varietal || '')
 
     // Construir update parcial
     const updateData: Record<string, unknown> = {
@@ -214,10 +334,10 @@ export async function createProduct(formData: FormData): Promise<ActionResponse>
       description: formData.get('description'),
       price: Number(formData.get('price')),
       category: mapCategoryToDB(category),
-      region: formData.get('region'),
+      region: normalizeRegion(formData.get('region') as string || ''),
       stock: Number(formData.get('stock')),
       year: isBox ? 'N/A' : (formData.get('year') || ''),
-      varietal: isBox ? 'Múltiples' : (formData.get('varietal') || ''),
+      varietal: isBox ? 'Múltiples' : normalizeVarietal(formData.get('varietal') as string || ''),
       featured: formData.get('featured') === 'on',
       is_visible: formData.get('is_visible') === 'on',
       free_shipping: formData.get('free_shipping') === 'on',

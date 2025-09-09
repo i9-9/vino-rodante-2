@@ -26,6 +26,7 @@ import OrdersTabLazy from './components/OrdersTabLazy'
 import { SubscriptionsTab } from './components/SubscriptionsTab'
 import AdminOrdersTabLazy from './admin-orders-tab-lazy'
 import AdminProductsTabLazy from './admin-products-tab-lazy'
+import { AdminDiscountsTab } from './admin-discounts-tab'
 import { AdminSubscriptionsTab } from './admin-subscriptions-tab'
 import AdminPlansTabLazy from './admin-plans-tab-lazy'
 
@@ -73,6 +74,7 @@ export default function AccountClientNew({
     ...(userRole === 'admin' ? [
       { value: 'admin-orders', label: t.account.adminOrders },
       { value: 'admin-products', label: t.account.adminProducts },
+      { value: 'admin-discounts', label: t.account.adminDiscounts },
       { value: 'admin-subscriptions', label: t.account.adminSubscriptions },
       { value: 'admin-plans', label: t.account.adminPlans },
     ] : [])
@@ -188,6 +190,10 @@ export default function AccountClientNew({
 
                   <TabsContent value="admin-products" className="space-y-4 m-0">
                     <AdminProductsTabLazy t={t} />
+                  </TabsContent>
+
+                  <TabsContent value="admin-discounts" className="space-y-4 m-0">
+                    <AdminDiscountsTab t={t} />
                   </TabsContent>
 
                   <TabsContent value="admin-subscriptions" className="space-y-4 m-0">

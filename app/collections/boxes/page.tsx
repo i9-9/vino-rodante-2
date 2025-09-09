@@ -2,7 +2,7 @@
 
 import { useTranslations } from "@/lib/providers/translations-provider"
 import { getProductsByCategory } from "@/lib/products-client"
-import ProductCard from "@/components/product-card"
+import BoxCard from "@/components/box-card"
 import { useEffect, useState } from "react"
 import type { Product } from "@/lib/types"
 
@@ -48,10 +48,11 @@ export default function BoxesCollectionPage() {
   }, [])
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-medium mb-4">Boxes de Vinos</h1>
-        <p className="text-muted-foreground text-lg">
+    <div className="container mx-auto px-6 md:px-8 py-16">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-16 gap-4">
+        <h1 className="text-4xl md:text-5xl font-medium">Boxes de Vinos</h1>
+        <p className="text-lg text-muted-foreground max-w-xl leading-tight">
           Descubrí nuestras cajas seleccionadas con los mejores vinos argentinos. 
           Perfectas para regalar o para disfrutar en casa.
         </p>
@@ -68,7 +69,7 @@ export default function BoxesCollectionPage() {
       ) : products.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <BoxCard key={product.id} product={product} />
           ))}
         </div>
       ) : (
