@@ -48,6 +48,30 @@ export default function WeeklyWinePage() {
         </p>
       </div>
 
+      {/* Clubs - Movido al principio y más grandes */}
+      <div className="mb-20">
+        <h2 className="text-3xl font-medium mb-12 text-center">Nuestros Clubs</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {CLUBS.map((club) => (
+            <Link key={club.id} href={club.link} className="group">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                <Image
+                  src={club.image}
+                  alt={club.title}
+                  fill
+                  className="object-cover transition-transform group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+                <div className="absolute inset-0 flex flex-col justify-end p-8 text-white">
+                  <h3 className="text-2xl font-bold mb-4">{club.title}</h3>
+                  <p className="text-base text-white/90 leading-relaxed">{club.description}</p>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
       {/* Cómo funciona */}
       <div className="mb-16">
         <h2 className="text-2xl font-medium mb-8 text-center">{t.club.howItWorks.title}</h2>
@@ -99,29 +123,6 @@ export default function WeeklyWinePage() {
           <p className="text-sm font-medium text-primary">
             {t.club.events.invitation}
           </p>
-        </div>
-      </div>
-
-      {/* Clubs */}
-      <div>
-        <h2 className="text-2xl font-medium mb-8 text-center">Nuestros Clubs</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {CLUBS.map((club) => (
-            <Link key={club.id} href={club.link} className="group">
-              <div className="relative aspect-[4/3] overflow-hidden rounded-lg">
-                <Image
-                  src={club.image}
-                  alt={club.title}
-                  fill
-                  className="object-cover transition-transform group-hover:scale-105"
-                />
-                <div className="absolute inset-0 flex flex-col justify-end p-4 text-white">
-                  <h3 className="text-lg font-medium mb-2">{club.title}</h3>
-                  <p className="text-xs text-white/80 leading-relaxed">{club.description}</p>
-                </div>
-              </div>
-            </Link>
-          ))}
         </div>
       </div>
     </div>

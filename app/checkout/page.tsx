@@ -162,15 +162,7 @@ export default function CheckoutPage() {
     }
 
     // Validate required fields
-    if (
-      !customerInfo.name ||
-      !customerInfo.email ||
-      !customerInfo.address1 ||
-      !customerInfo.city ||
-      !customerInfo.state ||
-      !customerInfo.postalCode ||
-      !customerInfo.country
-    ) {
+    if (!customerInfo.name || !customerInfo.email || !customerInfo.address1 || !customerInfo.city || !customerInfo.postalCode) {
       setError(t.checkout.allFieldsRequired || "All fields are required")
       setIsSubmitting(false)
       return
@@ -273,7 +265,7 @@ export default function CheckoutPage() {
           customer: {
             name: customerInfo.name,
             email: customerInfo.email,
-            id: customerId, // Include customer ID if available
+            id: customerId,
           },
         }),
       })

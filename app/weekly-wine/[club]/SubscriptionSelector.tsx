@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { formatCurrency } from "@/lib/utils"
+import { createClient } from "@/utils/supabase/client"
 
 interface SubscriptionPlan {
   id: string
@@ -87,19 +88,39 @@ export default function SubscriptionSelector({ plans }: SubscriptionSelectorProp
 
   const selectedSubscription = subscriptionOptions.find(option => option.id === selectedOption)
 
-  const handleSubscribe = () => {
+  const handleSubscribe = async () => {
     if (!selectedSubscription) return
 
-    // Aquí puedes agregar la lógica para procesar la suscripción
-    console.log("Suscribirse a:", {
-      planId: selectedSubscription.planId,
-      frequency: selectedSubscription.frequency,
-      price: selectedSubscription.price,
-      bottles: selectedSubscription.bottles
-    })
-    
-    // Por ahora, solo mostramos un alert
-    alert(`¡Próximamente! Suscripción ${selectedSubscription.label} por ${formatCurrency(selectedSubscription.price)}`)
+    try {
+      // Verificar autenticación
+      const supabase = createClient()
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      
+      if (authError || !user) {
+        // Redirigir al login si no está autenticado
+        window.location.href = '/auth/sign-in?redirectTo=' + encodeURIComponent(window.location.pathname)
+        return
+      }
+
+      // Redirigir al checkout específico de suscripciones
+      const subscriptionData = {
+        planId: selectedSubscription.planId,
+        frequency: selectedSubscription.frequency,
+        price: selectedSubscription.price,
+        bottles: selectedSubscription.bottles,
+        label: selectedSubscription.label
+      }
+
+      // Guardar datos de suscripción en sessionStorage para el checkout
+      sessionStorage.setItem('subscriptionData', JSON.stringify(subscriptionData))
+      
+      // Redirigir al checkout de suscripciones
+      window.location.href = '/checkout/subscription'
+
+    } catch (error) {
+      console.error('Error al suscribirse:', error)
+      alert(`Error: ${error instanceof Error ? error.message : 'Error desconocido'}`)
+    }
   }
 
   return (
@@ -149,14 +170,14 @@ export default function SubscriptionSelector({ plans }: SubscriptionSelectorProp
         size="lg" 
         className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white"
         onClick={handleSubscribe}
+        data-subscribe-button
       >
         Suscribirse - {formatCurrency(selectedSubscription?.price || 0)}
       </Button>
 
-      {/* Información adicional */}
+      {/* Información adicional - solo beneficios únicos */}
       <div className="text-center text-sm text-muted-foreground space-y-1">
         <p>✓ Cancela cuando quieras</p>
-        <p>✓ Envío gratis en CABA y GBA</p>
         <p>✓ Selección curada por sommeliers</p>
       </div>
     </div>

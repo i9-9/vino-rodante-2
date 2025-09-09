@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Plus, Pencil, ArrowUpDown, ArrowUp, ArrowDown, Trash2 } from 'lucide-react'
+import { Plus, Pencil, ArrowUpDown, ArrowUp, ArrowDown, Trash2, Eye, EyeOff } from 'lucide-react'
 import type { Product } from './types'
 import type { Translations } from '@/lib/i18n/types'
 import {
@@ -27,7 +27,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import Image from 'next/image'
-import { updateProduct, createProduct, deleteProducts } from './actions/products'
+import { updateProduct, createProduct, deleteProducts, toggleProductVisibility } from './actions/products'
 import { CreateProductForm } from './components/CreateProductForm'
 import {
   Table,
@@ -895,12 +895,47 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
     },
     {
       id: 'status',
-      header: 'Estado',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="-ml-4"
+        >
+          Estado
+          {column.getIsSorted() === "asc" ? (
+            <ArrowUp className="ml-2 h-4 w-4" />
+          ) : column.getIsSorted() === "desc" ? (
+            <ArrowDown className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          )}
+        </Button>
+      ),
+      accessorKey: 'is_visible',
       cell: ({ row }) => (
         <div className="flex flex-col gap-1">
-          <Badge variant={row.original.is_visible ? "default" : "secondary"}>
-            {row.original.is_visible ? 'Visible' : 'Oculto'}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge 
+              variant={row.original.is_visible ? "default" : "secondary"}
+              className={row.original.is_visible 
+                ? "bg-green-100 text-green-800 border-green-200" 
+                : "bg-gray-100 text-gray-600 border-gray-200"
+              }
+            >
+              {row.original.is_visible ? 'Visible' : 'Oculto'}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleToggleVisibility(row.original.id, !row.original.is_visible)
+              }}
+              className="h-6 px-2 text-xs"
+            >
+              {row.original.is_visible ? 'Ocultar' : 'Mostrar'}
+            </Button>
+          </div>
           {row.original.featured && (
             <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
               Destacado
@@ -908,7 +943,11 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
           )}
         </div>
       ),
-      enableSorting: false
+      sortingFn: (rowA, rowB) => {
+        const a = rowA.original.is_visible ? 1 : 0
+        const b = rowB.original.is_visible ? 1 : 0
+        return a - b
+      }
     },
     {
       id: 'actions',
@@ -1117,6 +1156,85 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
     setBulkDeleteDialogOpen(true)
   }
 
+  const handleToggleVisibility = async (productId: string, visible: boolean) => {
+    try {
+      const result = await toggleProductVisibility(productId, visible)
+      
+      if (result.success) {
+        toast({
+          title: "Éxito",
+          description: result.message,
+        })
+        
+        // Solicitar refresh de datos al padre si está disponible
+        if (onRefresh) {
+          await onRefresh()
+        }
+      } else {
+        throw new Error(result.error || 'Error desconocido')
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error al cambiar visibilidad del producto",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleBulkToggleVisibility = async (visible: boolean) => {
+    const selectedRows = table.getFilteredSelectedRowModel().rows
+    const selectedIds = selectedRows.map(row => row.original.id)
+
+    if (selectedIds.length === 0) {
+      toast({
+        title: "Error",
+        description: "No hay productos seleccionados",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      // Cambiar visibilidad de todos los productos seleccionados
+      const promises = selectedIds.map(id => toggleProductVisibility(id, visible))
+      const results = await Promise.all(promises)
+      
+      const successCount = results.filter(r => r.success).length
+      const errorCount = results.length - successCount
+      
+      if (successCount > 0) {
+        toast({
+          title: "Éxito",
+          description: `${successCount} producto(s) ${visible ? 'mostrado(s)' : 'oculto(s)'} correctamente`,
+        })
+      }
+      
+      if (errorCount > 0) {
+        toast({
+          title: "Advertencia",
+          description: `${errorCount} producto(s) no pudieron ser actualizado(s)`,
+          variant: "destructive",
+        })
+      }
+      
+      // Solicitar refresh de datos al padre si está disponible
+      if (onRefresh) {
+        await onRefresh()
+      }
+      
+      // Limpiar selección
+      setRowSelection({})
+      
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error al cambiar visibilidad de los productos",
+        variant: "destructive",
+      })
+    }
+  }
+
   // Opciones para los selects
   const categoryOptions = CATEGORIES.map(category => ({
     value: category,
@@ -1134,17 +1252,32 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
         <div className="flex items-center gap-4">
           <h2 className="text-2xl font-semibold">PRODUCTOS</h2>
           <Select value={visibilityFilter} onValueChange={(value: VisibilityFilter) => setVisibilityFilter(value)}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Filtrar por visibilidad" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="visible">Visibles</SelectItem>
-              <SelectItem value="hidden">Ocultos</SelectItem>
+              <SelectItem value="all">
+                <div className="flex items-center justify-between w-full">
+                  <span>Todos</span>
+                  <span className="ml-2 text-xs text-gray-500">({products.length})</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="visible">
+                <div className="flex items-center justify-between w-full">
+                  <span>Visibles</span>
+                  <span className="ml-2 text-xs text-green-600">({products.filter(p => p.is_visible).length})</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="hidden">
+                <div className="flex items-center justify-between w-full">
+                  <span>Ocultos</span>
+                  <span className="ml-2 text-xs text-gray-600">({products.filter(p => !p.is_visible).length})</span>
+                </div>
+              </SelectItem>
             </SelectContent>
           </Select>
           <div className="text-sm text-gray-500">
-            {filteredProducts.length} productos
+            {filteredProducts.length} productos mostrados
           </div>
           {table.getFilteredSelectedRowModel().rows.length > 0 && (
             <div className="text-sm text-blue-600 font-medium">
@@ -1154,14 +1287,32 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
         </div>
         <div className="flex gap-2">
           {table.getFilteredSelectedRowModel().rows.length > 0 && (
-            <Button 
-              onClick={openBulkDeleteDialog}
-              variant="destructive"
-              className="bg-red-600 hover:bg-red-700"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Eliminar seleccionados ({table.getFilteredSelectedRowModel().rows.length})
-            </Button>
+            <>
+              <Button 
+                onClick={() => handleBulkToggleVisibility(true)}
+                variant="outline"
+                className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Mostrar seleccionados ({table.getFilteredSelectedRowModel().rows.length})
+              </Button>
+              <Button 
+                onClick={() => handleBulkToggleVisibility(false)}
+                variant="outline"
+                className="bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+              >
+                <EyeOff className="h-4 w-4 mr-2" />
+                Ocultar seleccionados ({table.getFilteredSelectedRowModel().rows.length})
+              </Button>
+              <Button 
+                onClick={openBulkDeleteDialog}
+                variant="destructive"
+                className="bg-red-600 hover:bg-red-700"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Eliminar seleccionados ({table.getFilteredSelectedRowModel().rows.length})
+              </Button>
+            </>
           )}
           <Button 
             onClick={() => {

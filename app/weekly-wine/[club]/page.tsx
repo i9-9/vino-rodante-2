@@ -132,60 +132,6 @@ export default async function ClubPage({ params }: { params: Promise<{ club: str
           </div>
         </div>
 
-        {/* Beneficios */}
-        <div className="py-12 bg-muted rounded-lg mb-12 px-6">
-          <h3 className="text-2xl font-bold text-center mb-8">¿Qué recibís?</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            {clubInfo.benefits.slice(0, 3).map((benefit, idx) => (
-              <div key={idx}>
-                <div className="flex justify-center mb-2">
-                  <span className="text-4xl">🍷</span>
-                </div>
-                <div className="font-semibold mb-1">{benefit}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* About the Wines */}
-        {planProducts.length > 0 && (
-          <div className="mb-12">
-            <h3 className="text-2xl font-bold mb-6 text-center">Vinos destacados</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {planProducts.slice(0, 6).map((item) => (
-                <div key={item.id} className="border rounded-lg p-4 hover:shadow-lg transition-shadow">
-                  <div className="flex flex-col items-center text-center">
-                    {item.products.image && (
-                      <div className="relative w-24 h-32 mb-4">
-                        <Image
-                          src={item.products.image}
-                          alt={item.products.name}
-                          fill
-                          className="object-cover rounded"
-                        />
-                      </div>
-                    )}
-                    <h4 className="font-semibold mb-2">{item.products.name}</h4>
-                    <div className="text-sm text-muted-foreground space-y-1 mb-3">
-                      <div>{item.products.year} • {item.products.region}</div>
-                      <div>{item.products.varietal}</div>
-                      <div className="font-medium">Cantidad: {item.quantity}</div>
-                    </div>
-                    {item.products.description && (
-                      <p className="text-xs text-muted-foreground overflow-hidden" style={{ 
-                        display: '-webkit-box', 
-                        WebkitLineClamp: 3, 
-                        WebkitBoxOrient: 'vertical' 
-                      }}>
-                        {item.products.description}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* FAQ - Accordion con animación */}
         <div className="mb-12 max-w-2xl mx-auto">
@@ -193,20 +139,20 @@ export default async function ClubPage({ params }: { params: Promise<{ club: str
           <Accordion
             items={[
               {
-                title: "¿Puedo pausar o cancelar mi suscripción cuando quiera?",
-                content: "Sí, podés pausar o cancelar tu suscripción en cualquier momento desde tu cuenta."
-              },
-              {
-                title: "¿Qué vinos recibo cada semana?",
-                content: "Recibís una selección curada por nuestros sommeliers, diferente cada semana."
-              },
-              {
-                title: "¿Hay costo de envío?",
-                content: "El envío es gratis en CABA y GBA. Consultá por otras zonas."
+                title: "¿Cómo funciona la selección de vinos?",
+                content: "Nuestros sommeliers seleccionan cuidadosamente diferentes vinos cada semana basándose en la temporada, calidad y variedad para ofrecerte una experiencia única de cata."
               },
               {
                 title: "¿Puedo regalar una suscripción?",
-                content: "¡Sí! Solo marcá la opción \"Es un regalo\" al suscribirte."
+                content: "¡Sí! Solo marcá la opción \"Es un regalo\" al suscribirte y podrás personalizar el mensaje de regalo."
+              },
+              {
+                title: "¿Qué pasa si no me gusta un vino?",
+                content: "Entendemos que los gustos son personales. Si no estás satisfecho con alguna selección, contactanos y trabajaremos juntos para mejorar tu experiencia."
+              },
+              {
+                title: "¿Puedo cambiar la frecuencia de entrega?",
+                content: "Sí, podés cambiar entre semanal, quincenal o mensual en cualquier momento desde tu cuenta de usuario."
               }
             ]}
           />

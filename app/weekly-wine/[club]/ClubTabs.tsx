@@ -33,24 +33,19 @@ const tabContentVariants = {
   hidden: {
     opacity: 0,
     y: 20,
-    height: 0,
   },
   visible: {
     opacity: 1,
     y: 0,
-    height: "auto",
     transition: {
-      duration: 0.3,
-      ease: "easeOut"
+      duration: 0.3
     }
   },
   exit: {
     opacity: 0,
     y: -20,
-    height: 0,
     transition: {
-      duration: 0.2,
-      ease: "easeIn"
+      duration: 0.2
     }
   }
 }
@@ -135,29 +130,20 @@ export default function ClubTabs({ plan, products, clubInfo }: ClubTabsProps) {
               </div>
 
               <div className="bg-muted/50 p-4 rounded-lg">
-                <h4 className="font-semibold mb-2">Opciones de suscripción</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-                  {plan.price_weekly > 0 && (
-                    <div className="text-center p-3 bg-background rounded border">
-                      <div className="font-medium">Cada semana</div>
-                      <div className="text-lg font-bold text-primary">{formatCurrency(plan.price_weekly)}</div>
-                      <div className="text-xs text-muted-foreground">cada semana</div>
-                    </div>
-                  )}
-                  {plan.price_biweekly > 0 && (
-                    <div className="text-center p-3 bg-background rounded border">
-                      <div className="font-medium">Cada dos semanas</div>
-                      <div className="text-lg font-bold text-primary">{formatCurrency(plan.price_biweekly)}</div>
-                      <div className="text-xs text-muted-foreground">cada 2 semanas</div>
-                    </div>
-                  )}
-                  {plan.price_monthly > 0 && (
-                  <div className="text-center p-3 bg-background rounded border">
-                    <div className="font-medium">Cada mes</div>
-                    <div className="text-lg font-bold text-primary">{formatCurrency(plan.price_monthly)}</div>
-                    <div className="text-xs text-muted-foreground">cada mes</div>
+                <h4 className="font-semibold mb-2">Información de entrega</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Botellas por entrega:</span>
+                    <span className="font-medium">{plan.wines_per_delivery || 'Variable'}</span>
                   </div>
-                  )}
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tipo de club:</span>
+                    <span className="font-medium capitalize">{plan.club}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Envío:</span>
+                    <span className="font-medium text-green-600">Gratis en CABA y GBA</span>
+                  </div>
                 </div>
               </div>
             </motion.div>

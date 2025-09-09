@@ -98,7 +98,7 @@ export function SubscriptionBanner({
             alt={`Banner de ${planName}`}
             fallbackSrc={fallbackImage}
             priority
-            quality={100}
+            quality={75}
             sizes="100vw"
             overlay
             overlayGradient="from-black/30 via-black/10 to-transparent"
