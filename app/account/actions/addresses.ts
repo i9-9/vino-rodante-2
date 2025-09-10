@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import type { ActionResponse } from '../types'
-import type { Database } from '@/lib/database.types'
+import type { Database } from '@/lib/database.types.ts'
 
 type AddressUpdate = Database['public']['Tables']['addresses']['Update']
 
@@ -284,5 +284,84 @@ export async function setDefaultAddress(formData: FormData): Promise<ActionRespo
   } catch (error) {
     console.error('Error setting default address:', error)
     return { success: false, error: error instanceof Error ? error.message : 'Error al establecer dirección predeterminada' }
+  }
+}
+
+export async function cleanDuplicateAddresses(): Promise<ActionResponse> {
+  try {
+    const supabase = await createClient()
+    
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      redirect('/auth/sign-in')
+    }
+
+    // Obtener todas las direcciones del usuario
+    const { data: addresses, error: fetchError } = await supabase
+      .from('addresses')
+      .select('*')
+      .eq('customer_id', user.id)
+      .order('created_at', { ascending: true })
+
+    if (fetchError) throw fetchError
+
+    if (!addresses || addresses.length <= 1) {
+      return { success: true, message: 'No hay direcciones duplicadas' }
+    }
+
+    // Identificar duplicados
+    const uniqueAddresses = new Map()
+    const duplicatesToDelete: string[] = []
+
+    for (const address of addresses) {
+      const key = `${address.line1}|${address.line2 || ''}|${address.city}|${address.state}|${address.postal_code}|${address.country}`
+      
+      if (uniqueAddresses.has(key)) {
+        // Es un duplicado, marcar para eliminar
+        duplicatesToDelete.push(address.id)
+      } else {
+        uniqueAddresses.set(key, address)
+      }
+    }
+
+    // Eliminar duplicados
+    if (duplicatesToDelete.length > 0) {
+      const { error: deleteError } = await supabase
+        .from('addresses')
+        .delete()
+        .in('id', duplicatesToDelete)
+
+      if (deleteError) throw deleteError
+    }
+
+    // Asegurar que solo haya una dirección marcada como principal
+    const { data: remainingAddresses } = await supabase
+      .from('addresses')
+      .select('*')
+      .eq('customer_id', user.id)
+
+    const defaultAddresses = remainingAddresses?.filter(addr => addr.is_default) || []
+    
+    if (defaultAddresses.length > 1) {
+      // Mantener solo la primera como principal
+      const firstDefault = defaultAddresses[0]
+      const othersToUpdate = defaultAddresses.slice(1).map(addr => addr.id)
+
+      if (othersToUpdate.length > 0) {
+        await supabase
+          .from('addresses')
+          .update({ is_default: false })
+          .in('id', othersToUpdate)
+      }
+    }
+
+    revalidatePath('/account')
+    return { 
+      success: true, 
+      message: `Se eliminaron ${duplicatesToDelete.length} direcciones duplicadas` 
+    }
+  } catch (error) {
+    console.error('Error cleaning duplicate addresses:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Error al limpiar direcciones duplicadas' }
   }
 } 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import AdminOrdersTab from './admin-orders-tab'
 import { AdminOrdersSkeleton } from './components/AdminSkeleton'

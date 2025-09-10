@@ -56,8 +56,8 @@ export function SubscriptionButton({ plan, className }: SubscriptionButtonProps)
       }
 
       // Redirigir a MercadoPago
-      if (data.init_point) {
-        window.location.href = data.init_point;
+      if (data.paymentUrl) {
+        window.location.href = data.paymentUrl;
       } else {
         throw new Error('No se recibió el punto de inicio de MercadoPago');
       }
@@ -77,8 +77,7 @@ export function SubscriptionButton({ plan, className }: SubscriptionButtonProps)
     <>
       <Button
         onClick={() => setIsOpen(true)}
-        className={className}
-        variant="default"
+        className={`${className} bg-[#A83935] hover:bg-[#8B2D2A] text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200`}
         size="lg"
       >
         Suscribirse
@@ -145,7 +144,7 @@ export function SubscriptionButton({ plan, className }: SubscriptionButtonProps)
 
             <Button
               onClick={handleSubscribe}
-              className="w-full mt-4"
+              className="w-full mt-4 bg-[#A83935] hover:bg-[#8B2D2A] text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
               disabled={isLoading}
             >
               {isLoading ? 'Procesando...' : 'Confirmar suscripción'}

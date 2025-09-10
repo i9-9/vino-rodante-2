@@ -168,7 +168,7 @@ export default function SubscriptionSelector({ plans }: SubscriptionSelectorProp
       {/* Botón de suscripción */}
       <Button 
         size="lg" 
-        className="w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white"
+        className="w-full bg-[#A83935] hover:bg-[#8B2D2A] text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
         onClick={handleSubscribe}
         data-subscribe-button
       >

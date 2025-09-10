@@ -110,9 +110,9 @@ export function getPricingDetails(plan: SubscriptionPlan): SubscriptionPricing {
 export function getMercadoPagoFrequencyConfig(frequency: SubscriptionFrequency) {
   switch (frequency) {
     case 'weekly':
-      return { frequency: 1, frequency_type: 'weeks' as const };
+      return { frequency: 7, frequency_type: 'days' as const };
     case 'biweekly':
-      return { frequency: 2, frequency_type: 'weeks' as const };
+      return { frequency: 14, frequency_type: 'days' as const };
     case 'monthly':
       return { frequency: 1, frequency_type: 'months' as const };
     default:

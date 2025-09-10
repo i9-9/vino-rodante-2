@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { MapPin, Plus, Pencil, Trash2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { createAddress, deleteAddress, setDefaultAddress, updateAddress } from '../actions/addresses'
+import { createAddress, deleteAddress, setDefaultAddress, updateAddress, cleanDuplicateAddresses } from '../actions/addresses'
 import type { Address } from '../types'
 import type { Translations } from '@/lib/i18n/types'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -39,6 +39,35 @@ export function AddressesTab({ addresses, userId, t }: AddressesTabProps) {
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+
+  // Limpiar direcciones duplicadas y asegurar que solo haya una principal
+  const cleanAddresses = (addresses: Address[]) => {
+    // Eliminar duplicados basados en todos los campos excepto id
+    const uniqueAddresses = addresses.filter((address, index, self) => 
+      index === self.findIndex(a => 
+        a.line1 === address.line1 &&
+        a.line2 === address.line2 &&
+        a.city === address.city &&
+        a.state === address.state &&
+        a.postal_code === address.postal_code &&
+        a.country === address.country
+      )
+    )
+
+    // Asegurar que solo haya una dirección marcada como principal
+    const defaultAddresses = uniqueAddresses.filter(addr => addr.is_default)
+    if (defaultAddresses.length > 1) {
+      // Si hay múltiples direcciones marcadas como principales, mantener solo la primera
+      return uniqueAddresses.map((addr, index) => ({
+        ...addr,
+        is_default: index === 0 ? true : false
+      }))
+    }
+
+    return uniqueAddresses
+  }
+
+  const cleanedAddresses = cleanAddresses(addresses)
 
   const handleAddAddress = async (formData: FormData) => {
     setIsLoading(true)
@@ -148,6 +177,29 @@ export function AddressesTab({ addresses, userId, t }: AddressesTabProps) {
     })
   }
 
+  const handleCleanDuplicates = async () => {
+    setIsLoading(true)
+    setError(null)
+    startTransition(async () => {
+      try {
+        const result = await cleanDuplicateAddresses()
+        if (result.error) {
+          setError(result.error)
+          toast.error(result.error)
+        } else {
+          toast.success(result.message || 'Direcciones duplicadas eliminadas')
+          router.refresh()
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Error inesperado'
+        setError(message)
+        toast.error(message)
+      } finally {
+        setIsLoading(false)
+      }
+    })
+  }
+
   const handleOpenEditModal = (address: Address) => {
     setSelectedAddress({...address})
     setError(null)
@@ -208,8 +260,29 @@ export function AddressesTab({ addresses, userId, t }: AddressesTabProps) {
         </Alert>
       )}
 
+      {cleanedAddresses.length !== addresses.length && (
+        <Alert>
+          <AlertDescription className="flex items-center justify-between">
+            <span>Se detectaron direcciones duplicadas. Se han mostrado solo las direcciones únicas.</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCleanDuplicates}
+              disabled={isLoading}
+              className="ml-4"
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Limpiar duplicados'
+              )}
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="divide-y border rounded-lg flex-1">
-        {addresses.map((address) => (
+        {cleanedAddresses.map((address) => (
           <div 
             key={address.id}
             className="p-4 first:rounded-t-lg last:rounded-b-lg flex flex-col sm:flex-row sm:items-start gap-4"
@@ -220,7 +293,7 @@ export function AddressesTab({ addresses, userId, t }: AddressesTabProps) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
                 <h3 className="font-medium">
-                  {address.is_default ? 'DIRECCIÓN PRINCIPAL' : `Dirección #${addresses.indexOf(address) + 1}`}
+                  {address.is_default ? 'DIRECCIÓN PRINCIPAL' : `Dirección #${cleanedAddresses.indexOf(address) + 1}`}
                 </h3>
                 {address.is_default && (
                   <div className="px-2 py-1 text-xs font-medium bg-[#7B1E1E]/10 text-[#7B1E1E] rounded">

@@ -24,6 +24,7 @@ export default function SubscriptionCheckoutPage() {
   const router = useRouter()
   const { toast } = useToast()
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(null)
+  const [user, setUser] = useState<any>(null)
   const [customerInfo, setCustomerInfo] = useState({
     name: "",
     email: "",
@@ -39,6 +40,8 @@ export default function SubscriptionCheckoutPage() {
   const [error, setError] = useState<string | null>(null)
   const [preferenceId, setPreferenceId] = useState<string | null>(null)
   const [isRedirecting, setIsRedirecting] = useState(false)
+  const [isLoadingUserInfo, setIsLoadingUserInfo] = useState(true)
+  const [addressAutoFilled, setAddressAutoFilled] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -62,7 +65,11 @@ export default function SubscriptionCheckoutPage() {
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
+        setIsLoadingUserInfo(true)
         const { data: { user } } = await supabase.auth.getUser()
+        
+        // Set user state
+        setUser(user)
         
         if (user) {
           // Obtener información del cliente de la base de datos
@@ -72,13 +79,16 @@ export default function SubscriptionCheckoutPage() {
             .eq('id', user.id)
             .single()
 
-          // Obtener dirección por defecto
-          const { data: address } = await supabase
+          // Obtener dirección por defecto (o la primera si no hay ninguna marcada como default)
+          const { data: addresses } = await supabase
             .from('addresses')
             .select('*')
             .eq('customer_id', user.id)
-            .eq('is_default', true)
-            .single()
+            .order('is_default', { ascending: false })
+            .order('created_at', { ascending: false })
+            .limit(1)
+
+          const address = addresses?.[0]
 
           // Prellenar información del cliente
           setCustomerInfo(prev => ({
@@ -93,9 +103,16 @@ export default function SubscriptionCheckoutPage() {
             postalCode: address?.postal_code || prev.postalCode,
             country: address?.country || 'Argentina',
           }))
+
+          // Marcar si se autocompletó la dirección
+          if (address?.line1) {
+            setAddressAutoFilled(true)
+          }
         }
       } catch (error) {
         console.error('Error fetching user info:', error)
+      } finally {
+        setIsLoadingUserInfo(false)
       }
     }
 
@@ -113,17 +130,49 @@ export default function SubscriptionCheckoutPage() {
     setError(null)
 
     try {
+      // Validar que tenemos los datos de suscripción
+      if (!subscriptionData) {
+        throw new Error('No se encontraron los datos de suscripción. Por favor, vuelve a seleccionar un plan.')
+      }
+
       // Validar datos requeridos
       if (!customerInfo.name || !customerInfo.email || !customerInfo.address1 || !customerInfo.city) {
         throw new Error('Por favor completa todos los campos requeridos para la suscripción')
       }
 
       // Obtener usuario autenticado
+      console.log('🔐 Checking user authentication...');
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       
-      if (authError || !user) {
+      // También verificar la sesión
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      console.log('👤 User data:', { 
+        user: !!user, 
+        userId: user?.id,
+        userEmail: user?.email,
+        authError: !!authError,
+        authErrorDetails: authError
+      });
+      
+      console.log('🔑 Session data:', {
+        session: !!session,
+        sessionError: !!sessionError,
+        sessionErrorDetails: sessionError,
+        accessToken: session?.access_token ? 'present' : 'missing'
+      });
+      
+      if (authError) {
+        console.error('❌ Auth error:', authError);
+        throw new Error('Error de autenticación: ' + authError.message)
+      }
+      
+      if (!user) {
+        console.error('❌ No user found');
         throw new Error('Debes estar autenticado para crear una suscripción')
       }
+      
+      console.log('✅ User authenticated successfully:', user.id);
 
       // Primero guardar información del cliente
       const { error: customerError } = await supabase.from("customers").upsert({
@@ -137,60 +186,208 @@ export default function SubscriptionCheckoutPage() {
         throw new Error('Error al guardar información del cliente')
       }
 
-      // Crear dirección
-      const { error: addressError } = await supabase.from("addresses").insert({
-        customer_id: user.id,
-        line1: customerInfo.address1,
-        line2: customerInfo.address2,
-        city: customerInfo.city,
-        state: customerInfo.state,
-        postal_code: customerInfo.postalCode,
-        country: customerInfo.country,
-        is_default: true,
-      })
+      // Verificar si ya existe una dirección idéntica
+      const { data: existingAddress } = await supabase
+        .from('addresses')
+        .select('id')
+        .eq('customer_id', user.id)
+        .eq('line1', customerInfo.address1)
+        .eq('city', customerInfo.city)
+        .eq('state', customerInfo.state)
+        .eq('postal_code', customerInfo.postalCode)
+        .single()
 
-      if (addressError) {
-        console.error('Error saving address:', addressError)
-        throw new Error('Error al guardar dirección')
+      if (existingAddress) {
+        // Actualizar dirección existente
+        const { error: addressError } = await supabase
+          .from('addresses')
+          .update({
+            line1: customerInfo.address1,
+            line2: customerInfo.address2,
+            city: customerInfo.city,
+            state: customerInfo.state,
+            postal_code: customerInfo.postalCode,
+            country: customerInfo.country,
+            is_default: true,
+          })
+          .eq('id', existingAddress.id)
+
+        if (addressError) {
+          console.error('Error updating address:', addressError)
+          throw new Error('Error al actualizar dirección')
+        }
+      } else {
+        // Crear nueva dirección
+        const { error: addressError } = await supabase.from("addresses").insert({
+          customer_id: user.id,
+          line1: customerInfo.address1,
+          line2: customerInfo.address2,
+          city: customerInfo.city,
+          state: customerInfo.state,
+          postal_code: customerInfo.postalCode,
+          country: customerInfo.country,
+          is_default: true,
+        })
+
+        if (addressError) {
+          console.error('Error saving address:', addressError)
+          throw new Error('Error al guardar dirección')
+        }
       }
 
-      // Crear suscripción recurrente
-      const response = await fetch('/api/subscriptions/recurring', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      // Asegurar que solo esta dirección sea la principal
+      await supabase
+        .from('addresses')
+        .update({ is_default: false })
+        .eq('customer_id', user.id)
+        .neq('line1', customerInfo.address1)
+
+      // Marcar la dirección actual como principal
+      await supabase
+        .from('addresses')
+        .update({ is_default: true })
+        .eq('customer_id', user.id)
+        .eq('line1', customerInfo.address1)
+
+      // Crear suscripción
+      const subscriptionPayload = {
+        planId: subscriptionData!.planId,
+        frequency: subscriptionData!.frequency,
+        userId: user.id,
+      };
+      
+      console.log('🚀 Creating subscription with data:', subscriptionPayload);
+      console.log('📋 Subscription data details:', {
+        planId: subscriptionData!.planId,
+        planIdType: typeof subscriptionData!.planId,
+        frequency: subscriptionData!.frequency,
+        frequencyType: typeof subscriptionData!.frequency,
+        userId: user.id,
+        userIdType: typeof user.id,
+      });
+
+      // Verificación adicional de datos
+      if (!subscriptionData!.planId || !subscriptionData!.frequency || !user.id) {
+        throw new Error('Datos de suscripción incompletos: ' + JSON.stringify({
           planId: subscriptionData!.planId,
           frequency: subscriptionData!.frequency,
-          userId: user.id,
-        }),
-      })
+          userId: user.id
+        }));
+      }
 
-      const result = await response.json()
-      console.log('API Response:', result)
+      let response;
+      try {
+        console.log('🌐 Making API call to /api/subscriptions/create-recurring...');
+        console.log('📤 Request payload:', subscriptionPayload);
+        console.log('🔗 Request URL:', '/api/subscriptions/create-recurring');
+        console.log('📋 Request headers:', {
+          'Content-Type': 'application/json',
+        });
+        
+        response = await fetch('/api/subscriptions/create-recurring', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(subscriptionPayload),
+        })
+        
+        console.log('📥 API call completed, response received');
+        console.log('📊 Response status:', response.status);
+        console.log('📊 Response ok:', response.ok);
+      } catch (fetchError) {
+        console.error('❌ Fetch error details:', {
+          name: fetchError.name,
+          message: fetchError.message,
+          stack: fetchError.stack,
+          cause: fetchError.cause
+        });
+        throw new Error('Error de conexión con el servidor: ' + (fetchError instanceof Error ? fetchError.message : 'Error desconocido'));
+      }
+
+      console.log('📊 API Response status:', response.status);
+      console.log('📊 API Response headers:', Object.fromEntries(response.headers.entries()));
+
+      let result;
+      try {
+        const responseText = await response.text()
+        console.log('📊 Raw response text:', responseText)
+        
+        if (!responseText) {
+          throw new Error('Respuesta vacía del servidor')
+        }
+        
+        result = JSON.parse(responseText)
+        console.log('📊 API Response body:', result)
+      } catch (parseError) {
+        console.error('❌ Error parsing JSON response:', parseError);
+        console.error('❌ Response status:', response.status);
+        console.error('❌ Response headers:', Object.fromEntries(response.headers.entries()));
+        console.error('❌ Response was:', response);
+        throw new Error('Error al procesar la respuesta del servidor: ' + (parseError instanceof Error ? parseError.message : 'Error desconocido'))
+      }
 
       if (!response.ok) {
-        console.error('API Error:', result)
-        throw new Error(result.error || 'Error al crear la suscripción')
+        console.log('❌ API Error - Status:', response.status)
+        console.log('❌ API Error - Response:', result)
+        const errorMessage = result?.error || `Error del servidor (${response.status})`
+        throw new Error(errorMessage)
       }
 
-      // Redirigir a MercadoPago para completar el pago
-      console.log('Payment URL:', result.paymentUrl)
-      console.log('Init Point:', result.init_point)
+      // Verificar que tenemos los datos necesarios
+      console.log('✅ API call successful, checking response data...')
+      console.log('📊 Full result object:', result)
       
-      if (result.paymentUrl || result.init_point) {
-        setIsRedirecting(true)
-        const paymentUrl = result.paymentUrl || result.init_point
-        console.log('Redirecting to:', paymentUrl)
-        window.location.href = paymentUrl
-      } else {
-        console.error('No payment URL received:', result)
-        throw new Error('No se recibió URL de pago de MercadoPago')
+      // Validar que result no esté vacío
+      if (!result || typeof result !== 'object') {
+        console.log('❌ Invalid result object:', result)
+        throw new Error('Respuesta inválida del servidor')
+      }
+      
+      console.log('🔗 Payment URL:', result?.paymentUrl)
+      console.log('🔗 Init Point:', result?.init_point)
+      console.log('🔄 Is Recurring:', result?.isRecurring)
+      
+      // Redirigir a MercadoPago para completar el pago
+      try {
+        if (result?.paymentUrl || result?.init_point) {
+          setIsRedirecting(true)
+          const paymentUrl = result.paymentUrl || result.init_point
+          console.log('🚀 Redirecting to MercadoPago for REAL subscription:', paymentUrl)
+          
+          // Mostrar mensaje de suscripción real
+          if (result.isRecurring) {
+            console.log('✅ This is a REAL recurring subscription that will auto-renew')
+          }
+          
+          window.location.href = paymentUrl
+        } else {
+          console.log('❌ No payment URL received in response:', result)
+          throw new Error('No se recibió URL de pago de MercadoPago en la respuesta')
+        }
+      } catch (redirectError) {
+        console.log('❌ Error during redirect:', redirectError)
+        throw new Error('Error al redirigir a MercadoPago: ' + redirectError.message)
       }
     } catch (error: any) {
-      console.error('Error creating subscription:', error)
-      setError(error.message || 'Error al crear la suscripción')
+      console.error('❌ Error creating subscription:', error)
+      console.error('❌ Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      })
+      
+      // Mostrar error más específico al usuario
+      let errorMessage = 'Error al crear la suscripción'
+      if (error.message) {
+        errorMessage = error.message
+      } else if (error instanceof Error) {
+        errorMessage = error.message
+      } else {
+        errorMessage = 'Error desconocido al procesar la suscripción'
+      }
+      
+      setError(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
@@ -220,6 +417,21 @@ export default function SubscriptionCheckoutPage() {
             <div className="w-12 h-12 bg-wine-600 rounded-full mx-auto mb-4"></div>
             <p className="text-wine-800">Cargando información de suscripción...</p>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Verificar autenticación antes de mostrar el formulario
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Acceso requerido</h1>
+          <p className="text-gray-600 mb-4">Debes estar autenticado para crear una suscripción.</p>
+          <Button onClick={() => router.push('/auth/sign-in')}>
+            Iniciar Sesión
+          </Button>
         </div>
       </div>
     )
@@ -277,6 +489,12 @@ export default function SubscriptionCheckoutPage() {
                     Se debitará automáticamente cada {subscriptionData.frequency === 'weekly' ? 'semana' : 
                     subscriptionData.frequency === 'biweekly' ? '2 semanas' : 'mes'}
                   </p>
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      <strong>🔄 Suscripción Recurrente:</strong> Esta es una suscripción real que se renovará automáticamente en MercadoPago. 
+                      Podrás pausar o cancelar en cualquier momento desde tu cuenta.
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -285,10 +503,43 @@ export default function SubscriptionCheckoutPage() {
             {!isRedirecting && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Información de Entrega</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    Información de Entrega
+                    {isLoadingUserInfo && (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-wine-600"></div>
+                    )}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleSubmitInfo} className="space-y-4">
+                  {isLoadingUserInfo ? (
+                    <div className="space-y-4">
+                      <div className="animate-pulse space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="h-10 bg-gray-200 rounded"></div>
+                          <div className="h-10 bg-gray-200 rounded"></div>
+                        </div>
+                        <div className="h-10 bg-gray-200 rounded"></div>
+                        <div className="h-10 bg-gray-200 rounded"></div>
+                        <div className="h-10 bg-gray-200 rounded"></div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="h-10 bg-gray-200 rounded"></div>
+                          <div className="h-10 bg-gray-200 rounded"></div>
+                          <div className="h-10 bg-gray-200 rounded"></div>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-500 text-center">
+                        Cargando información de tu cuenta...
+                      </p>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSubmitInfo} className="space-y-4">
+                      {addressAutoFilled && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                          <p className="text-sm text-green-800">
+                            ✅ Se ha autocompletado tu dirección principal. Puedes modificarla si es necesario.
+                          </p>
+                        </div>
+                      )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="name">Nombre completo *</Label>
@@ -381,12 +632,13 @@ export default function SubscriptionCheckoutPage() {
 
                     <Button 
                       type="submit" 
-                      className="w-full bg-wine-600 hover:bg-wine-700"
-                      disabled={isSubmitting || isRedirecting}
+                      className="w-full bg-[#A83935] hover:bg-[#8B2D2A] text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      disabled={isSubmitting || isRedirecting || !subscriptionData}
                     >
                       {isSubmitting ? 'Procesando...' : isRedirecting ? 'Redirigiendo...' : 'Continuar al Pago'}
                     </Button>
-                  </form>
+                    </form>
+                  )}
                 </CardContent>
               </Card>
             )}

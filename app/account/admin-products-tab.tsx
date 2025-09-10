@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Plus, Pencil, ArrowUpDown, ArrowUp, ArrowDown, Trash2, Eye, EyeOff, Tag } from 'lucide-react'
 import type { Product } from './types'

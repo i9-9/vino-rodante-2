@@ -19,6 +19,8 @@ const protectedRoutes = [
   '/dashboard',
   '/profile',
   '/account', // Dashboard principal
+  '/api/subscriptions', // API de suscripciones
+  '/api/checkout', // API de checkout
 ]
 
 export async function middleware(request: NextRequest) {
@@ -68,7 +70,10 @@ export async function middleware(request: NextRequest) {
   // 1. No hay usuario autenticado
   // 2. Está intentando acceder a una ruta protegida
   // 3. No está ya en una ruta de auth
-  if (!user && isProtectedRoute && !isAuthRoute) {
+  // 4. NO es una ruta de API (las APIs manejan su propia autenticación)
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api/')
+  
+  if (!user && isProtectedRoute && !isAuthRoute && !isApiRoute) {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = '/auth/sign-in'
     return NextResponse.redirect(redirectUrl)

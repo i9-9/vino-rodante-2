@@ -220,7 +220,7 @@ function AvailablePlanCard({ plan, onSubscribe }: AvailablePlanCardProps) {
       </CardContent>
       <CardFooter>
         <Button
-          className="w-full"
+          className="w-full bg-[#A83935] hover:bg-[#8B2D2A] text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
           onClick={handleSubscribe}
           disabled={isLoading}
         >
