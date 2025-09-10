@@ -40,11 +40,11 @@ console.log('\n🔧 Solutions to try:')
 const solutions = [
   '1. Kill all Next.js processes: pkill -f "next"',
   '2. Clear .next cache: rm -rf .next',
-  '3. Clear node_modules: rm -rf node_modules && npm install',
+  '3. Clear node_modules: rm -rf node_modules && pnpm install',
   '4. Restart development server',
   '5. Check available disk space',
-  '6. Use different port: npm run dev -- -p 3002',
-  '7. Disable file watching: npm run dev -- --no-watch',
+  '6. Use different port: pnpm dev -- -p 3002',
+  '7. Disable file watching: pnpm dev -- --no-watch',
   '8. Increase file watcher limits (macOS)'
 ]
 
@@ -53,7 +53,7 @@ solutions.forEach(solution => console.log(solution))
 console.log('\n🚀 Quick fix commands:')
 console.log('1. pkill -f "next"')
 console.log('2. rm -rf .next')
-console.log('3. npm run dev')
+console.log('3. pnpm dev')
 
 console.log('\n💡 Prevention tips:')
 console.log('1. Always stop dev server with Ctrl+C before restarting')

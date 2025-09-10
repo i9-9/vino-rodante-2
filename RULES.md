@@ -146,10 +146,10 @@ El paquete @supabase/auth-helpers-nextjs está oficialmente deprecado desde 2024
 
 ```bash
 # Remover paquete deprecado (CRÍTICO)
-npm uninstall @supabase/auth-helpers-nextjs
+pnpm remove @supabase/auth-helpers-nextjs
 
 # Instalar paquetes actuales
-npm install @supabase/ssr@latest @supabase/supabase-js@latest
+pnpm add @supabase/ssr@latest @supabase/supabase-js@latest
 ```
 
 ### 2. Cambios Breaking de APIs Async en NextJS 15 (Verificado)

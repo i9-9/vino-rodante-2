@@ -82,7 +82,7 @@
 ### Comandos Útiles
 ```bash
 # Verificar salud de la aplicación
-npm run build
+pnpm build
 
 # Verificar variables de entorno
 npx tsx scripts/production-health-check.ts
