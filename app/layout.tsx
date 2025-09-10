@@ -75,10 +75,10 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/logo/logo_vr.svg", type: "image/svg+xml" },
+      { url: "/logo/logo2.svg", type: "image/svg+xml" },
     ],
-    apple: "/logo/logo_vr.svg",
-    shortcut: "/logo/logo_vr.svg",
+    apple: "/logo/logo2.svg",
+    shortcut: "/logo/logo2.svg",
   },
   alternates: {
     canonical: "https://www.vinorodante.com"

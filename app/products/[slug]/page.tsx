@@ -5,6 +5,8 @@ import type { Product } from "@/lib/types"
 import ProductCard from '@/components/product-card'
 import { SimpleProductZoom } from '@/components/simple-product-zoom'
 import { ProductDiscountBadge } from '@/components/ProductDiscountBadge'
+import SEO from '@/components/SEO'
+import { productSEO } from '@/lib/seo-config'
 
 export const dynamic = "force-dynamic";
 
@@ -137,92 +139,107 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   
   console.log('🔍 [ProductPage] Final related products:', related.length)
 
+  const seoConfig = productSEO({
+    name: productWithDiscounts.name,
+    description: productWithDiscounts.description,
+    image: productWithDiscounts.image,
+    price: productWithDiscounts.price,
+    region: productWithDiscounts.region,
+    varietal: productWithDiscounts.varietal,
+    year: productWithDiscounts.year,
+    category: productWithDiscounts.category,
+    slug: productWithDiscounts.slug,
+    stock: productWithDiscounts.stock
+  })
+
   return (
-    <div className="container px-4 py-12">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-        <SimpleProductZoom
-          src={productWithDiscounts.image || "/placeholder.svg"}
-          alt={productWithDiscounts.name}
-        />
+    <SEO seo={seoConfig}>
+      <div className="container px-4 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <SimpleProductZoom
+            src={productWithDiscounts.image || "/placeholder.svg"}
+            alt={productWithDiscounts.name}
+          />
 
-        <div className="flex flex-col">
-          <h1 className="text-3xl font-bold text-[#5B0E2D] mb-2">{productWithDiscounts.name}</h1>
-          <p className="text-lg text-[#1F1F1F]/70 mb-4">
-            {isBox ? capitalizeWords(productWithDiscounts.region) : `${productWithDiscounts.year} • ${capitalizeWords(productWithDiscounts.region)}`}
-          </p>
+          <div className="flex flex-col">
+            <h1 className="text-3xl font-bold text-[#5B0E2D] mb-2">{productWithDiscounts.name}</h1>
+            <p className="text-lg text-[#1F1F1F]/70 mb-4">
+              {isBox ? capitalizeWords(productWithDiscounts.region) : `${productWithDiscounts.year} • ${capitalizeWords(productWithDiscounts.region)}`}
+            </p>
 
-          <div className="mb-6">
-            {/* Mostrar precio con descuento si existe */}
-            {productWithDiscounts.discount ? (
-              <div className="mb-4">
-                <ProductDiscountBadge product={productWithDiscounts} size="lg" />
-              </div>
-            ) : (
-              <div className="mb-4">
-                <p className="text-2xl font-bold">${productWithDiscounts.price.toFixed(2)}</p>
-              </div>
-            )}
-            <AddToCartButton product={productWithDiscounts} label={t.products.addToCart} />
-
-            <div className="flex items-center text-sm text-[#1F1F1F]/70 mb-4 mt-10">
-              <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-              <span>
-                {productWithDiscounts.stock > 0 
-                  ? t.products.inStock
-                  : t.products.outOfStock
-                }
-              </span>
-            </div>
-          </div>
-
-          <div className="border-t pt-6">
-            <h2 className="text-xl font-semibold mb-3">{t.products.description}</h2>
-            <p className="text-[#1F1F1F]/80 mb-6">{productWithDiscounts.description}</p>
-
-            <div className="grid grid-cols-2 gap-4">
-              {!isBox && (
-                <>
-                  <div>
-                    <h3 className="font-medium text-[#5B0E2D]">{t.products.varietal}</h3>
-                    <p className="text-[#1F1F1F]/70">{capitalizeWords(productWithDiscounts.varietal)}</p>
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-[#5B0E2D]">{t.products.year}</h3>
-                    <p className="text-[#1F1F1F]/70">{productWithDiscounts.year}</p>
-                  </div>
-                </>
-              )}
-              <div>
-                <h3 className="font-medium text-[#5B0E2D]">{t.products.region}</h3>
-                <p className="text-[#1F1F1F]/70">{capitalizeWords(productWithDiscounts.region)}</p>
-              </div>
-              <div>
-                <h3 className="font-medium text-[#5B0E2D]">{t.products.category}</h3>
-                <p className="text-[#1F1F1F]/70">
-                  {isBox ? 'Box de Vinos' : productWithDiscounts.category.charAt(0).toUpperCase() + productWithDiscounts.category.slice(1)}
-                </p>
-              </div>
-              {isBox && (
-                <div>
-                  <h3 className="font-medium text-[#5B0E2D]">Contenido</h3>
-                  <p className="text-[#1F1F1F]/70">Vinos varietales múltiples</p>
+            <div className="mb-6">
+              {/* Mostrar precio con descuento si existe */}
+              {productWithDiscounts.discount ? (
+                <div className="mb-4">
+                  <ProductDiscountBadge product={productWithDiscounts} size="lg" />
+                </div>
+              ) : (
+                <div className="mb-4">
+                  <p className="text-2xl font-bold">${productWithDiscounts.price.toFixed(2)}</p>
                 </div>
               )}
+              <AddToCartButton product={productWithDiscounts} label={t.products.addToCart} />
+
+              <div className="flex items-center text-sm text-[#1F1F1F]/70 mb-4 mt-10">
+                <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                <span>
+                  {productWithDiscounts.stock > 0 
+                    ? t.products.inStock
+                    : t.products.outOfStock
+                  }
+                </span>
+              </div>
+            </div>
+
+            <div className="border-t pt-6">
+              <h2 className="text-xl font-semibold mb-3">{t.products.description}</h2>
+              <p className="text-[#1F1F1F]/80 mb-6">{productWithDiscounts.description}</p>
+
+              <div className="grid grid-cols-2 gap-4">
+                {!isBox && (
+                  <>
+                    <div>
+                      <h3 className="font-medium text-[#5B0E2D]">{t.products.varietal}</h3>
+                      <p className="text-[#1F1F1F]/70">{capitalizeWords(productWithDiscounts.varietal)}</p>
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-[#5B0E2D]">{t.products.year}</h3>
+                      <p className="text-[#1F1F1F]/70">{productWithDiscounts.year}</p>
+                    </div>
+                  </>
+                )}
+                <div>
+                  <h3 className="font-medium text-[#5B0E2D]">{t.products.region}</h3>
+                  <p className="text-[#1F1F1F]/70">{capitalizeWords(productWithDiscounts.region)}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-[#5B0E2D]">{t.products.category}</h3>
+                  <p className="text-[#1F1F1F]/70">
+                    {isBox ? 'Box de Vinos' : productWithDiscounts.category.charAt(0).toUpperCase() + productWithDiscounts.category.slice(1)}
+                  </p>
+                </div>
+                {isBox && (
+                  <div>
+                    <h3 className="font-medium text-[#5B0E2D]">Contenido</h3>
+                    <p className="text-[#1F1F1F]/70">Vinos varietales múltiples</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      {/* Productos relacionados */}
-      {related.length > 0 && (
-        <div className="mt-16">
-          <h2 className="text-2xl font-bold mb-6">Productos relacionados</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {related.map((prod) => (
-              <ProductCard key={prod.id} product={prod} />
-            ))}
+        {/* Productos relacionados */}
+        {related.length > 0 && (
+          <div className="mt-16">
+            <h2 className="text-2xl font-bold mb-6">Productos relacionados</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {related.map((prod) => (
+                <ProductCard key={prod.id} product={prod} />
+              ))}
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </SEO>
   )
 }

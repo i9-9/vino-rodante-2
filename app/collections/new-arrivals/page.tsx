@@ -5,6 +5,8 @@ import { getProducts, getBoxesProducts } from "@/lib/products-client"
 import ProductCard from "@/components/product-card"
 import { useEffect, useState } from "react"
 import type { Product } from "@/lib/types"
+import SEO from '@/components/SEO'
+import { collectionSEO } from '@/lib/seo-config'
 
 export default function NewArrivalsPage() {
   const t = useTranslations()
@@ -66,26 +68,34 @@ export default function NewArrivalsPage() {
     )
   }
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-medium mb-4">{t.megamenu?.newArrivals || "Novedades"}</h1>
-        <p className="text-muted-foreground text-lg">
-          {t.collections?.newArrivalsDescription || "Descubre nuestros vinos y boxes más recientes"}
-        </p>
-      </div>
+  const seoConfig = collectionSEO({
+    name: t.megamenu?.newArrivals || "Novedades",
+    description: t.collections?.newArrivalsDescription || "Descubre nuestros vinos y boxes más recientes",
+    slug: "new-arrivals"
+  })
 
-      {products.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">{t.products?.noProductsFound || "No se encontraron productos"}</p>
+  return (
+    <SEO seo={seoConfig}>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-medium mb-4">{t.megamenu?.newArrivals || "Novedades"}</h1>
+          <p className="text-muted-foreground text-lg">
+            {t.collections?.newArrivalsDescription || "Descubre nuestros vinos y boxes más recientes"}
+          </p>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      )}
-    </div>
+
+        {products.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">{t.products?.noProductsFound || "No se encontraron productos"}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
+      </div>
+    </SEO>
   )
 } 
