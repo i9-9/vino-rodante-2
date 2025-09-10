@@ -1,6 +1,5 @@
 "use client"
 
-import { useTranslations } from "@/lib/providers/translations-provider"
 import { getProductsByVarietal } from "@/lib/products-client"
 import ProductCard from "@/components/product-card"
 import { useEffect, useState, use } from "react"
@@ -8,14 +7,17 @@ import type { Product } from "@/lib/types"
 import { isValidWineVarietal, getWineVarietalData } from "@/lib/wine-data"
 
 export default function VarietalPage({ params }: { params: Promise<{ varietal: string }> }) {
-  const t = useTranslations()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const { varietal } = use(params)
   
   // Validar varietal
   const isValid = isValidWineVarietal(varietal)
-  const varietalData = isValid ? getWineVarietalData(varietal, t) : null
+  const varietalData = isValid ? {
+    id: varietal,
+    name: varietal.charAt(0).toUpperCase() + varietal.slice(1).replace('-', ' '),
+    slug: varietal
+  } : null
 
   useEffect(() => {
     async function loadProducts() {
@@ -39,8 +41,8 @@ export default function VarietalPage({ params }: { params: Promise<{ varietal: s
   if (!isValid) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
-        <h1 className="text-3xl font-medium mb-8">{t.products.title || "Varietal no encontrado"}</h1>
-        <p className="text-muted-foreground">{t.products.description || "El varietal solicitado no existe."}</p>
+        <h1 className="text-3xl font-medium mb-8">Varietal no encontrado</h1>
+        <p className="text-muted-foreground">El varietal solicitado no existe.</p>
       </div>
     )
   }

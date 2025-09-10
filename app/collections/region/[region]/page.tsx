@@ -4,11 +4,9 @@ import React from "react"
 import { useProductsByRegion } from "@/lib/hooks/use-products"
 import { LoadingError } from "@/components/ui/loading-error"
 import { ProductGrid } from "@/components/product-grid"
-import { useTranslations } from "@/lib/providers/translations-provider"
 import { prettyLabel } from "@/lib/wine-data"
 
 export default function RegionPage({ params }: { params: Promise<{ region: string }> }) {
-  const t = useTranslations()
   const { region } = React.use(params)
   const { products, isLoading, isError } = useProductsByRegion(region)
 
@@ -19,7 +17,7 @@ export default function RegionPage({ params }: { params: Promise<{ region: strin
   return (
     <div className="container py-8">
       <h1 className="text-3xl font-medium mb-8">
-        {t.wineRegions[region as keyof typeof t.wineRegions] || prettyLabel(region)}
+        {prettyLabel(region)}
       </h1>
       
       <LoadingError isLoading={isLoading} error={isError}>
@@ -32,7 +30,7 @@ export default function RegionPage({ params }: { params: Promise<{ region: strin
       ) : (
           <div className="text-center py-12">
             <p className="text-lg text-gray-500">
-              {t.products.noProductsFound}
+              No se encontraron productos
             </p>
         </div>
       )}

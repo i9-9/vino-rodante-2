@@ -1,6 +1,5 @@
 "use client"
 
-import { useTranslations } from "@/lib/providers/translations-provider"
 import { getProductsByCategory } from "@/lib/products-client"
 import ProductCard from "@/components/product-card"
 import { useEffect, useState, use } from "react"
@@ -8,14 +7,17 @@ import type { Product } from "@/lib/types"
 import { isValidWineType, getWineTypeData } from "@/lib/wine-data"
 
 export default function CollectionPage({ params }: { params: Promise<{ type: string }> }) {
-  const t = useTranslations()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const { type } = use(params)
   
   // Validar tipo
   const isValid = isValidWineType(type)
-  const typeData = isValid ? getWineTypeData(type, t) : null
+  const typeData = isValid ? {
+    id: type,
+    name: type.charAt(0).toUpperCase() + type.slice(1).replace('-', ' '),
+    slug: type
+  } : null
 
   useEffect(() => {
     async function loadProducts() {
@@ -41,8 +43,8 @@ export default function CollectionPage({ params }: { params: Promise<{ type: str
   if (!isValid) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
-        <h1 className="text-3xl font-medium mb-8">{t.products.title || "Colección no encontrada"}</h1>
-        <p className="text-muted-foreground">{t.products.description || "El tipo de vino solicitado no existe."}</p>
+        <h1 className="text-3xl font-medium mb-8">Colección no encontrada</h1>
+        <p className="text-muted-foreground">El tipo de vino solicitado no existe.</p>
       </div>
     )
   }

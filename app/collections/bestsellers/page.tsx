@@ -1,15 +1,11 @@
 "use client"
 
-import { useTranslations } from "@/lib/providers/translations-provider"
 import { getProducts, getBoxesProducts } from "@/lib/products-client"
 import ProductCard from "@/components/product-card"
 import { useEffect, useState } from "react"
 import type { Product } from "@/lib/types"
-import SEO from '@/components/SEO'
-import { collectionSEO } from '@/lib/seo-config'
 
 export default function BestsellersPage() {
-  const t = useTranslations()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -74,25 +70,18 @@ export default function BestsellersPage() {
     )
   }
 
-  const seoConfig = collectionSEO({
-    name: t.megamenu?.bestsellers || "Más Vendidos",
-    description: t.collections?.bestsellersDescription || "Los vinos y boxes más populares entre nuestros clientes",
-    slug: "bestsellers"
-  })
-
   return (
-    <SEO seo={seoConfig}>
-      <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-medium mb-4">{t.megamenu?.bestsellers || "Más Vendidos"}</h1>
+          <h1 className="text-4xl font-medium mb-4">Más Vendidos</h1>
           <p className="text-muted-foreground text-lg">
-            {t.collections?.bestsellersDescription || "Los vinos y boxes más populares entre nuestros clientes"}
+            Los vinos y boxes más populares entre nuestros clientes
           </p>
         </div>
 
         {products.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">{t.products?.noProductsFound || "No se encontraron productos"}</p>
+            <p className="text-muted-foreground">No se encontraron productos</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -102,6 +91,5 @@ export default function BestsellersPage() {
           </div>
         )}
       </div>
-    </SEO>
   )
 } 

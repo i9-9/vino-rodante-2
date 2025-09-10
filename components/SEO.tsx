@@ -1,18 +1,11 @@
 'use client'
 
-import { NextSeo } from 'next-seo'
-import type { NextSeoProps } from 'next-seo'
-
 interface SEOProps {
-  seo: NextSeoProps
   children: React.ReactNode
 }
 
-export default function SEO({ seo, children }: SEOProps) {
-  return (
-    <>
-      <NextSeo {...seo} />
-      {children}
-    </>
-  )
+export default function SEO({ children }: SEOProps) {
+  // For client-side rendering, we don't need to do anything special
+  // The metadata is handled by Next.js metadata API in the page components
+  return <>{children}</>
 }

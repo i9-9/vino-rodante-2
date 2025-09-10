@@ -1,12 +1,9 @@
 "use client"
 
-import { useTranslations } from "@/lib/providers/translations-provider"
 import { getProductsByCategory } from "@/lib/products-client"
 import BoxCard from "@/components/box-card"
 import { useEffect, useState } from "react"
 import type { Product } from "@/lib/types"
-import SEO from '@/components/SEO'
-import { collectionSEO } from '@/lib/seo-config'
 
 export default function BoxesCollectionPage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -49,15 +46,8 @@ export default function BoxesCollectionPage() {
     loadProducts()
   }, [])
 
-  const seoConfig = collectionSEO({
-    name: "Boxes de Vinos",
-    description: "Descubrí nuestras cajas seleccionadas con los mejores vinos argentinos. Perfectas para regalar o para disfrutar en casa.",
-    slug: "boxes"
-  })
-
   return (
-    <SEO seo={seoConfig}>
-      <div className="container mx-auto px-6 md:px-8 py-16">
+    <div className="container mx-auto px-6 md:px-8 py-16">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-16 gap-4">
           <h1 className="text-4xl md:text-5xl font-medium">Boxes de Vinos</h1>
@@ -104,6 +94,5 @@ export default function BoxesCollectionPage() {
           </div>
         )}
       </div>
-    </SEO>
   )
 }
