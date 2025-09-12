@@ -92,17 +92,7 @@ export default function SubscriptionSelector({ plans }: SubscriptionSelectorProp
     if (!selectedSubscription) return
 
     try {
-      // Verificar autenticación
-      const supabase = createClient()
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
-      if (authError || !user) {
-        // Redirigir al login si no está autenticado
-        window.location.href = '/auth/sign-in?redirectTo=' + encodeURIComponent(window.location.pathname)
-        return
-      }
-
-      // Redirigir al checkout específico de suscripciones
+      // Preparar datos de suscripción
       const subscriptionData = {
         planId: selectedSubscription.planId,
         frequency: selectedSubscription.frequency,
@@ -114,7 +104,7 @@ export default function SubscriptionSelector({ plans }: SubscriptionSelectorProp
       // Guardar datos de suscripción en sessionStorage para el checkout
       sessionStorage.setItem('subscriptionData', JSON.stringify(subscriptionData))
       
-      // Redirigir al checkout de suscripciones
+      // Redirigir al checkout de suscripciones (funciona tanto para usuarios autenticados como invitados)
       window.location.href = '/checkout/subscription'
 
     } catch (error) {

@@ -20,6 +20,14 @@ import { createClient } from '@/utils/supabase/client'
 import { CATEGORIES, REGIONS, VARIETALS } from '../types/product'
 import { BoxForm } from './BoxForm'
 
+function capitalizeWords(str: string) {
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 interface CreateProductFormProps {
   onSubmit: (formData: FormData) => Promise<void>
   onClose: () => void
@@ -473,7 +481,7 @@ export function CreateProductForm({ onSubmit, onClose }: CreateProductFormProps)
                       <div className="flex-1">
                         <span className="font-medium">{wine.name}</span>
                         <span className="text-sm text-gray-500 ml-2">
-                          {wine.varietal} - {wine.year} - {wine.region}
+                          {capitalizeWords(wine.varietal)} - {wine.year} - {capitalizeWords(wine.region)}
                         </span>
                       </div>
                       <Button

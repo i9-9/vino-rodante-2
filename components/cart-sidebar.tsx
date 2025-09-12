@@ -8,6 +8,14 @@ import { useCart } from "@/lib/hooks/use-cart"
 import { formatCurrency } from "@/lib/utils"
 import { useTranslations } from "@/lib/providers/translations-provider"
 
+function capitalizeWords(str: string) {
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 export default function CartSidebar({
   open,
   onClose,
@@ -85,7 +93,7 @@ export default function CartSidebar({
                         <p className="ml-4">{formatCurrency(item.price)}</p>
                       </div>
                       <p className="mt-1 text-sm text-gray-500">
-                        {item.year} • {item.region}
+                        {item.year} • {capitalizeWords(item.region)}
                       </p>
                     </div>
 

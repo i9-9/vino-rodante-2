@@ -140,57 +140,88 @@ export default function SubscriptionCheckoutPage() {
         throw new Error('Por favor completa todos los campos requeridos para la suscripción')
       }
 
-      // Obtener usuario autenticado
+      // Obtener usuario autenticado o crear cuenta automáticamente
       console.log('🔐 Checking user authentication...');
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       
-      // También verificar la sesión
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      let customerId = user?.id
       
-      console.log('👤 User data:', { 
-        user: !!user, 
-        userId: user?.id,
-        userEmail: user?.email,
-        authError: !!authError,
-        authErrorDetails: authError
-      });
-      
-      console.log('🔑 Session data:', {
-        session: !!session,
-        sessionError: !!sessionError,
-        sessionErrorDetails: sessionError,
-        accessToken: session?.access_token ? 'present' : 'missing'
-      });
-      
-      if (authError) {
-        console.error('❌ Auth error:', authError);
-        throw new Error('Error de autenticación: ' + authError.message)
-      }
-      
+      // Si el usuario no está autenticado, crear cuenta automáticamente
       if (!user) {
-        console.error('❌ No user found');
-        throw new Error('Debes estar autenticado para crear una suscripción')
+        console.log("Creating account for guest user")
+        
+        // Create user account with email and password
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: customerInfo.email,
+          password: `temp_${Date.now()}`, // Temporary password
+          options: {
+            data: {
+              name: customerInfo.name,
+            }
+          }
+        })
+
+        if (authError) {
+          // If user already exists, try to sign in
+          if (authError.message.includes('already registered')) {
+            console.log("User already exists, trying to sign in")
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+              email: customerInfo.email,
+              password: `temp_${Date.now()}`,
+            })
+            
+            if (signInError) {
+              // If sign in fails, create a new account with different email
+              const tempEmail = `guest_${Date.now()}@vinorodante.com`
+              const { data: newAuthData, error: newAuthError } = await supabase.auth.signUp({
+                email: tempEmail,
+                password: `temp_${Date.now()}`,
+                options: {
+                  data: {
+                    name: customerInfo.name,
+                  }
+                }
+              })
+              
+              if (newAuthError) {
+                throw new Error("Error creating guest account")
+              }
+              
+              customerId = newAuthData.user?.id
+            } else {
+              customerId = signInData.user?.id
+            }
+          } else {
+            throw new Error("Error creating account")
+          }
+        } else {
+          customerId = authData.user?.id
+        }
+
+        // Create customer record
+        if (customerId) {
+          const { error: customerError } = await supabase
+            .from('customers')
+            .upsert({
+              id: customerId,
+              name: customerInfo.name,
+              email: customerInfo.email,
+            })
+
+          if (customerError) {
+            console.error('Error creating customer record:', customerError)
+            throw new Error('Error al crear el registro del cliente')
+          }
+        }
       }
       
-      console.log('✅ User authenticated successfully:', user.id);
-
-      // Primero guardar información del cliente
-      const { error: customerError } = await supabase.from("customers").upsert({
-        id: user.id,
-        name: customerInfo.name,
-        email: customerInfo.email,
-      })
-
-      if (customerError) {
-        console.error('Error saving customer:', customerError)
-        throw new Error('Error al guardar información del cliente')
-      }
+      console.log('✅ User/Customer ID:', customerId);
 
       // Verificar si ya existe una dirección idéntica
       const { data: existingAddress } = await supabase
         .from('addresses')
         .select('id')
-        .eq('customer_id', user.id)
+        .eq('customer_id', customerId)
         .eq('line1', customerInfo.address1)
         .eq('city', customerInfo.city)
         .eq('state', customerInfo.state)
@@ -219,7 +250,7 @@ export default function SubscriptionCheckoutPage() {
       } else {
         // Crear nueva dirección
         const { error: addressError } = await supabase.from("addresses").insert({
-          customer_id: user.id,
+          customer_id: customerId,
           line1: customerInfo.address1,
           line2: customerInfo.address2,
           city: customerInfo.city,
@@ -239,21 +270,21 @@ export default function SubscriptionCheckoutPage() {
       await supabase
         .from('addresses')
         .update({ is_default: false })
-        .eq('customer_id', user.id)
+        .eq('customer_id', customerId)
         .neq('line1', customerInfo.address1)
 
       // Marcar la dirección actual como principal
       await supabase
         .from('addresses')
         .update({ is_default: true })
-        .eq('customer_id', user.id)
+        .eq('customer_id', customerId)
         .eq('line1', customerInfo.address1)
 
       // Crear suscripción
       const subscriptionPayload = {
         planId: subscriptionData!.planId,
         frequency: subscriptionData!.frequency,
-        userId: user.id,
+        userId: customerId,
       };
       
       console.log('🚀 Creating subscription with data:', subscriptionPayload);
@@ -262,16 +293,16 @@ export default function SubscriptionCheckoutPage() {
         planIdType: typeof subscriptionData!.planId,
         frequency: subscriptionData!.frequency,
         frequencyType: typeof subscriptionData!.frequency,
-        userId: user.id,
-        userIdType: typeof user.id,
+        userId: customerId,
+        userIdType: typeof customerId,
       });
 
       // Verificación adicional de datos
-      if (!subscriptionData!.planId || !subscriptionData!.frequency || !user.id) {
+      if (!subscriptionData!.planId || !subscriptionData!.frequency || !customerId) {
         throw new Error('Datos de suscripción incompletos: ' + JSON.stringify({
           planId: subscriptionData!.planId,
           frequency: subscriptionData!.frequency,
-          userId: user.id
+          userId: customerId
         }));
       }
 
@@ -422,20 +453,7 @@ export default function SubscriptionCheckoutPage() {
     )
   }
 
-  // Verificar autenticación antes de mostrar el formulario
-  if (!user) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Acceso requerido</h1>
-          <p className="text-gray-600 mb-4">Debes estar autenticado para crear una suscripción.</p>
-          <Button onClick={() => router.push('/auth/sign-in')}>
-            Iniciar Sesión
-          </Button>
-        </div>
-      </div>
-    )
-  }
+  // Permitir acceso tanto para usuarios autenticados como invitados
 
   return (
     <div className="container mx-auto px-4 py-8">

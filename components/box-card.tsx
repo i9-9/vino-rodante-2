@@ -13,9 +13,10 @@ import BoxProducts from "./box-products"
 
 function capitalizeWords(str: string) {
   return str
-    .toLocaleLowerCase('es-AR')
-    .replace(/(?:^|\s|\b)([a-záéíóúüñ])/g, (match) => match.toLocaleUpperCase('es-AR'))
-    .replace(/([A-ZÁÉÍÓÚÜÑ])([A-ZÁÉÍÓÚÜÑ]+)/g, (match, first, rest) => first + rest.toLowerCase());
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 function getValidImageUrl(imageUrl: string | null | undefined): string {

@@ -41,8 +41,10 @@ export async function generateStaticParams() {
 
 function capitalizeWords(str: string) {
   return str
-    .toLocaleLowerCase('es-AR')
-    .replace(/(?:^|\s|\b)([a-záéíóúüñ])/g, (match) => match.toLocaleUpperCase('es-AR'));
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {

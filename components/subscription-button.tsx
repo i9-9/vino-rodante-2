@@ -30,37 +30,21 @@ export function SubscriptionButton({ plan, className }: SubscriptionButtonProps)
   const handleSubscribe = async () => {
     try {
       setIsLoading(true);
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        toast.error('Debes iniciar sesión para suscribirte');
-        router.push('/auth/sign-in');
-        return;
+      
+      // Preparar datos de suscripción
+      const subscriptionData = {
+        planId: plan.id,
+        frequency,
+        price: calculateSubscriptionPrice(plan, frequency),
+        bottles: plan.wines_per_delivery,
+        label: `${plan.name} - ${frequency}`
       }
 
-      const response = await fetch('/api/subscriptions/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          planId: plan.id,
-          frequency,
-          userId: user.id
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Error al crear la suscripción');
-      }
-
-      // Redirigir a MercadoPago
-      if (data.paymentUrl) {
-        window.location.href = data.paymentUrl;
-      } else {
-        throw new Error('No se recibió el punto de inicio de MercadoPago');
-      }
+      // Guardar datos de suscripción en sessionStorage para el checkout
+      sessionStorage.setItem('subscriptionData', JSON.stringify(subscriptionData))
+      
+      // Redirigir al checkout de suscripciones (funciona tanto para usuarios autenticados como invitados)
+      router.push('/checkout/subscription');
 
     } catch (error) {
       console.error('Error al suscribirse:', error);

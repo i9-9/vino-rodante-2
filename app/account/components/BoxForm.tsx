@@ -18,6 +18,14 @@ import { useToast } from '@/hooks/use-toast'
 import { Loader2, Plus, X } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 
+function capitalizeWords(str: string) {
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 interface BoxFormProps {
   onSubmit: (formData: FormData) => Promise<void>
   onClose: () => void
@@ -413,7 +421,7 @@ export function BoxForm({ onSubmit, onClose, initialData }: BoxFormProps) {
                   <div className="flex-1">
                     <p className="font-medium">{product.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {product.varietal} • {product.year} • {product.region}
+                      {capitalizeWords(product.varietal || '')} • {product.year} • {capitalizeWords(product.region || '')}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -543,7 +551,7 @@ export function BoxForm({ onSubmit, onClose, initialData }: BoxFormProps) {
                   <div className="flex-1">
                     <p className="font-medium">{product.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {product.varietal} • {product.year} • {product.region}
+                      {capitalizeWords(product.varietal || '')} • {product.year} • {capitalizeWords(product.region || '')}
                     </p>
                   </div>
                   <div className="text-right">

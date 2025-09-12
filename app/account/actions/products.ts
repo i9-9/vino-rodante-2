@@ -4,6 +4,19 @@ import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { ProductSchema } from '../types/product'
 
+// Función para generar slug a partir del nombre
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remover acentos
+    .replace(/[^a-z0-9\s-]/g, '') // Solo letras, números, espacios y guiones
+    .replace(/\s+/g, '-') // Reemplazar espacios con guiones
+    .replace(/-+/g, '-') // Reemplazar múltiples guiones con uno solo
+    .trim()
+    .replace(/^-+|-+$/g, '') // Remover guiones al inicio y final
+}
+
 // Tipo básico de producto para la base de datos
 type DatabaseProduct = {
   id: string
@@ -342,7 +355,7 @@ export async function createProduct(formData: FormData): Promise<ActionResponse>
       is_visible: formData.get('is_visible') === 'on',
       free_shipping: formData.get('free_shipping') === 'on',
       is_box: formData.get('is_box') === 'on',
-      slug: (formData.get('name') as string)?.toLowerCase().replace(/\s+/g, '-') || '',
+      slug: generateSlug(formData.get('name') as string || ''),
       image: '/placeholder.svg' // Imagen por defecto
     }
 

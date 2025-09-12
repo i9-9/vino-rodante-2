@@ -573,7 +573,7 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
                           <div className="flex-1">
                             <span className="font-medium">{wine.name}</span>
                             <span className="text-sm text-gray-500 ml-2">
-                              {wine.varietal} - {wine.year} - {wine.region}
+                              {capitalizeWords(wine.varietal)} - {wine.year} - {capitalizeWords(wine.region)}
                             </span>
                           </div>
                           <Button
@@ -725,6 +725,14 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
       </DialogContent>
     </Dialog>
   )
+}
+
+function capitalizeWords(str: string) {
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 export default function AdminProductsTab({ products, t, onRefresh }: AdminProductsTabProps) {
