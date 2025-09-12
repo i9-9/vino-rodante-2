@@ -18,7 +18,8 @@ const DiscountSchema = z.object({
   is_active: z.boolean(),
   usage_limit: z.number().min(1).nullable(),
   applies_to: z.enum(['all_products', 'category', 'specific_products']),
-  target_value: z.string().min(1, 'El valor objetivo es requerido')
+  target_value: z.string().min(1, 'El valor objetivo es requerido'),
+  days_of_week: z.array(z.number().min(0).max(6)).default([])
 }).refine((data) => {
   const startDate = new Date(data.start_date)
   const endDate = new Date(data.end_date)
@@ -133,7 +134,8 @@ export async function createDiscount(formData: FormData): Promise<ActionResponse
       is_active: formData.get('is_active') === 'on',
       usage_limit: formData.get('usage_limit') ? Number(formData.get('usage_limit')) : null,
       applies_to: formData.get('applies_to') as 'all_products' | 'category' | 'specific_products',
-      target_value: formData.get('target_value') as string
+      target_value: formData.get('target_value') as string,
+      days_of_week: formData.get('days_of_week') ? JSON.parse(formData.get('days_of_week') as string) : []
     }
 
     // Validar datos
@@ -183,7 +185,8 @@ export async function updateDiscount(formData: FormData): Promise<ActionResponse
       is_active: formData.get('is_active') === 'on',
       usage_limit: formData.get('usage_limit') ? Number(formData.get('usage_limit')) : null,
       applies_to: formData.get('applies_to') as 'all_products' | 'category' | 'specific_products',
-      target_value: formData.get('target_value') as string
+      target_value: formData.get('target_value') as string,
+      days_of_week: formData.get('days_of_week') ? JSON.parse(formData.get('days_of_week') as string) : []
     }
 
     // Validar datos
@@ -267,6 +270,8 @@ export async function toggleDiscountActive(
 export async function getActiveDiscountsForProduct(productId: string): Promise<ActionResponse> {
   try {
     const supabase = await createClient()
+    const currentDate = new Date()
+    const currentDayOfWeek = currentDate.getDay() // 0 = Sunday, 1 = Monday, etc.
     
     // Obtener información del producto
     const { data: product, error: productError } = await supabase
@@ -277,20 +282,52 @@ export async function getActiveDiscountsForProduct(productId: string): Promise<A
 
     if (productError) throw productError
 
-    // Buscar descuentos que apliquen al producto
+    // Buscar descuentos que apliquen al producto con validación de días de la semana
     const { data: discounts, error } = await supabase
       .from('discounts')
       .select('*')
       .eq('is_active', true)
-      .gte('end_date', new Date().toISOString())
-      .lte('start_date', new Date().toISOString())
+      .gte('end_date', currentDate.toISOString())
+      .lte('start_date', currentDate.toISOString())
       .or(`applies_to.eq.all_products,and(applies_to.eq.category,target_value.eq.${product.category}),and(applies_to.eq.specific_products,target_value.cs.["${productId}"])`)
 
     if (error) throw error
 
+    // Filtrar descuentos que aplican al día actual
+    const validDiscounts = discounts?.filter(discount => {
+      // Si no tiene restricciones de días, aplicar siempre
+      if (!discount.days_of_week || discount.days_of_week.length === 0) {
+        return true
+      }
+      
+      // Verificar si el día actual está en los días permitidos
+      return discount.days_of_week.includes(currentDayOfWeek)
+    }) || []
+
+    // Limpiar la estructura de datos para que coincida con el tipo Discount esperado
+    const cleanedDiscounts = validDiscounts.map(discount => ({
+      id: discount.id,
+      name: discount.name,
+      description: discount.description,
+      discount_type: discount.discount_type,
+      discount_value: discount.discount_value,
+      min_purchase_amount: discount.min_purchase_amount,
+      max_discount_amount: discount.max_discount_amount,
+      start_date: discount.start_date,
+      end_date: discount.end_date,
+      is_active: discount.is_active,
+      usage_limit: discount.usage_limit,
+      used_count: discount.used_count,
+      applies_to: discount.applies_to,
+      target_value: discount.target_value,
+      days_of_week: discount.days_of_week || [],
+      created_at: discount.created_at,
+      updated_at: discount.updated_at
+    }))
+
     return { 
       success: true, 
-      data: discounts || [] 
+      data: cleanedDiscounts 
     }
   } catch (error) {
     return { 

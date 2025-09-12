@@ -27,7 +27,7 @@ import { CalendarIcon, X } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
-import type { Discount, DiscountFormData, APPLIES_TO_OPTIONS, DISCOUNT_TYPES, PRODUCT_CATEGORIES } from '../types/discount'
+import type { Discount, DiscountFormData, APPLIES_TO_OPTIONS, DISCOUNT_TYPES, PRODUCT_CATEGORIES, DAYS_OF_WEEK } from '../types/discount'
 
 interface DiscountFormProps {
   discount?: Discount
@@ -56,7 +56,8 @@ export function DiscountForm({
     is_active: true,
     usage_limit: null,
     applies_to: 'all_products',
-    target_value: ''
+    target_value: '',
+    days_of_week: []
   })
 
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
@@ -77,7 +78,8 @@ export function DiscountForm({
         is_active: discount.is_active,
         usage_limit: discount.usage_limit,
         applies_to: discount.applies_to,
-        target_value: discount.target_value
+        target_value: discount.target_value,
+        days_of_week: discount.days_of_week || []
       })
 
       // Si es descuento por productos específicos, cargar los IDs
@@ -136,6 +138,7 @@ export function DiscountForm({
     }
     
     form.append('target_value', targetValue)
+    form.append('days_of_week', JSON.stringify(formData.days_of_week))
     
     if (discount) {
       form.append('id', discount.id)
@@ -159,6 +162,15 @@ export function DiscountForm({
         ? prev.filter(id => id !== productId)
         : [...prev, productId]
     )
+  }
+
+  const handleDayToggle = (dayValue: number) => {
+    setFormData(prev => ({
+      ...prev,
+      days_of_week: prev.days_of_week.includes(dayValue)
+        ? prev.days_of_week.filter(day => day !== dayValue)
+        : [...prev.days_of_week, dayValue]
+    }))
   }
 
   return (
@@ -360,6 +372,31 @@ export function DiscountForm({
                 </Button>
               </div>
             )}
+          </div>
+
+          {/* Días de la semana */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Días de Aplicación</h3>
+            <div className="space-y-2">
+              <Label>Seleccionar días de la semana</Label>
+              <p className="text-sm text-muted-foreground">
+                Si no selecciona ningún día, el descuento se aplicará todos los días
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {DAYS_OF_WEEK.map((day) => (
+                  <div key={day.value} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`day-${day.value}`}
+                      checked={formData.days_of_week.includes(day.value)}
+                      onCheckedChange={() => handleDayToggle(day.value)}
+                    />
+                    <Label htmlFor={`day-${day.value}`} className="text-sm">
+                      {day.label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Configuración adicional */}

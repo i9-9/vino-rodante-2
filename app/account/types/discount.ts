@@ -13,6 +13,7 @@ export interface Discount {
   used_count: number
   applies_to: 'all_products' | 'category' | 'specific_products'
   target_value: string
+  days_of_week: number[] // 0=Sunday, 1=Monday, 2=Tuesday, etc.
   created_at: string
   updated_at: string
 }
@@ -30,6 +31,7 @@ export interface DiscountFormData {
   usage_limit: number | null
   applies_to: 'all_products' | 'category' | 'specific_products'
   target_value: string
+  days_of_week: number[] // 0=Sunday, 1=Monday, 2=Tuesday, etc.
 }
 
 export interface DiscountWithProducts extends Discount {
@@ -86,4 +88,14 @@ export const PRODUCT_CATEGORIES = [
   'Dulce',
   'Boxes',
   'Otras Bebidas'
+] as const
+
+export const DAYS_OF_WEEK = [
+  { value: 0, label: 'Domingo' },
+  { value: 1, label: 'Lunes' },
+  { value: 2, label: 'Martes' },
+  { value: 3, label: 'Miércoles' },
+  { value: 4, label: 'Jueves' },
+  { value: 5, label: 'Viernes' },
+  { value: 6, label: 'Sábado' }
 ] as const

@@ -3,12 +3,17 @@ CREATE TABLE IF NOT EXISTS discounts (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
   description TEXT,
-  percentage DECIMAL(5,2) NOT NULL CHECK (percentage >= 0 AND percentage <= 100),
-  min_products INTEGER NOT NULL DEFAULT 1,
-  max_products INTEGER,
+  discount_type TEXT NOT NULL DEFAULT 'percentage' CHECK (discount_type IN ('percentage', 'fixed_amount')),
+  discount_value DECIMAL(10,2) NOT NULL CHECK (discount_value >= 0),
+  min_purchase_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  max_discount_amount DECIMAL(10,2),
+  start_date TIMESTAMPTZ DEFAULT NOW(),
+  end_date TIMESTAMPTZ,
   is_active BOOLEAN DEFAULT true,
-  valid_from TIMESTAMPTZ DEFAULT NOW(),
-  valid_until TIMESTAMPTZ,
+  usage_limit INTEGER,
+  used_count INTEGER DEFAULT 0,
+  applies_to TEXT NOT NULL DEFAULT 'all_products' CHECK (applies_to IN ('all_products', 'category', 'specific_products')),
+  target_value TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -22,17 +27,18 @@ CREATE TABLE IF NOT EXISTS discount_days (
 );
 
 -- Create discount_products table for product-specific discounts
+-- Note: product_id reference will be added later when products table exists
 CREATE TABLE IF NOT EXISTS discount_products (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   discount_id UUID REFERENCES discounts(id) ON DELETE CASCADE,
-  product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+  product_id UUID NOT NULL, -- Will add foreign key constraint later
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(discount_id, product_id)
 );
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_discounts_active ON discounts(is_active);
-CREATE INDEX IF NOT EXISTS idx_discounts_valid_dates ON discounts(valid_from, valid_until);
+CREATE INDEX IF NOT EXISTS idx_discounts_valid_dates ON discounts(start_date, end_date);
 CREATE INDEX IF NOT EXISTS idx_discount_days_discount_id ON discount_days(discount_id);
 CREATE INDEX IF NOT EXISTS idx_discount_products_discount_id ON discount_products(discount_id);
 CREATE INDEX IF NOT EXISTS idx_discount_products_product_id ON discount_products(product_id);
@@ -46,50 +52,57 @@ ALTER TABLE discount_products ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Discounts are viewable by everyone" ON discounts
   FOR SELECT USING (is_active = true);
 
-CREATE POLICY "Only admins can manage discounts" ON discounts
-  FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM customers 
-      WHERE customers.id = auth.uid() 
-      AND customers.is_admin = true
-    )
-  );
+-- Note: Admin policies will be added later when customers table exists
+-- CREATE POLICY "Only admins can manage discounts" ON discounts
+--   FOR ALL USING (
+--     EXISTS (
+--       SELECT 1 FROM customers 
+--       WHERE customers.id = auth.uid() 
+--       AND customers.is_admin = true
+--     )
+--   );
 
 -- RLS Policies for discount_days
 CREATE POLICY "Discount days are viewable by everyone" ON discount_days
   FOR SELECT USING (true);
 
-CREATE POLICY "Only admins can manage discount days" ON discount_days
-  FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM customers 
-      WHERE customers.id = auth.uid() 
-      AND customers.is_admin = true
-    )
-  );
+-- Note: Admin policies will be added later when customers table exists
+-- CREATE POLICY "Only admins can manage discount days" ON discount_days
+--   FOR ALL USING (
+--     EXISTS (
+--       SELECT 1 FROM customers 
+--       WHERE customers.id = auth.uid() 
+--       AND customers.is_admin = true
+--     )
+--   );
 
 -- RLS Policies for discount_products
 CREATE POLICY "Discount products are viewable by everyone" ON discount_products
   FOR SELECT USING (true);
 
-CREATE POLICY "Only admins can manage discount products" ON discount_products
-  FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM customers 
-      WHERE customers.id = auth.uid() 
-      AND customers.is_admin = true
-    )
-  );
+-- Note: Admin policies will be added later when customers table exists
+-- CREATE POLICY "Only admins can manage discount products" ON discount_products
+--   FOR ALL USING (
+--     EXISTS (
+--       SELECT 1 FROM customers 
+--       WHERE customers.id = auth.uid() 
+--       AND customers.is_admin = true
+--     )
+--   );
 
 -- Insert the default midweek discount (Monday to Wednesday, 30% off, min 3 products)
-INSERT INTO discounts (name, description, percentage, min_products, is_active, valid_from)
+INSERT INTO discounts (name, description, discount_type, discount_value, min_purchase_amount, is_active, start_date, end_date, applies_to, target_value)
 VALUES (
   'Descuento de Mitad de Semana',
   '30% de descuento en vinos seleccionados de lunes a miércoles con un mínimo de 3 vinos',
+  'percentage',
   30.00,
-  3,
+  0,
   true,
-  NOW()
+  NOW(),
+  NOW() + INTERVAL '1 year',
+  'all_products',
+  ''
 );
 
 -- Add Monday, Tuesday, Wednesday to the discount
