@@ -21,7 +21,13 @@ export async function sendEmail({ to, subject, html, text, from }: SendEmailPara
   const fromAddress = from || process.env.EMAIL_FROM || 'Vino Rodante <info@vinorodante.com>'
 
   // Use the raw API to avoid React requirement
-  return resend.emails.send({ from: fromAddress, to, subject, html, text })
+  return resend.emails.send({ 
+    from: fromAddress, 
+    to, 
+    subject, 
+    html: html || undefined, 
+    text: text || undefined 
+  })
 }
 
 export function renderCustomerOrderEmail(params: {
@@ -626,6 +632,90 @@ export function renderBoxNotificationEmail(params: {
       </p>
     </div>
   </div>`
+}
+
+export function renderAccountCreatedEmail(params: {
+  name: string
+  email: string
+  password: string
+  isTemporaryEmail: boolean
+  originalEmail?: string
+}) {
+  const { name, email, password, isTemporaryEmail, originalEmail } = params;
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Cuenta Creada - Vino Rodante</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #A83935; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .credentials { background-color: #fff; padding: 15px; border-left: 4px solid #A83935; margin: 20px 0; }
+        .warning { background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .button { background-color: #A83935; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🍷 Vino Rodante</h1>
+          <h2>${isTemporaryEmail ? 'Cuenta Creada con Email Temporal' : '¡Bienvenido!'}</h2>
+        </div>
+        
+        <div class="content">
+          <p>Hola <strong>${name}</strong>,</p>
+          
+          ${isTemporaryEmail ? `
+            <p>Tu compra ha sido procesada exitosamente. Como tu email original (<strong>${originalEmail}</strong>) ya estaba registrado, hemos creado tu cuenta con un email temporal.</p>
+          ` : `
+            <p>Tu compra ha sido procesada exitosamente y hemos creado tu cuenta automáticamente.</p>
+          `}
+          
+          <div class="credentials">
+            <h3>🔐 Datos de tu cuenta:</h3>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Contraseña temporal:</strong> <code>${password}</code></p>
+          </div>
+          
+          <div class="warning">
+            <h4>⚠️ Importante:</h4>
+            <ul>
+              <li>Esta es una <strong>contraseña temporal</strong> generada automáticamente</li>
+              <li>Te recomendamos cambiar tu contraseña por seguridad</li>
+              <li>Puedes acceder a tu cuenta desde: <a href="${process.env.NEXT_PUBLIC_SITE_URL}/auth/sign-in">Iniciar Sesión</a></li>
+            </ul>
+          </div>
+          
+          <p>Con tu cuenta podrás:</p>
+          <ul>
+            <li>Ver el historial de tus compras</li>
+            <li>Gestionar tus suscripciones</li>
+            <li>Actualizar tu información personal</li>
+            <li>Cambiar tu contraseña</li>
+          </ul>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.NEXT_PUBLIC_SITE_URL}/account" class="button">Ir a Mi Cuenta</a>
+          </div>
+          
+          <p>Si tienes alguna pregunta, no dudes en contactarnos.</p>
+          
+          <p>¡Saludos!<br>El equipo de Vino Rodante</p>
+        </div>
+        
+        <div class="footer">
+          <p>Este email fue enviado automáticamente. No respondas a este mensaje.</p>
+          <p>Vino Rodante - Tu club de vinos favorito</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
 }
 
 

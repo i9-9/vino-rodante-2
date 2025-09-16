@@ -9,6 +9,8 @@ import {
   getMercadoPagoFrequencyConfig,
   calculateNextDeliveryDate 
 } from '@/utils/subscription-helpers';
+import { generateTemporaryPassword, generateTemporaryEmail } from '@/lib/password-utils';
+import { sendAccountCreatedEmail } from '@/lib/emails/send-account-created';
 
 const mp = new MercadoPagoConfig({ 
   accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN! 
@@ -40,10 +42,14 @@ export async function POST(request: Request) {
     if (!user && customerInfo) {
       console.log('Creating account for guest user');
       
+      const tempPassword = generateTemporaryPassword();
+      let isTemporaryEmail = false;
+      let originalEmail = customerInfo.email;
+      
       // Create user account with email and password
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: customerInfo.email,
-        password: `temp_${Date.now()}`, // Temporary password
+        password: tempPassword,
         options: {
           data: {
             name: customerInfo.name,
@@ -57,15 +63,17 @@ export async function POST(request: Request) {
           console.log("User already exists, trying to sign in");
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
             email: customerInfo.email,
-            password: `temp_${Date.now()}`,
+            password: tempPassword,
           });
           
           if (signInError) {
             // If sign in fails, create a new account with different email
-            const tempEmail = `guest_${Date.now()}@vinorodante.com`;
+            const tempEmail = generateTemporaryEmail(customerInfo.email);
+            isTemporaryEmail = true;
+            
             const { data: newAuthData, error: newAuthError } = await supabase.auth.signUp({
               email: tempEmail,
-              password: `temp_${Date.now()}`,
+              password: tempPassword,
               options: {
                 data: {
                   name: customerInfo.name,
@@ -78,6 +86,7 @@ export async function POST(request: Request) {
             }
             
             finalUserId = newAuthData.user?.id;
+            customerInfo.email = tempEmail; // Update email for customer record
           } else {
             finalUserId = signInData.user?.id;
           }
@@ -111,6 +120,21 @@ export async function POST(request: Request) {
           throw new Error(`Error al crear el registro del cliente: ${customerError.message}`);
         } else {
           console.log('✅ Customer record created successfully:', customerData);
+          
+          // Enviar email con información de la cuenta creada
+          try {
+            await sendAccountCreatedEmail({
+              name: customerInfo.name,
+              email: customerInfo.email,
+              password: tempPassword,
+              isTemporaryEmail,
+              originalEmail: isTemporaryEmail ? originalEmail : undefined
+            });
+            console.log('✅ Account creation email sent successfully');
+          } catch (emailError) {
+            console.error('❌ Error sending account creation email:', emailError);
+            // No fallar la suscripción si el email falla
+          }
         }
       }
     } else if (user) {
