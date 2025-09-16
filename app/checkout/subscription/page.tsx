@@ -260,12 +260,17 @@ export default function SubscriptionCheckoutPage() {
       });
 
       // Verificación adicional de datos
-      if (!subscriptionData!.planId || !subscriptionData!.frequency || !customerId) {
+      if (!subscriptionData!.planId || !subscriptionData!.frequency) {
         throw new Error('Datos de suscripción incompletos: ' + JSON.stringify({
           planId: subscriptionData!.planId,
           frequency: subscriptionData!.frequency,
           userId: customerId
         }));
+      }
+
+      // Si no hay usuario autenticado, verificar que tenemos customerInfo
+      if (!user && !customerInfo.name && !customerInfo.email) {
+        throw new Error('Información del cliente incompleta para crear cuenta automática');
       }
 
       let response;
