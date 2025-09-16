@@ -285,6 +285,11 @@ export default function SubscriptionCheckoutPage() {
         planId: subscriptionData!.planId,
         frequency: subscriptionData!.frequency,
         userId: customerId,
+        // Incluir información del cliente si no está autenticado
+        ...(user ? {} : { customerInfo: {
+          name: customerInfo.name,
+          email: customerInfo.email,
+        }}),
       };
       
       console.log('🚀 Creating subscription with data:', subscriptionPayload);

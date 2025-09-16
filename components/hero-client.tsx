@@ -14,14 +14,14 @@ export default function HeroClient({ weeklyPlans }: HeroClientProps) {
   const t = useTranslations()
 
   return (
-    <section className="w-full bg-white relative md:h-[calc(100vh-4rem)]">
+    <section className="w-full bg-white relative lg:h-[calc(100vh-4rem)]">
       {/* Columna izquierda: contenido alineado con el logo */}
       <div className="container h-full">
-        <div className="flex flex-col items-start text-left z-10 h-full justify-center w-full py-28 md:py-20 mb-0 md:mb-0">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-medium tracking-[-0.04em] text-[#5B0E2D] leading-tight mb-6 max-w-xl">
+        <div className="flex flex-col items-start text-left z-10 h-full justify-center w-full py-28 lg:py-20 mb-0 lg:mb-0">
+          <h1 className="text-4xl lg:text-5xl xl:text-6xl font-medium tracking-[-0.04em] text-[#5B0E2D] leading-tight mb-6 max-w-xl">
             {t.home?.hero?.title || "Weekly Wine"}
           </h1>
-          <p className="text-base md:text-base text-[#444] max-w-xl whitespace-pre-line mb-8 leading-relaxed">
+          <p className="text-base lg:text-base text-[#444] max-w-lg lg:max-w-xl whitespace-pre-line mb-8 leading-relaxed">
             {t.home?.hero?.subtitle || "En Vino Rodante lo sabemos: tu tiempo es para disfrutar, no para buscar.\nPor eso te llevamos a casa una cuidada selección de vinos de calidad a precios irresistibles. Descorchá sin salir de casa. Disfrutá sin complicaciones."}
           </p>
           <div className="flex flex-row gap-4 mb-8 w-full justify-start">
@@ -48,14 +48,15 @@ export default function HeroClient({ weeklyPlans }: HeroClientProps) {
           </div>
         </div>
       </div>
-      {/* Mosaico de la derecha: mural absoluto en desktop, bloque normal en mobile */}
-      <div className="md:absolute md:top-0 md:right-0 md:w-1/2 md:h-full h-auto w-full md:block z-0">
-        <div className="grid grid-cols-2 grid-rows-2 w-full h-full gap-0 min-h-[70vw] md:min-h-0">
+      {/* Mosaico de la derecha: mural absoluto en desktop, bloque normal en mobile/tablet */}
+      <div className="lg:absolute lg:top-0 lg:right-0 lg:w-1/2 lg:h-full h-auto w-full lg:block z-0">
+        <div className="grid grid-cols-2 grid-rows-2 w-full h-full gap-0 min-h-[50vw] md:min-h-[40vw] lg:min-h-0">
           {weeklyPlans.length > 0 ? (
             weeklyPlans.map((plan, index) => (
-              <div
+              <Link
                 key={plan.id}
-                className="group relative w-full h-full min-h-[140px] aspect-[4/5] overflow-hidden hover:shadow-lg transition-shadow duration-300"
+                href={`/weekly-wine/${plan.type}`}
+                className="group relative w-full h-full min-h-[140px] aspect-[4/5] overflow-hidden hover:shadow-lg transition-shadow duration-300 block"
               >
                 <Image
                   src={plan.image || '/placeholder.svg'}
@@ -84,11 +85,11 @@ export default function HeroClient({ weeklyPlans }: HeroClientProps) {
                       </div>
                     )}
                   </div>
-                  <Button size="sm" variant="primary" asChild className="mt-2 w-fit">
-                    <Link href={`/weekly-wine/${plan.type}`}>{t.home?.hero?.cta || "Ver suscripciones"}</Link>
+                  <Button size="sm" variant="primary" className="mt-2 w-fit">
+                    {t.home?.hero?.cta || "Ver suscripciones"}
                   </Button>
                 </div>
-              </div>
+              </Link>
             ))
           ) : (
             // Fallback simple cuando no hay planes disponibles

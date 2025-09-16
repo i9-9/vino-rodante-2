@@ -23,18 +23,10 @@ export async function POST(request: Request) {
 
     console.log('👤 User authenticated:', !!user);
 
-    if (!user) {
-      console.log('❌ No user found');
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
+    const { planId, frequency, userId, customerInfo } = await request.json();
+    console.log('📋 Request data:', { planId, frequency, userId, customerInfo: !!customerInfo });
 
-    const { planId, frequency, userId } = await request.json();
-    console.log('📋 Request data:', { planId, frequency, userId });
-
-    if (!planId || !frequency || !userId) {
+    if (!planId || !frequency) {
       console.log('❌ Missing required data');
       return NextResponse.json(
         { error: 'Faltan datos requeridos' },
@@ -42,12 +34,89 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verificar que el usuario tenga permiso
-    if (user.id !== userId) {
-      console.log('❌ User ID mismatch');
+    let finalUserId = userId;
+
+    // Si no hay usuario autenticado, crear cuenta automáticamente
+    if (!user && customerInfo) {
+      console.log('Creating account for guest user');
+      
+      // Create user account with email and password
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: customerInfo.email,
+        password: `temp_${Date.now()}`, // Temporary password
+        options: {
+          data: {
+            name: customerInfo.name,
+          }
+        }
+      });
+
+      if (authError) {
+        // If user already exists, try to sign in
+        if (authError.message.includes('already registered')) {
+          console.log("User already exists, trying to sign in");
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email: customerInfo.email,
+            password: `temp_${Date.now()}`,
+          });
+          
+          if (signInError) {
+            // If sign in fails, create a new account with different email
+            const tempEmail = `guest_${Date.now()}@vinorodante.com`;
+            const { data: newAuthData, error: newAuthError } = await supabase.auth.signUp({
+              email: tempEmail,
+              password: `temp_${Date.now()}`,
+              options: {
+                data: {
+                  name: customerInfo.name,
+                }
+              }
+            });
+            
+            if (newAuthError) {
+              throw new Error("Error creating guest account");
+            }
+            
+            finalUserId = newAuthData.user?.id;
+          } else {
+            finalUserId = signInData.user?.id;
+          }
+        } else {
+          throw new Error("Error creating account");
+        }
+      } else {
+        finalUserId = authData.user?.id;
+      }
+
+      // Create customer record
+      if (finalUserId) {
+        const { error: customerError } = await supabase
+          .from('customers')
+          .upsert({
+            id: finalUserId,
+            name: customerInfo.name,
+            email: customerInfo.email,
+          });
+
+        if (customerError) {
+          console.error('Error creating customer:', customerError);
+        }
+      }
+    } else if (user) {
+      finalUserId = user.id;
+    } else {
+      console.log('❌ No user found and no customer info provided');
       return NextResponse.json(
-        { error: 'No autorizado para crear suscripción para otro usuario' },
-        { status: 403 }
+        { error: 'No autorizado' },
+        { status: 401 }
+      );
+    }
+
+    if (!finalUserId) {
+      console.log('❌ No user ID available');
+      return NextResponse.json(
+        { error: 'Error al crear usuario' },
+        { status: 500 }
       );
     }
 
@@ -90,9 +159,9 @@ export async function POST(request: Request) {
         currency_id: 'ARS'
       }],
       payer: {
-        email: user.email!
+        email: customerInfo?.email || user?.email!
       },
-      external_reference: `${user.id}_${planId}_${frequency}`,
+      external_reference: `${finalUserId}_${planId}_${frequency}`,
       back_urls: {
         success: `${process.env.NEXT_PUBLIC_SITE_URL}/account/subscriptions?status=success`,
         failure: `${process.env.NEXT_PUBLIC_SITE_URL}/account/subscriptions?status=failure`,
@@ -103,7 +172,7 @@ export async function POST(request: Request) {
         default_installments: 1
       },
       metadata: {
-        user_id: userId,
+        user_id: finalUserId,
         plan_id: planId,
         frequency,
         frequency_type: mpFrequencyType,
@@ -124,7 +193,7 @@ export async function POST(request: Request) {
     // Crear suscripción en la base de datos
     console.log('💾 Creating subscription in database...');
     const subscriptionData = {
-      user_id: userId,
+      user_id: finalUserId,
       plan_id: planId,
       frequency,
       status: 'pending',

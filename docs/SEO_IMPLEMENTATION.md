@@ -12,7 +12,8 @@ Se ha implementado un sistema completo de SEO para Vino Rodante usando `next-seo
 
 ## Archivos Creados/Modificados
 
-### Archivos de Configuración
+### Archivos de ConfiguraciónCION
+rear Lasto
 - `lib/seo-config.ts` - Configuraciones base de SEO
 - `lib/seo-utils.ts` - Utilidades para structured data
 - `components/SEO.tsx` - Componente wrapper para next-seo

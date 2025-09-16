@@ -19,8 +19,14 @@ const protectedRoutes = [
   '/dashboard',
   '/profile',
   '/account', // Dashboard principal
-  '/api/subscriptions', // API de suscripciones
+  '/api/subscriptions/[id]', // API de suscripciones específicas (requieren auth)
   '/api/checkout', // API de checkout
+]
+
+// Lista de rutas de API que permiten acceso sin autenticación
+const publicApiRoutes = [
+  '/api/subscriptions/create',
+  '/api/subscriptions/create-recurring',
 ]
 
 export async function middleware(request: NextRequest) {
@@ -66,14 +72,18 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(route)
   )
 
+  // Verificar si es una ruta de API pública (no requiere autenticación)
+  const isPublicApiRoute = publicApiRoutes.some(route => 
+    request.nextUrl.pathname.startsWith(route)
+  )
+
   // Solo redirigir si:
   // 1. No hay usuario autenticado
   // 2. Está intentando acceder a una ruta protegida
   // 3. No está ya en una ruta de auth
-  // 4. NO es una ruta de API (las APIs manejan su propia autenticación)
-  const isApiRoute = request.nextUrl.pathname.startsWith('/api/')
+  // 4. NO es una ruta de API pública (las APIs públicas manejan su propia autenticación)
   
-  if (!user && isProtectedRoute && !isAuthRoute && !isApiRoute) {
+  if (!user && isProtectedRoute && !isAuthRoute && !isPublicApiRoute) {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = '/auth/sign-in'
     return NextResponse.redirect(redirectUrl)
