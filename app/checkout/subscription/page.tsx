@@ -11,6 +11,8 @@ import { createClient } from '@/utils/supabase/client'
 import { useToast } from "@/components/ui/use-toast"
 import { CheckCircle, Wine, Calendar, CreditCard, ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ARGENTINA_PROVINCES } from "@/lib/argentina-provinces"
 
 interface SubscriptionData {
   planId: string
@@ -136,7 +138,7 @@ export default function SubscriptionCheckoutPage() {
       }
 
       // Validar datos requeridos
-      if (!customerInfo.name || !customerInfo.email || !customerInfo.address1 || !customerInfo.city) {
+      if (!customerInfo.name || !customerInfo.email || !customerInfo.address1 || !customerInfo.city || !customerInfo.state || !customerInfo.postalCode) {
         throw new Error('Por favor completa todos los campos requeridos para la suscripción')
       }
 
@@ -630,21 +632,31 @@ export default function SubscriptionCheckoutPage() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="state">Provincia</Label>
-                        <Input
-                          id="state"
-                          name="state"
+                        <Label htmlFor="state">Provincia *</Label>
+                        <Select
                           value={customerInfo.state}
-                          onChange={handleInputChange}
-                        />
+                          onValueChange={(value) => setCustomerInfo(prev => ({ ...prev, state: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona una provincia" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ARGENTINA_PROVINCES.map((province) => (
+                              <SelectItem key={province} value={province}>
+                                {province}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div>
-                        <Label htmlFor="postalCode">Código Postal</Label>
+                        <Label htmlFor="postalCode">Código Postal *</Label>
                         <Input
                           id="postalCode"
                           name="postalCode"
                           value={customerInfo.postalCode}
                           onChange={handleInputChange}
+                          required
                         />
                       </div>
                     </div>

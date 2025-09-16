@@ -94,16 +94,27 @@ export async function POST(request: Request) {
 
       // Create customer record
       if (finalUserId) {
-        const { error: customerError } = await supabase
+        console.log('Creating customer record for user:', finalUserId);
+        const { data: customerData, error: customerError } = await supabase
           .from('customers')
           .upsert({
             id: finalUserId,
             name: customerInfo.name,
             email: customerInfo.email,
-          });
+          })
+          .select();
 
         if (customerError) {
-          console.error('Error creating customer:', customerError);
+          console.error('❌ Error creating customer:', customerError);
+          console.error('❌ Customer error details:', {
+            message: customerError.message,
+            details: customerError.details,
+            hint: customerError.hint,
+            code: customerError.code
+          });
+          throw new Error(`Error al crear el registro del cliente: ${customerError.message}`);
+        } else {
+          console.log('✅ Customer record created successfully:', customerData);
         }
       }
     } else if (user) {

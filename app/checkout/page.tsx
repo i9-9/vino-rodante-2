@@ -17,6 +17,8 @@ import { useToast } from "@/components/ui/use-toast"
 import { useCart } from "@/lib/hooks/use-cart"
 import { calculateShipping, getShippingZone } from "@/lib/shipping-utils"
 import { OrderSummary } from "@/components/checkout/OrderSummary"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ARGENTINA_PROVINCES } from "@/lib/argentina-provinces"
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -427,27 +429,34 @@ export default function CheckoutPage() {
                             <Input id="city" name="city" required value={customerInfo.city} onChange={handleInputChange} autoComplete="address-level2" />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="state">{t.checkout?.state || "State/Province"}</Label>
-                            <Input
-                              id="state"
-                              name="state"
-                              required
+                            <Label htmlFor="state">{t.checkout?.state || "Provincia"}</Label>
+                            <Select
                               value={customerInfo.state}
-                              onChange={handleInputChange}
-                            autoComplete="address-level1"
-                            />
+                              onValueChange={(value) => setCustomerInfo(prev => ({ ...prev, state: value }))}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecciona una provincia" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ARGENTINA_PROVINCES.map((province) => (
+                                  <SelectItem key={province} value={province}>
+                                    {province}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="postalCode">{t.checkout?.postalCode || "Postal Code"}</Label>
+                            <Label htmlFor="postalCode">{t.checkout?.postalCode || "Código Postal"} *</Label>
                             <Input
                               id="postalCode"
                               name="postalCode"
                               required
                               value={customerInfo.postalCode}
                               onChange={handleInputChange}
-                            autoComplete="postal-code"
+                              autoComplete="postal-code"
                             />
                           </div>
                           <div className="space-y-2">
