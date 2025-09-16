@@ -142,99 +142,62 @@ export default function SubscriptionCheckoutPage() {
         throw new Error('Por favor completa todos los campos requeridos para la suscripción')
       }
 
-      // Obtener usuario autenticado o crear cuenta automáticamente
+      // Obtener usuario autenticado
       console.log('🔐 Checking user authentication...');
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       
       let customerId = user?.id
       
-      // Si el usuario no está autenticado, crear cuenta automáticamente
+      // Si no hay usuario autenticado, el backend se encargará de crear la cuenta
       if (!user) {
-        console.log("Creating account for guest user")
-        
-        // Create user account with email and password
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: customerInfo.email,
-          password: `temp_${Date.now()}`, // Temporary password
-          options: {
-            data: {
-              name: customerInfo.name,
-            }
-          }
-        })
-
-        if (authError) {
-          // If user already exists, try to sign in
-          if (authError.message.includes('already registered')) {
-            console.log("User already exists, trying to sign in")
-            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-              email: customerInfo.email,
-              password: `temp_${Date.now()}`,
-            })
-            
-            if (signInError) {
-              // If sign in fails, create a new account with different email
-              const tempEmail = `guest_${Date.now()}@vinorodante.com`
-              const { data: newAuthData, error: newAuthError } = await supabase.auth.signUp({
-                email: tempEmail,
-                password: `temp_${Date.now()}`,
-                options: {
-                  data: {
-                    name: customerInfo.name,
-                  }
-                }
-              })
-              
-              if (newAuthError) {
-                throw new Error("Error creating guest account")
-              }
-              
-              customerId = newAuthData.user?.id
-            } else {
-              customerId = signInData.user?.id
-            }
-          } else {
-            throw new Error("Error creating account")
-          }
-        } else {
-          customerId = authData.user?.id
-        }
-
-        // Create customer record
-        if (customerId) {
-          const { error: customerError } = await supabase
-            .from('customers')
-            .upsert({
-              id: customerId,
-              name: customerInfo.name,
-              email: customerInfo.email,
-            })
-
-          if (customerError) {
-            console.error('Error creating customer record:', customerError)
-            throw new Error('Error al crear el registro del cliente')
-          }
-        }
+        console.log("No authenticated user - backend will create account automatically")
+        customerId = undefined // El backend creará la cuenta
       }
       
       console.log('✅ User/Customer ID:', customerId);
 
-      // Verificar si ya existe una dirección idéntica
-      const { data: existingAddress } = await supabase
-        .from('addresses')
-        .select('id')
-        .eq('customer_id', customerId)
-        .eq('line1', customerInfo.address1)
-        .eq('city', customerInfo.city)
-        .eq('state', customerInfo.state)
-        .eq('postal_code', customerInfo.postalCode)
-        .single()
-
-      if (existingAddress) {
-        // Actualizar dirección existente
-        const { error: addressError } = await supabase
+      // Solo manejar direcciones si el usuario está autenticado
+      // Si no está autenticado, el backend se encargará de crear la dirección
+      if (customerId) {
+        // Verificar si ya existe una dirección idéntica
+        const { data: existingAddress, error: addressQueryError } = await supabase
           .from('addresses')
-          .update({
+          .select('id')
+          .eq('customer_id', customerId)
+          .eq('line1', customerInfo.address1)
+          .eq('city', customerInfo.city)
+          .eq('state', customerInfo.state)
+          .eq('postal_code', customerInfo.postalCode)
+          .single()
+
+        if (addressQueryError && addressQueryError.code !== 'PGRST116') {
+          console.error('Error checking existing address:', addressQueryError);
+          // Continuar sin verificar dirección existente
+        }
+
+        if (existingAddress) {
+          // Actualizar dirección existente
+          const { error: addressError } = await supabase
+            .from('addresses')
+            .update({
+              line1: customerInfo.address1,
+              line2: customerInfo.address2,
+              city: customerInfo.city,
+              state: customerInfo.state,
+              postal_code: customerInfo.postalCode,
+              country: customerInfo.country,
+              is_default: true,
+            })
+            .eq('id', existingAddress.id)
+
+          if (addressError) {
+            console.error('Error updating address:', addressError)
+            throw new Error('Error al actualizar dirección')
+          }
+        } else {
+          // Crear nueva dirección
+          const { error: addressError } = await supabase.from("addresses").insert({
+            customer_id: customerId,
             line1: customerInfo.address1,
             line2: customerInfo.address2,
             city: customerInfo.city,
@@ -243,44 +206,27 @@ export default function SubscriptionCheckoutPage() {
             country: customerInfo.country,
             is_default: true,
           })
-          .eq('id', existingAddress.id)
 
-        if (addressError) {
-          console.error('Error updating address:', addressError)
-          throw new Error('Error al actualizar dirección')
+          if (addressError) {
+            console.error('Error saving address:', addressError)
+            throw new Error('Error al guardar dirección')
+          }
         }
-      } else {
-        // Crear nueva dirección
-        const { error: addressError } = await supabase.from("addresses").insert({
-          customer_id: customerId,
-          line1: customerInfo.address1,
-          line2: customerInfo.address2,
-          city: customerInfo.city,
-          state: customerInfo.state,
-          postal_code: customerInfo.postalCode,
-          country: customerInfo.country,
-          is_default: true,
-        })
 
-        if (addressError) {
-          console.error('Error saving address:', addressError)
-          throw new Error('Error al guardar dirección')
-        }
+        // Asegurar que solo esta dirección sea la principal
+        await supabase
+          .from('addresses')
+          .update({ is_default: false })
+          .eq('customer_id', customerId)
+          .neq('line1', customerInfo.address1)
+
+        // Marcar la dirección actual como principal
+        await supabase
+          .from('addresses')
+          .update({ is_default: true })
+          .eq('customer_id', customerId)
+          .eq('line1', customerInfo.address1)
       }
-
-      // Asegurar que solo esta dirección sea la principal
-      await supabase
-        .from('addresses')
-        .update({ is_default: false })
-        .eq('customer_id', customerId)
-        .neq('line1', customerInfo.address1)
-
-      // Marcar la dirección actual como principal
-      await supabase
-        .from('addresses')
-        .update({ is_default: true })
-        .eq('customer_id', customerId)
-        .eq('line1', customerInfo.address1)
 
       // Crear suscripción
       const subscriptionPayload = {
@@ -288,10 +234,19 @@ export default function SubscriptionCheckoutPage() {
         frequency: subscriptionData!.frequency,
         userId: customerId,
         // Incluir información del cliente si no está autenticado
-        ...(user ? {} : { customerInfo: {
-          name: customerInfo.name,
-          email: customerInfo.email,
-        }}),
+        ...(user ? {} : { 
+          customerInfo: {
+            name: customerInfo.name,
+            email: customerInfo.email,
+            phone: customerInfo.phone,
+            address1: customerInfo.address1,
+            address2: customerInfo.address2,
+            city: customerInfo.city,
+            state: customerInfo.state,
+            postalCode: customerInfo.postalCode,
+            country: customerInfo.country,
+          }
+        }),
       };
       
       console.log('🚀 Creating subscription with data:', subscriptionPayload);
@@ -335,10 +290,10 @@ export default function SubscriptionCheckoutPage() {
         console.log('📊 Response ok:', response.ok);
       } catch (fetchError) {
         console.error('❌ Fetch error details:', {
-          name: fetchError.name,
-          message: fetchError.message,
-          stack: fetchError.stack,
-          cause: fetchError.cause
+          name: fetchError instanceof Error ? fetchError.name : 'Unknown',
+          message: fetchError instanceof Error ? fetchError.message : 'Unknown error',
+          stack: fetchError instanceof Error ? fetchError.stack : undefined,
+          cause: fetchError instanceof Error ? fetchError.cause : undefined
         });
         throw new Error('Error de conexión con el servidor: ' + (fetchError instanceof Error ? fetchError.message : 'Error desconocido'));
       }
@@ -405,7 +360,7 @@ export default function SubscriptionCheckoutPage() {
         }
       } catch (redirectError) {
         console.log('❌ Error during redirect:', redirectError)
-        throw new Error('Error al redirigir a MercadoPago: ' + redirectError.message)
+        throw new Error('Error al redirigir a MercadoPago: ' + (redirectError instanceof Error ? redirectError.message : 'Error desconocido'))
       }
     } catch (error: any) {
       console.error('❌ Error creating subscription:', error)
@@ -444,7 +399,7 @@ export default function SubscriptionCheckoutPage() {
       description: errorMessage,
       variant: "destructive",
     })
-    setStep("info")
+    // Reset form state if needed
   }
 
   if (!subscriptionData) {

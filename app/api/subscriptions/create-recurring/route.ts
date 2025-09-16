@@ -125,6 +125,30 @@ export async function POST(request: Request) {
         } else {
           console.log('✅ Customer record created successfully:', customerData);
           
+          // Crear dirección para el usuario
+          try {
+            const { error: addressError } = await supabase.from("addresses").insert({
+              customer_id: finalUserId,
+              line1: customerInfo.address1,
+              line2: customerInfo.address2 || '',
+              city: customerInfo.city,
+              state: customerInfo.state,
+              postal_code: customerInfo.postalCode,
+              country: customerInfo.country || 'Argentina',
+              is_default: true,
+            });
+
+            if (addressError) {
+              console.error('❌ Error creating address:', addressError);
+              // No fallar la suscripción si la dirección falla
+            } else {
+              console.log('✅ Address created successfully');
+            }
+          } catch (addressError) {
+            console.error('❌ Error creating address:', addressError);
+            // No fallar la suscripción si la dirección falla
+          }
+
           // Enviar email con información de la cuenta creada
           try {
             await sendAccountCreatedEmail({
