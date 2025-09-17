@@ -115,6 +115,28 @@ export async function updatePasswordAction(formData: FormData) {
   return redirectWithMessage("/auth/sign-in", "success", "Contraseña actualizada correctamente. Ahora puedes iniciar sesión.")
 }
 
+// SOCIAL LOGIN ACTIONS
+export async function signInWithGoogle(returnTo?: string) {
+  const supabase = await createClient()
+  const origin = (await headers()).get("origin")
+  
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${origin}/auth/callback?return_to=${encodeURIComponent(returnTo || '/account')}`,
+    },
+  })
+
+  if (error) {
+    return encodedRedirect("error", "/auth/sign-in", error.message)
+  }
+
+  if (data.url) {
+    redirect(data.url)
+  }
+}
+
+
 // LOGOUT: usa el endpoint /api/auth/signout ya creado 
 export async function signOut() {
   const supabase = await createClient()

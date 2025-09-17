@@ -25,12 +25,27 @@ export async function POST(request: Request) {
     console.log('🚀 Starting REAL subscription creation with PreApproval...');
     
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    
+    // Intentar obtener usuario de cookies primero
+    let { data: { user } } = await supabase.auth.getUser();
+    
+    // Si no hay usuario en cookies, intentar con header de autorización
+    if (!user) {
+      const authHeader = request.headers.get('authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        console.log('🔑 Using Authorization header token');
+        
+        // Crear cliente con token específico
+        const { data: { user: tokenUser } } = await supabase.auth.getUser(token);
+        user = tokenUser;
+      }
+    }
 
     console.log('👤 User authenticated:', !!user);
 
-    const { planId, frequency, userId, customerInfo } = await request.json();
-    console.log('📋 Request data:', { planId, frequency, userId, customerInfo: !!customerInfo });
+    const { planId, frequency, userId } = await request.json();
+    console.log('📋 Request data:', { planId, frequency, userId });
 
     if (!planId || !frequency) {
       console.log('❌ Missing required data');
@@ -42,138 +57,16 @@ export async function POST(request: Request) {
 
     let finalUserId = userId;
 
-    // Si no hay usuario autenticado, crear cuenta automáticamente
-    if (!user && customerInfo) {
-      console.log('Creating account for guest user');
-      
-      const tempPassword = generateTemporaryPassword();
-      let isTemporaryEmail = false;
-      let originalEmail = customerInfo.email;
-      
-      // Create user account with email and password
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: customerInfo.email,
-        password: tempPassword,
-        options: {
-          data: {
-            name: customerInfo.name,
-          }
-        }
-      });
-
-      if (authError) {
-        // If user already exists, try to sign in
-        if (authError.message.includes('already registered')) {
-          console.log("User already exists, trying to sign in");
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-            email: customerInfo.email,
-            password: tempPassword,
-          });
-          
-          if (signInError) {
-            // If sign in fails, create a new account with different email
-            const tempEmail = generateTemporaryEmail(customerInfo.email);
-            isTemporaryEmail = true;
-            
-            const { data: newAuthData, error: newAuthError } = await supabase.auth.signUp({
-              email: tempEmail,
-              password: tempPassword,
-              options: {
-                data: {
-                  name: customerInfo.name,
-                }
-              }
-            });
-            
-            if (newAuthError) {
-              throw new Error("Error creating guest account");
-            }
-            
-            finalUserId = newAuthData.user?.id;
-            customerInfo.email = tempEmail; // Update email for customer record
-          } else {
-            finalUserId = signInData.user?.id;
-          }
-        } else {
-          throw new Error("Error creating account");
-        }
-      } else {
-        finalUserId = authData.user?.id;
-      }
-
-      // Create customer record
-      if (finalUserId) {
-        console.log('Creating customer record for user:', finalUserId);
-        const { data: customerData, error: customerError } = await supabase
-          .from('customers')
-          .upsert({
-            id: finalUserId,
-            name: customerInfo.name,
-            email: customerInfo.email,
-          })
-          .select();
-
-        if (customerError) {
-          console.error('❌ Error creating customer:', customerError);
-          console.error('❌ Customer error details:', {
-            message: customerError.message,
-            details: customerError.details,
-            hint: customerError.hint,
-            code: customerError.code
-          });
-          throw new Error(`Error al crear el registro del cliente: ${customerError.message}`);
-        } else {
-          console.log('✅ Customer record created successfully:', customerData);
-          
-          // Crear dirección para el usuario
-          try {
-            const { error: addressError } = await supabase.from("addresses").insert({
-              customer_id: finalUserId,
-              line1: customerInfo.address1,
-              line2: customerInfo.address2 || '',
-              city: customerInfo.city,
-              state: customerInfo.state,
-              postal_code: customerInfo.postalCode,
-              country: customerInfo.country || 'Argentina',
-              is_default: true,
-            });
-
-            if (addressError) {
-              console.error('❌ Error creating address:', addressError);
-              // No fallar la suscripción si la dirección falla
-            } else {
-              console.log('✅ Address created successfully');
-            }
-          } catch (addressError) {
-            console.error('❌ Error creating address:', addressError);
-            // No fallar la suscripción si la dirección falla
-          }
-
-          // Enviar email con información de la cuenta creada
-          try {
-            await sendAccountCreatedEmail({
-              name: customerInfo.name,
-              email: customerInfo.email,
-              password: tempPassword,
-              isTemporaryEmail,
-              originalEmail: isTemporaryEmail ? originalEmail : undefined
-            });
-            console.log('✅ Account creation email sent successfully');
-          } catch (emailError) {
-            console.error('❌ Error sending account creation email:', emailError);
-            // No fallar la suscripción si el email falla
-          }
-        }
-      }
-    } else if (user) {
-      finalUserId = user.id;
-    } else {
-      console.log('❌ No user found and no customer info provided');
+    // Verificar que tenemos un usuario autenticado
+    if (!user) {
+      console.log('❌ No authenticated user found');
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
       );
     }
+
+    finalUserId = user.id;
 
     if (!finalUserId) {
       console.log('❌ No user ID available');
@@ -212,11 +105,16 @@ export async function POST(request: Request) {
 
     // Crear PreApproval en MercadoPago (SUSCRIPCIÓN REAL)
     console.log('🎯 Creating MercadoPago PreApproval (REAL subscription)...');
+    console.log('🔧 MercadoPago config:', {
+      accessToken: !!process.env.MERCADO_PAGO_ACCESS_TOKEN,
+      timeout: 5000
+    });
     
     let init_point: string | undefined;
     let mpSubscriptionId: string | undefined;
     
     try {
+      console.log('🔧 Creating PreApproval instance...');
       const preApproval = new PreApproval(mp);
       console.log('✅ PreApproval instance created successfully');
       
@@ -234,15 +132,17 @@ export async function POST(request: Request) {
         status: 'pending'
       };
 
-      console.log('📝 PreApproval data:', preApprovalData);
       console.log('🔍 PreApproval data validation:', {
         reason: typeof preApprovalData.reason,
         external_reference: typeof preApprovalData.external_reference,
         payer_email: typeof preApprovalData.payer_email,
+        payer_email_value: preApprovalData.payer_email,
         auto_recurring: typeof preApprovalData.auto_recurring,
         back_url: typeof preApprovalData.back_url,
         status: typeof preApprovalData.status
       });
+
+      console.log('📝 PreApproval data:', preApprovalData);
       
       const result = await preApproval.create({ body: preApprovalData });
       init_point = result.init_point;
@@ -282,6 +182,11 @@ export async function POST(request: Request) {
 
     // Crear suscripción en la base de datos
     console.log('💾 Creating subscription in database...');
+    console.log('🔍 Final user ID:', finalUserId);
+    console.log('🔍 Plan ID:', planId);
+    console.log('🔍 Frequency:', frequency);
+    console.log('🔍 MercadoPago subscription ID:', mpSubscriptionId);
+    
     const subscriptionData = {
       user_id: finalUserId,
       plan_id: planId,
@@ -296,6 +201,12 @@ export async function POST(request: Request) {
     };
     
     console.log('📊 Subscription data:', subscriptionData);
+    console.log('🔍 Subscription data validation:', {
+      user_id: typeof subscriptionData.user_id,
+      plan_id: typeof subscriptionData.plan_id,
+      frequency: typeof subscriptionData.frequency,
+      mercadopago_subscription_id: typeof subscriptionData.mercadopago_subscription_id
+    });
     
     const { data: subscription, error: subscriptionError } = await supabase
       .from('user_subscriptions')
@@ -307,8 +218,18 @@ export async function POST(request: Request) {
 
     if (subscriptionError) {
       console.log('❌ Subscription creation error:', subscriptionError);
+      console.log('❌ Subscription error details:', {
+        message: subscriptionError.message,
+        details: subscriptionError.details,
+        hint: subscriptionError.hint,
+        code: subscriptionError.code
+      });
       return NextResponse.json(
-        { error: 'Error al crear la suscripción' },
+        { 
+          error: 'Error al crear la suscripción',
+          details: subscriptionError.message,
+          code: subscriptionError.code
+        },
         { status: 500 }
       );
     }
