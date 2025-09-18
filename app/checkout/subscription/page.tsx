@@ -13,6 +13,7 @@ import { CheckCircle, Wine, Calendar, CreditCard, ArrowLeft } from "lucide-react
 import Link from "next/link"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ARGENTINA_PROVINCES } from "@/lib/argentina-provinces"
+import { createOrUpdateGuestCustomer } from '@/lib/actions/guest-checkout'
 
 interface SubscriptionData {
   planId: string
@@ -150,110 +151,25 @@ export default function SubscriptionCheckoutPage() {
       
       let customerId = user?.id
       
-      // Si no hay usuario autenticado, crear cuenta automáticamente (como en checkout individual)
+      // Si no hay usuario autenticado, crear cuenta automáticamente como invitado
       if (!user) {
-        console.log("🔄 NEW VERSION: Creating account for guest user")
+        console.log("🔄 Creating/updating guest account for checkout")
         
-        // Use a fixed password for testing (Supabase requires email confirmation by default)
-        const tempPassword = "VinoRodante123!";
+        const guestResult = await createOrUpdateGuestCustomer(customerInfo)
         
-        // Try to sign in first (in case user already exists)
-        console.log("🔄 Trying to sign in existing user first...");
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email: customerInfo.email,
-          password: tempPassword,
-        })
-        
-        if (signInError) {
-          console.log("❌ Sign in failed, creating new account...");
-          console.log("❌ SignIn error:", signInError.message);
-          
-          // Create user account with email and password
-          const { data: authData, error: authError } = await supabase.auth.signUp({
-            email: customerInfo.email,
-            password: tempPassword,
-            options: {
-              data: {
-                name: customerInfo.name,
-              }
-            }
-          })
-
-          if (authError) {
-            console.log('❌ Supabase signUp error:', authError);
-            console.log('❌ Error details:', {
-              message: authError.message,
-              status: authError.status,
-              name: authError.name
-            });
-            
-            // If user already exists, try to sign in
-            if (authError.message.includes('already registered')) {
-              console.log("User already exists, trying to sign in again")
-              const { data: retrySignInData, error: retrySignInError } = await supabase.auth.signInWithPassword({
-                email: customerInfo.email,
-                password: tempPassword,
-              })
-              
-              if (retrySignInError) {
-                // If sign in fails, create a new account with different email
-                const tempEmail = `guest_${Date.now()}@vinorodante.com`
-                const { data: newAuthData, error: newAuthError } = await supabase.auth.signUp({
-                  email: tempEmail,
-                  password: tempPassword,
-                  options: {
-                    data: {
-                      name: customerInfo.name,
-                    }
-                  }
-                })
-                
-                if (newAuthError) {
-                  throw new Error("Error creating guest account")
-                }
-                
-                customerId = newAuthData.user?.id
-              } else {
-                customerId = retrySignInData.user?.id
-              }
-            } else {
-              console.log('❌ Auth error is not "already registered", throwing error');
-              console.log('❌ Full auth error:', authError);
-              throw new Error(`Error creating account: ${authError.message}`)
-            }
-          } else {
-            customerId = authData.user?.id
-            console.log('✅ New account created successfully');
-          }
-        } else {
-          customerId = signInData.user?.id
-          console.log('✅ Successfully signed in existing user');
+        if (!guestResult.success) {
+          throw new Error(guestResult.error || 'Error al crear cliente invitado')
         }
-
-        // Delay más largo para asegurar que la sesión se establezca completamente
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // Create customer record
-        if (customerId) {
-          const { error: customerError } = await supabase
-            .from('customers')
-            .upsert({
-              id: customerId,
-              name: customerInfo.name,
-              email: customerInfo.email,
-            })
-
-          if (customerError) {
-            console.error('Error creating customer record:', customerError)
-            throw new Error('Error al crear el registro del cliente')
-          }
-        }
+        
+        customerId = guestResult.customerId!
+        console.log('✅ Guest customer handled successfully:', customerId)
       }
       
       console.log('✅ User/Customer ID:', customerId);
 
-      // Manejar direcciones (ahora siempre tenemos customerId)
-      if (customerId) {
+      // Las direcciones ya se manejan en el server action para usuarios invitados
+      // Para usuarios autenticados, manejar direcciones aquí
+      if (user && customerId) {
         // Verificar si ya existe una dirección idéntica
         const { data: existingAddress, error: addressQueryError } = await supabase
           .from('addresses')
@@ -349,25 +265,16 @@ export default function SubscriptionCheckoutPage() {
         }));
       }
 
-      // Obtener el token de sesión actual con reintentos
+      // Para usuarios invitados, no necesitamos token de sesión
+      // Solo lo obtenemos si el usuario está autenticado
       let session = null;
-      let attempts = 0;
-      const maxAttempts = 3;
-      
-      while (!session && attempts < maxAttempts) {
+      if (user) {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         session = currentSession;
-        attempts++;
-        
-        if (!session) {
-          console.log(`🔑 Session token attempt ${attempts}/${maxAttempts}: Missing, waiting...`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        } else {
-          console.log(`🔑 Session token attempt ${attempts}/${maxAttempts}: Present`);
-        }
+        console.log('🔑 Session token for authenticated user:', session?.access_token ? 'Present' : 'Missing');
+      } else {
+        console.log('🔑 Guest checkout - no session token needed');
       }
-      
-      console.log('🔑 Final session token:', session?.access_token ? 'Present' : 'Missing');
       
       let response;
       try {

@@ -17,7 +17,7 @@ export default function HeroClient({ weeklyPlans }: HeroClientProps) {
     <section className="w-full bg-white relative lg:h-[calc(100vh-4rem)]">
       {/* Columna izquierda: contenido alineado con el logo */}
       <div className="container h-full">
-        <div className="flex flex-col items-start text-left z-10 h-full justify-center w-full py-28 lg:py-20 mb-0 lg:mb-0">
+        <div className="flex flex-col items-start text-left z-10 h-full justify-center w-full py-10 lg:py-20 mb-0 lg:mb-0">
           <h1 className="text-4xl lg:text-5xl xl:text-6xl font-medium tracking-[-0.04em] text-[#5B0E2D] leading-tight mb-6 max-w-xl">
             {t.home?.hero?.title || "Weekly Wine"}
           </h1>

@@ -1,7 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getPaymentStatus } from "@/lib/mercadopago"
 import { sendEmail, renderCustomerOrderEmail, renderAdminOrderEmail } from "@/lib/emails/resend"
+import { sendAccountCreatedEmail } from "@/lib/emails/send-account-created"
 
 // Validate webhook signature (optional but recommended for production)
 function validateWebhookSignature(): boolean {
@@ -81,7 +83,7 @@ export async function POST(request: NextRequest) {
 
     // Validate webhook signature in production
     if (process.env.NODE_ENV === "production") {
-      if (!validateWebhookSignature(request, body)) {
+      if (!validateWebhookSignature()) {
         console.error("Invalid webhook signature")
         return NextResponse.json({ message: "Invalid signature" }, { status: 401 })
       }
@@ -103,136 +105,304 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Invalid payment data" }, { status: 400 })
     }
 
-    // Update order status based on payment status
-    const orderId = paymentData.external_reference
+    // Parse external_reference to determine if it's an order or subscription
+    const externalRef = paymentData.external_reference
+    const isSubscription = externalRef.includes('_') && externalRef.split('_').length === 3
+    
+    let orderId: string | null = null
+    let subscriptionId: string | null = null
+    let userId: string | null = null
+    
+    if (isSubscription) {
+      // Format: userId_planId_frequency
+      const [parsedUserId, planId, frequency] = externalRef.split('_')
+      userId = parsedUserId
+      
+      // Find subscription by user_id, plan_id, and frequency
+      const { data: subscription } = await supabase
+        .from('user_subscriptions')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('plan_id', planId)
+        .eq('frequency', frequency)
+        .single()
+      
+      subscriptionId = subscription?.id || null
+    } else {
+      // It's a regular order
+      orderId = externalRef
+    }
+
     let orderStatus = "pending"
+    let subscriptionStatus = "pending"
 
     switch (paymentData.status) {
       case "approved":
         orderStatus = "paid"
+        subscriptionStatus = "active"
         break
       case "rejected":
         orderStatus = "cancelled"
+        subscriptionStatus = "cancelled"
         break
       case "refunded":
         orderStatus = "refunded"
+        subscriptionStatus = "cancelled"
         break
       case "in_process":
         orderStatus = "pending"
+        subscriptionStatus = "pending"
         break
       case "pending":
         orderStatus = "pending"
+        subscriptionStatus = "pending"
         break
       default:
         orderStatus = "pending"
+        subscriptionStatus = "pending"
     }
 
-    console.log("Updating order status:", {
+    console.log("Updating status:", {
       orderId,
+      subscriptionId,
       orderStatus,
+      subscriptionStatus,
       paymentStatus: paymentData.status,
-      paymentId
+      paymentId,
+      isSubscription
     })
 
-    // Update order in database
-    const { error: orderUpdateError } = await supabase
-      .from("orders")
-      .update({ 
-        status: orderStatus
-      })
-      .eq("id", orderId)
+    // Update order or subscription in database
+    if (orderId) {
+      const { error: orderUpdateError } = await supabase
+        .from("orders")
+        .update({ 
+          status: orderStatus
+        })
+        .eq("id", orderId)
 
-    if (orderUpdateError) {
-      console.error("Error updating order status:", orderUpdateError)
-      return NextResponse.json({ 
-        message: "Error updating order",
-        details: orderUpdateError.message
-      }, { status: 500 })
+      if (orderUpdateError) {
+        console.error("Error updating order status:", orderUpdateError)
+        return NextResponse.json({ 
+          message: "Error updating order",
+          details: orderUpdateError.message
+        }, { status: 500 })
+      }
     }
 
-    // If payment is approved, send confirmation emails
+    if (subscriptionId) {
+      const { error: subscriptionUpdateError } = await supabase
+        .from("user_subscriptions")
+        .update({ 
+          status: subscriptionStatus
+        })
+        .eq("id", subscriptionId)
+
+      if (subscriptionUpdateError) {
+        console.error("Error updating subscription status:", subscriptionUpdateError)
+        return NextResponse.json({ 
+          message: "Error updating subscription",
+          details: subscriptionUpdateError.message
+        }, { status: 500 })
+      }
+    }
+
+    // If payment is approved, send confirmation emails and handle guest account creation
     if (paymentData.status === "approved") {
-      console.log("Payment approved for order:", orderId)
+      console.log("Payment approved:", { orderId, subscriptionId, isSubscription })
 
-      // Fetch order with items for email
-      const { data: orderWithItems } = await supabase
-        .from('orders')
-        .select(`id, total, user_id, order_items (quantity, price, products (name))`)
-        .eq('id', orderId)
-        .single()
-
-      const items = (orderWithItems?.order_items || []).map((it: any) => ({
-        name: it.products?.name || 'Producto',
-        quantity: it.quantity,
-        price: it.price * it.quantity,
-      }))
-      const subtotal = items.reduce((s: number, it: any) => s + it.price, 0)
-      // shipping = total - subtotal (aproximado)
-      const shipping = Math.max(0, (orderWithItems?.total || 0) - subtotal)
-
+      // Get customer information
       const { data: customer } = await supabase
         .from('customers')
         .select('email, name')
-        .eq('id', orderWithItems?.user_id)
+        .eq('id', userId || (orderId ? await getOrderUserId(orderId) : null))
         .single()
 
       const customerName = customer?.name || 'Cliente'
       const customerEmail = customer?.email
-      const toAdmin = 'info@vinorodante.com'
 
-      // Generate customer email HTML
-      const customerEmailHtml = customerEmail ? renderCustomerOrderEmail({
-        customerName,
-        orderId,
-        subtotal,
-        shipping,
-        total: orderWithItems?.total || 0,
-        items,
-        customerEmail,
-      }) : null
+      // Check if this is a guest user (no auth account)
+      const { data: { user } } = await supabase.auth.getUser()
+      const isGuestUser = !user && customerEmail
 
-      // Generate admin email HTML  
-      const adminEmailHtml = renderAdminOrderEmail({
-        customerName,
-        customerEmail: customerEmail || 'No proporcionado',
-        orderId,
-        subtotal,
-        shipping,
-        total: orderWithItems?.total || 0,
-        items,
-        paymentId,
-      })
+      // Handle guest account creation
+      if (isGuestUser) {
+        console.log("Creating account for guest user:", customerEmail)
+        
+        try {
+          // Create auth account with temporary password
+          const tempPassword = `VinoRodante${Math.random().toString(36).slice(-8)}!`
+          
+          const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+            email: customerEmail,
+            password: tempPassword,
+            user_metadata: {
+              name: customerName,
+            },
+            email_confirm: true // Skip email confirmation for guest accounts
+          })
 
-      // Do not let email failures cause the webhook to fail and trigger long MP retries
+          if (authError) {
+            console.error('Error creating guest auth account:', authError)
+          } else {
+            console.log('Guest auth account created successfully')
+            
+            // Send account activation email
+            await sendAccountCreatedEmail({
+              email: customerEmail,
+              name: customerName,
+              password: tempPassword,
+              isTemporaryEmail: false
+            })
+            
+            console.log('Account activation email sent to guest user')
+          }
+        } catch (accountError) {
+          console.error('Error in guest account creation process:', accountError)
+        }
+      }
+
+      // Send order/subscription confirmation emails
       try {
         const emailPromises = []
 
-        // Send customer confirmation email
-        if (customerEmail && customerEmailHtml) {
+        if (orderId) {
+          // Handle order confirmation emails
+          const { data: orderWithItems } = await supabase
+            .from('orders')
+            .select(`id, total, user_id, order_items (quantity, price, products (name))`)
+            .eq('id', orderId)
+            .single()
+
+          const items = (orderWithItems?.order_items || []).map((it: any) => ({
+            name: it.products?.name || 'Producto',
+            quantity: it.quantity,
+            price: it.price * it.quantity,
+          }))
+          const subtotal = items.reduce((s: number, it: any) => s + it.price, 0)
+          const shipping = Math.max(0, (orderWithItems?.total || 0) - subtotal)
+
+          // Generate customer email HTML
+          const customerEmailHtml = customerEmail ? renderCustomerOrderEmail({
+            customerName,
+            orderId,
+            subtotal,
+            shipping,
+            total: orderWithItems?.total || 0,
+            items,
+            customerEmail,
+          }) : null
+
+          // Generate admin email HTML  
+          const adminEmailHtml = renderAdminOrderEmail({
+            customerName,
+            customerEmail: customerEmail || 'No proporcionado',
+            orderId,
+            subtotal,
+            shipping,
+            total: orderWithItems?.total || 0,
+            items,
+            paymentId,
+          })
+
+          // Send customer confirmation email
+          if (customerEmail && customerEmailHtml) {
+            emailPromises.push(
+              sendEmail({
+                to: customerEmail,
+                subject: `🍷 ¡Tu pedido está confirmado! - Vino Rodante #${orderId.slice(-8)}`,
+                html: customerEmailHtml,
+              })
+            )
+          }
+
+          // Send admin notification email
           emailPromises.push(
             sendEmail({
-              to: customerEmail,
-              subject: `🍷 ¡Tu pedido está confirmado! - Vino Rodante #${orderId.slice(-8)}`,
-              html: customerEmailHtml,
+              to: 'info@vinorodante.com',
+              subject: `💰 Nueva venta confirmada #${orderId.slice(-8)} - ${customerName}`,
+              html: adminEmailHtml,
             })
           )
         }
 
-        // Send admin notification email
-        emailPromises.push(
-          sendEmail({
-            to: toAdmin,
-            subject: `💰 Nueva venta confirmada #${orderId.slice(-8)} - ${customerName}`,
-            html: adminEmailHtml,
-          })
-        )
+        if (subscriptionId) {
+          // Handle subscription confirmation emails
+          const { data: subscriptionWithPlan } = await supabase
+            .from('user_subscriptions')
+            .select(`
+              id,
+              frequency,
+              next_delivery_date,
+              subscription_plans!inner(name, price_monthly, price_quarterly, price_weekly, price_biweekly)
+            `)
+            .eq('id', subscriptionId)
+            .single()
+
+          if (subscriptionWithPlan) {
+            const plan = subscriptionWithPlan.subscription_plans
+            const frequency = subscriptionWithPlan.frequency
+            
+            // Calculate price based on frequency
+            let price = 0
+            switch (frequency) {
+              case 'weekly':
+                price = plan.price_weekly
+                break
+              case 'biweekly':
+                price = plan.price_biweekly
+                break
+              case 'monthly':
+                price = plan.price_monthly
+                break
+              case 'quarterly':
+                price = plan.price_quarterly
+                break
+            }
+
+            // Send subscription confirmation email (you can create a specific template for this)
+            if (customerEmail) {
+              emailPromises.push(
+                sendEmail({
+                  to: customerEmail,
+                  subject: `🍷 ¡Tu suscripción está activa! - Vino Rodante`,
+                  html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                      <h1 style="color: #7B1E1E;">🍷 ¡Tu suscripción está activa!</h1>
+                      <p>Hola ${customerName},</p>
+                      <p>Tu suscripción a <strong>${plan.name}</strong> ha sido activada exitosamente.</p>
+                      <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3>Detalles de tu suscripción:</h3>
+                        <p><strong>Plan:</strong> ${plan.name}</p>
+                        <p><strong>Frecuencia:</strong> ${frequency}</p>
+                        <p><strong>Precio:</strong> $${price.toLocaleString()}</p>
+                        <p><strong>Próxima entrega:</strong> ${new Date(subscriptionWithPlan.next_delivery_date).toLocaleDateString('es-AR')}</p>
+                      </div>
+                      <p>¡Gracias por elegir Vino Rodante!</p>
+                    </div>
+                  `
+                })
+              )
+            }
+          }
+        }
 
         await Promise.allSettled(emailPromises)
-        console.log(`Emails sent for order ${orderId}: customer=${!!customerEmail}, admin=true`)
+        console.log(`Emails sent: order=${!!orderId}, subscription=${!!subscriptionId}, guest=${isGuestUser}`)
       } catch (emailError) {
         console.error('Email send error (non-blocking):', emailError)
         // Continue without throwing to ensure a 200 response to MP
       }
+    }
+
+    // Helper function to get user ID from order
+    async function getOrderUserId(orderId: string): Promise<string | null> {
+      const { data: order } = await supabase
+        .from('orders')
+        .select('user_id')
+        .eq('id', orderId)
+        .single()
+      return order?.user_id || null
     }
 
     return NextResponse.json({ 

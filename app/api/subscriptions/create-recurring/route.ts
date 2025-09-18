@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { MercadoPagoConfig, PreApproval } from 'mercadopago';
 import type { 
   SubscriptionFrequency
@@ -26,28 +27,10 @@ export async function POST(request: Request) {
     
     const supabase = await createClient();
     
-    // Intentar obtener usuario de cookies primero
-    let { data: { user } } = await supabase.auth.getUser();
-    
-    // Si no hay usuario en cookies, intentar con header de autorización
-    if (!user) {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
-        console.log('🔑 Using Authorization header token');
-        
-        // Crear cliente con token específico
-        const { data: { user: tokenUser } } = await supabase.auth.getUser(token);
-        user = tokenUser;
-      }
-    }
-
-    console.log('👤 User authenticated:', !!user);
-
     const { planId, frequency, userId } = await request.json();
     console.log('📋 Request data:', { planId, frequency, userId });
 
-    if (!planId || !frequency) {
+    if (!planId || !frequency || !userId) {
       console.log('❌ Missing required data');
       return NextResponse.json(
         { error: 'Faltan datos requeridos' },
@@ -55,30 +38,53 @@ export async function POST(request: Request) {
       );
     }
 
-    let finalUserId = userId;
-
-    // Verificar que tenemos un usuario autenticado
-    if (!user) {
-      console.log('❌ No authenticated user found');
+    // Para usuarios invitados, usamos el userId directamente
+    // Para usuarios autenticados, verificamos que coincida
+    let { data: { user } } = await supabase.auth.getUser();
+    
+    if (user && user.id !== userId) {
+      console.log('❌ User ID mismatch');
       return NextResponse.json(
-        { error: 'No autorizado' },
+        { error: 'ID de usuario no coincide' },
         { status: 401 }
       );
     }
 
-    finalUserId = user.id;
+    console.log('👤 User type:', user ? 'authenticated' : 'guest');
+    const finalUserId = userId;
 
-    if (!finalUserId) {
-      console.log('❌ No user ID available');
+    // Crear cliente de administrador para usuarios invitados (bypass RLS)
+    const adminSupabase = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+
+    // Obtener información del cliente para el email
+    // Usar cliente de administrador para usuarios invitados (bypass RLS)
+    const supabaseClient = user ? supabase : adminSupabase;
+    const { data: customer, error: customerError } = await supabaseClient
+      .from('customers')
+      .select('email, name')
+      .eq('id', finalUserId)
+      .single();
+
+    if (customerError || !customer) {
+      console.log('❌ Customer not found:', customerError);
       return NextResponse.json(
-        { error: 'Error al crear usuario' },
-        { status: 500 }
+        { error: 'Cliente no encontrado' },
+        { status: 404 }
       );
     }
 
     // Obtener el plan
     console.log('🔍 Fetching plan with ID:', planId);
-    const { data: plan, error: planError } = await supabase
+    const { data: plan, error: planError } = await supabaseClient
       .from('subscription_plans')
       .select('*')
       .eq('id', planId)
@@ -121,14 +127,14 @@ export async function POST(request: Request) {
       const preApprovalData = {
         reason: `Suscripción ${plan.name} - ${frequency}`,
         external_reference: `${finalUserId}_${planId}_${frequency}`,
-        payer_email: customerInfo?.email || user?.email!,
+        payer_email: customer.email,
         auto_recurring: {
           frequency: mpFrequency,
           frequency_type: mpFrequencyType,
           transaction_amount: price,
           currency_id: 'ARS'
         },
-        back_url: 'https://vino-rodante.vercel.app/account/subscriptions',
+        back_url: 'https://vino-rodante.vercel.app/checkout/success',
         status: 'pending'
       };
 
@@ -208,7 +214,10 @@ export async function POST(request: Request) {
       mercadopago_subscription_id: typeof subscriptionData.mercadopago_subscription_id
     });
     
-    const { data: subscription, error: subscriptionError } = await supabase
+    // Usar cliente de administrador para usuarios invitados (bypass RLS)
+    console.log('🔧 Using client:', user ? 'authenticated' : 'admin (bypass RLS)');
+    
+    const { data: subscription, error: subscriptionError } = await supabaseClient
       .from('user_subscriptions')
       .insert([subscriptionData])
       .select()
