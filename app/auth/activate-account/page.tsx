@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +11,7 @@ import Link from "next/link"
 import { createClient } from '@/utils/supabase/client'
 import { useToast } from "@/components/ui/use-toast"
 
-export default function ActivateAccountPage() {
+function ActivateAccountContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -314,5 +314,22 @@ export default function ActivateAccountPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function ActivateAccountPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-pulse text-center">
+            <div className="w-12 h-12 bg-wine-600 rounded-full mx-auto mb-4"></div>
+            <p className="text-wine-800">Cargando...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <ActivateAccountContent />
+    </Suspense>
   )
 }
