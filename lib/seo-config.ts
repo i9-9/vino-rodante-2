@@ -15,15 +15,15 @@ const getBaseUrl = () => {
 
 export const defaultSEO: NextSeoProps = {
   title: "Vino Rodante | Selección de Vinos Argentinos",
-  description: "Descubre vinos excepcionales de todo el país, cuidadosamente seleccionados para los paladares más exigentes.",
+  description: "Descubrí vinos excepcionales de todo el país, cuidadosamente seleccionados para los paladares más exigentes.",
   canonical: getBaseUrl(),
   openGraph: {
     type: 'website',
     locale: 'es_AR',
-    url: getBaseUrl(),
+    url: getBaseUrl(),    
     siteName: 'Vino Rodante',
     title: 'Vino Rodante | El Vino Rueda en el Tiempo y Crece con la Historia',
-    description: 'Tienda online rodante de vinos de toda la Argentina.',
+    description: 'Tienda online de Vino Rodante. Envíos a todo el país',
     images: [
       {
         url: `${getBaseUrl()}/og-image.jpg`,
@@ -71,7 +71,7 @@ export const productSEO = (product: {
   const productImage = product.image ? `${baseUrl}${product.image}` : `${baseUrl}/og-image.jpg`
   
   const title = `${product.name} | Vino Rodante`
-  const description = `${product.description} ${product.year ? `Año ${product.year}.` : ''} ${product.varietal ? `Varietal ${product.varietal}.` : ''} Región ${product.region}. Precio $${product.price.toFixed(2)}.`
+  const description = `🍷 ${product.name} ${product.year ? `(${product.year})` : ''} - ${product.varietal || 'Vino'} de ${product.region}. ${product.description.slice(0, 100)}... ¡Comprá ahora por $${product.price.toFixed(2)}! Envío gratis en compras +$5000.`
   
   const baseSEO: NextSeoProps = {
     title,
@@ -122,7 +122,6 @@ export const productSEO = (product: {
     ]
   }
 
-  // Add structured data
   const structuredData = generateProductStructuredData(product)
   return addStructuredDataToSEO(baseSEO, structuredData)
 }
@@ -178,7 +177,6 @@ export const collectionSEO = (collection: {
     ]
   }
 
-  // Add structured data
   const structuredData = generateCollectionStructuredData(collection)
   return addStructuredDataToSEO(baseSEO, structuredData)
 }
@@ -186,7 +184,7 @@ export const collectionSEO = (collection: {
 export const homeSEO: NextSeoProps = {
   ...defaultSEO,
   title: "Vino Rodante | El Vino Rueda en el Tiempo y Crece con la Historia",
-  description: "Tienda online rodante de vinos de toda la Argentina. Descubre vinos excepcionales de todo el país, cuidadosamente seleccionados para los paladares más exigentes.",
+  description: "🍷 Descubrí los mejores vinos argentinos en Vino Rodante. Malbec, Cabernet, Chardonnay y más. ¡Comprá online con envío gratis! Club de vino semanal disponible.",
   canonical: getBaseUrl(),
 }
 
