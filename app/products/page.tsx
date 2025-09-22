@@ -4,7 +4,8 @@ import SEO from '@/components/SEO'
 import { collectionSEO } from '@/lib/seo-config'
 
 // Forzar renderizado dinámico para páginas que dependen de datos de Supabase
-export const dynamic = "force-dynamic"
+// Usar SSG con revalidación cada 30 minutos
+export const revalidate = 1800 // 30 minutos en segundos
 
 export async function generateMetadata() {
   const t = await getTranslations()

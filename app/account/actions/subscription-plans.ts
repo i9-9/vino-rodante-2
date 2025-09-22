@@ -21,6 +21,7 @@ function generateSlug(name: string): string {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // Remover acentos
+    .replace(/\//g, '-') // Reemplazar slashes con guiones PRIMERO
     .replace(/[^a-z0-9\s-]/g, '') // Solo letras, números, espacios y guiones
     .replace(/\s+/g, '-') // Reemplazar espacios con guiones
     .replace(/-+/g, '-') // Reemplazar múltiples guiones con uno solo

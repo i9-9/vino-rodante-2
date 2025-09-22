@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
+import { useImageCache } from '@/lib/image-cache'
 
 interface OptimizedImageProps {
   src: string
@@ -31,7 +32,7 @@ export function OptimizedImage({
   fill = false,
   className,
   priority = false,
-  quality = 85,
+  quality = 75, // Reducir calidad por defecto para ahorrar egress
   sizes,
   placeholder = 'blur',
   blurDataURL,
@@ -44,7 +45,36 @@ export function OptimizedImage({
   const [isLoaded, setIsLoaded] = useState(false)
   const [hasError, setHasError] = useState(false)
   const [isInView, setIsInView] = useState(priority) // Priority images are considered "in view"
+  const [optimizedSrc, setOptimizedSrc] = useState(src)
   const imgRef = useRef<HTMLDivElement>(null)
+  const { getOptimizedUrl } = useImageCache()
+
+  // Optimizar URL de imagen cuando esté en vista
+  useEffect(() => {
+    if (!isInView) return
+
+    const optimizeImage = async () => {
+      try {
+        // Si es una URL de Supabase Storage, usar cache
+        if (src.includes('supabase.co') || src.includes('storage')) {
+          const path = src.split('/').slice(-2).join('/') // Extraer path del bucket
+          const optimizedUrl = await getOptimizedUrl(path, {
+            width: width,
+            height: height,
+            quality: quality
+          })
+          setOptimizedSrc(optimizedUrl)
+        } else {
+          setOptimizedSrc(src)
+        }
+      } catch (error) {
+        console.warn('Error optimizing image:', error)
+        setOptimizedSrc(src)
+      }
+    }
+
+    optimizeImage()
+  }, [isInView, src, width, height, quality, getOptimizedUrl])
 
   // Intersection Observer for lazy loading
   useEffect(() => {
@@ -109,7 +139,7 @@ export function OptimizedImage({
       {/* Actual image */}
       {isInView && !hasError && (
         <Image
-          src={src}
+          src={optimizedSrc}
           alt={alt}
           width={fill ? undefined : width}
           height={fill ? undefined : height}

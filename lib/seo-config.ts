@@ -8,9 +8,12 @@ const getBaseUrl = () => {
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`
   }
-  return process.env.NODE_ENV === 'development' 
-    ? 'http://localhost:3000' 
-    : 'https://www.vinorodante.com'
+  // En desarrollo, detectar el puerto correcto
+  if (process.env.NODE_ENV === 'development') {
+    const port = process.env.PORT || process.env.NEXT_PUBLIC_PORT || '3001'
+    return `http://localhost:${port}`
+  }
+  return 'https://www.vinorodante.com'
 }
 
 export const defaultSEO: NextSeoProps = {

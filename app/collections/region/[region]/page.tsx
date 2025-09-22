@@ -5,8 +5,10 @@ import { ProductGrid } from "@/components/product-grid"
 import SEO from '@/components/SEO'
 import { Breadcrumbs, breadcrumbConfigs } from '@/components/breadcrumbs'
 import { collectionSEO } from '@/lib/seo-config'
-import { generateFAQStructuredData, faqConfigs } from '@/lib/faq-schema'
 import { prettyLabel } from "@/lib/wine-data"
+
+// Usar SSG con revalidación cada 1 hora
+export const revalidate = 3600 // 1 hora en segundos
 
 export async function generateMetadata({ params }: { params: Promise<{ region: string }> }): Promise<Metadata> {
   const { region } = await params
@@ -22,7 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<{ region: s
   return {
     title: seoConfig.title,
     description: seoConfig.description,
-    openGraph: seoConfig.openGraph,
+    openGraph: seoConfig.openGraph as any,
     twitter: seoConfig.twitter,
     alternates: {
       canonical: seoConfig.canonical
@@ -32,11 +34,19 @@ export async function generateMetadata({ params }: { params: Promise<{ region: s
 
 export default async function RegionPage({ params }: { params: Promise<{ region: string }> }) {
   const { region } = await params
+  
+  console.log('Region recibida:', region)
+  
   const regionName = prettyLabel(region)
+  
+  console.log('Region name:', regionName)
   
   const { data: products, error } = await getProductsByRegion(region)
   
+  console.log('Productos encontrados:', products?.length, 'Error:', error)
+  
   if (error || !products || products.length === 0) {
+    console.log('No se encontraron productos, llamando notFound()')
     notFound()
   }
 
@@ -52,14 +62,15 @@ export default async function RegionPage({ params }: { params: Promise<{ region:
     }))
   })
 
-  // Generate FAQ structured data
-  const faqData = faqConfigs.general()
-  const faqStructuredData = generateFAQStructuredData(faqData)
 
-  const breadcrumbs = breadcrumbConfigs.collection(regionName, 'Región')
+  const breadcrumbs = [
+    { label: 'Colecciones', href: '/collections' },
+    { label: 'Regiones', href: '/collections/region' },
+    { label: regionName, current: true }
+  ]
 
   return (
-    <SEO seo={seoConfig}>
+    <SEO>
       <div className="container mx-auto px-4 py-8">
         {/* Breadcrumbs */}
         <Breadcrumbs items={breadcrumbs} className="mb-6" />
@@ -92,31 +103,6 @@ export default async function RegionPage({ params }: { params: Promise<{ region:
 
         {/* Products Grid */}
         <ProductGrid products={products} />
-
-        {/* FAQ Section */}
-        <section className="mt-16">
-          <h2 className="text-3xl font-bold text-center mb-8">Preguntas Frecuentes</h2>
-          <div className="max-w-4xl mx-auto space-y-6">
-            {faqData.map((faq, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-sm border p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {faq.question}
-                </h3>
-                <p className="text-gray-600">
-                  {faq.answer}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Structured Data */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(faqStructuredData)
-          }}
-        />
       </div>
     </SEO>
   )

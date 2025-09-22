@@ -367,7 +367,7 @@ export async function getProductsByVarietal(varietal: string): Promise<ApiRespon
     const { data, error } = await supabase
       .from('products')
       .select('*')
-      .eq('varietal', varietal)
+      .ilike('varietal', varietal) // Case-insensitive search
       .eq('is_visible', true)
       .order('created_at', { ascending: false })
 
@@ -382,7 +382,7 @@ export async function getProductsByVarietal(varietal: string): Promise<ApiRespon
       const { data: publicData, error: publicError } = await publicSupabase
         .from('products')
         .select('*')
-        .eq('varietal', varietal)
+        .ilike('varietal', varietal) // Case-insensitive search
         .eq('is_visible', true)
         .order('created_at', { ascending: false })
 
@@ -442,6 +442,38 @@ export async function searchProducts(query: string): Promise<ApiResponse<Product
   }
 }
 
+// Función auxiliar para intentar buscar un producto con diferentes variaciones del slug
+async function tryFindProductWithVariations(slug: string, supabase: any): Promise<Product | undefined> {
+  // Generar diferentes variaciones del slug
+  const variations = [
+    slug, // Slug original
+    slug.replace(/-/g, ''), // Sin guiones: '4040malbec'
+    slug.replace(/-/g, '_'), // Con guiones bajos: '40_40_malbec'
+    slug.replace(/-/g, '').toLowerCase(), // Sin guiones y minúsculas
+  ]
+
+  for (const variation of variations) {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('slug', variation)
+        .eq('is_visible', true)
+        .single()
+
+      if (data && !error) {
+        console.log('🔍 [getProductBySlug] Found product with variation:', variation)
+        return data as Product
+      }
+    } catch (error) {
+      // Continuar con la siguiente variación
+      continue
+    }
+  }
+
+  return undefined
+}
+
 export async function getProductBySlug(slug: string): Promise<Product | undefined> {
   try {
     // Decodificar el slug para manejar caracteres especiales como tildes
@@ -451,48 +483,23 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
     
     // Intentar primero con el cliente autenticado
     const supabase = createClient()
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('slug', decodedSlug)
-      .eq('is_visible', true)
-      .single()
-
-    if (data && !error) {
-      return data as Product
-    }
-
-    // Si hay error de autenticación, usar cliente público
-    if (error && (error.message?.includes('auth') || error.message?.includes('policy') || (error as any).code === 'PGRST116')) {
-      console.log('🔍 [getProductBySlug] Auth error, trying public client')
-      const publicSupabase = createAdaptiveClient()
-      const { data: publicData, error: publicError } = await publicSupabase
-        .from('products')
-        .select('*')
-        .eq('slug', decodedSlug)
-        .eq('is_visible', true)
-        .single()
-
-      if (publicError) {
-        console.error('🔍 [getProductBySlug] Public client error:', {
-          message: publicError.message || 'Unknown error',
-          code: publicError.code || 'No code',
-          details: publicError.details || 'No details',
-          hint: publicError.hint || 'No hint',
-          fullError: publicError
-        })
-        return undefined
-      }
-
-      return publicData as Product
-    }
-
-    if (error) {
-      console.error('Error fetching product by slug:', error)
-      return undefined
-    }
+    let product = await tryFindProductWithVariations(decodedSlug, supabase)
     
-    return data as Product
+    if (product) {
+      return product
+    }
+
+    // Si no encontramos con cliente autenticado, intentar con cliente público
+    console.log('🔍 [getProductBySlug] Trying public client')
+    const publicSupabase = createAdaptiveClient()
+    product = await tryFindProductWithVariations(decodedSlug, publicSupabase)
+    
+    if (product) {
+      return product
+    }
+
+    console.log('🔍 [getProductBySlug] Product not found with any variation')
+    return undefined
   } catch (error) {
     console.error('🔍 [getProductBySlug] Exception:', error)
     return undefined

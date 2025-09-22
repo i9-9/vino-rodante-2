@@ -7,7 +7,9 @@ import { redirect } from "next/navigation"
 
 // Helper para redirección con mensaje
 export async function redirectWithMessage(path: string, type: "error" | "success", message: string) {
-  const url = new URL(path, process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000")
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+    (process.env.NODE_ENV === 'development' ? `http://localhost:${process.env.PORT || '3001'}` : 'https://www.vinorodante.com')
+  const url = new URL(path, baseUrl)
   url.searchParams.set(type, message)
   return redirect(url.toString())
 }
@@ -88,7 +90,7 @@ export async function resetPasswordAction(formData: FormData) {
   const email = formData.get('email') as string
   const supabase = await createClient()
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/auth/update-password`
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || (process.env.NODE_ENV === 'development' ? `http://localhost:${process.env.PORT || '3001'}` : 'https://www.vinorodante.com')}/auth/update-password`
   })
 
   if (error) {

@@ -6,8 +6,8 @@ import { getFeaturedProducts } from '@/lib/products-client'
 import SEO from '@/components/SEO'
 import { getHomeSEOWithStructuredData } from '@/lib/seo-config'
 
-// Forzar renderizado dinámico para páginas que dependen de datos de Supabase
-export const dynamic = "force-dynamic"
+// Usar SSG con revalidación cada 1 hora
+export const revalidate = 3600 // 1 hora en segundos
 
 // Componente asíncrono para cargar productos destacados
 async function ProductSection() {

@@ -61,11 +61,12 @@ const nextConfig = {
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     domains: ['vino-rodante.s3.sa-east-1.amazonaws.com', 'drive.google.com'],
-    // Optimizaciones para alta calidad
+    // Optimizaciones para reducir egress
     formats: ['image/webp', 'image/avif'],
-    minimumCacheTTL: 60,
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 31536000, // 1 año - máximo cache
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920], // Reducir tamaños
+    imageSizes: [16, 32, 48, 64, 96, 128, 256], // Reducir tamaños
+    unoptimized: false,
   },
   experimental: {
     serverActions: {

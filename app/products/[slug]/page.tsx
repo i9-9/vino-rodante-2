@@ -7,8 +7,10 @@ import { SimpleProductZoom } from '@/components/simple-product-zoom'
 import { ProductDiscountBadge } from '@/components/ProductDiscountBadge'
 import SEO from '@/components/SEO'
 import { productSEO } from '@/lib/seo-config'
+import { getApiUrl } from '@/lib/url-utils'
 
-export const dynamic = "force-dynamic";
+// Usar SSG con revalidación cada 2 horas
+export const revalidate = 7200 // 2 horas en segundos
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -56,7 +58,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   let productWithDiscounts = product
   if (product) {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/discounts/active`, {
+      const response = await fetch(getApiUrl('/api/discounts/active'), {
         cache: 'no-store'
       })
       if (response.ok) {
