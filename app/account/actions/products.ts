@@ -1,8 +1,9 @@
 "use server"
 
 import { createClient } from '@/utils/supabase/server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { ProductSchema } from '../types/product'
+import { CACHE_TAGS } from '@/lib/cache-tags'
 
 // Función para generar slug a partir del nombre
 function generateSlug(name: string): string {
@@ -306,6 +307,9 @@ export async function updateProduct(formData: FormData): Promise<ActionResponse>
     if (error) throw error
 
     revalidatePath('/account')
+    revalidateTag(CACHE_TAGS.PRODUCTS)
+    revalidateTag(CACHE_TAGS.PRODUCT_BY_SLUG)
+    revalidateTag(`product-${updateData.slug}`)
     return { success: true, message: 'Producto actualizado correctamente' }
 
   } catch (error) {
@@ -393,6 +397,9 @@ export async function createProduct(formData: FormData): Promise<ActionResponse>
     if (error) throw error
 
     revalidatePath('/account')
+    revalidateTag(CACHE_TAGS.PRODUCTS)
+    revalidateTag(CACHE_TAGS.PRODUCT_BY_SLUG)
+    revalidateTag(`product-${validatedData.slug}`)
     return { success: true, data }
 
   } catch (error) {
@@ -441,6 +448,10 @@ export async function deleteProducts(ids: string[]) {
     if (error) throw error
 
     revalidatePath('/account')
+    revalidateTag(CACHE_TAGS.PRODUCTS)
+    revalidateTag(CACHE_TAGS.PRODUCT_BY_SLUG)
+    // Revalidar todos los productos eliminados
+    ids.forEach(id => revalidateTag(`product-${id}`))
     return { success: true }
   } catch (error) {
     throw error
@@ -466,6 +477,9 @@ export async function toggleProductVisibility(
     if (error) throw error
 
     revalidatePath('/account')
+    revalidateTag(CACHE_TAGS.PRODUCTS)
+    revalidateTag(CACHE_TAGS.PRODUCT_BY_SLUG)
+    revalidateTag(`product-${productId}`)
     
     return { 
       success: true, 
@@ -499,6 +513,10 @@ export async function toggleProductFeatured(
     if (error) throw error
 
     revalidatePath('/account')
+    revalidateTag(CACHE_TAGS.PRODUCTS)
+    revalidateTag(CACHE_TAGS.FEATURED_PRODUCTS)
+    revalidateTag(CACHE_TAGS.PRODUCT_BY_SLUG)
+    revalidateTag(`product-${productId}`)
     
     return { 
       success: true, 
