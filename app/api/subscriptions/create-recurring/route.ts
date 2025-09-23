@@ -105,6 +105,16 @@ export async function POST(request: Request) {
     const price = calculateSubscriptionPrice(plan, frequency as SubscriptionFrequency);
     console.log('💵 Calculated price:', price);
     
+    // Validar monto mínimo para MercadoPago (mínimo $15 ARS)
+    const MINIMUM_AMOUNT = 15;
+    if (price < MINIMUM_AMOUNT) {
+      console.log('❌ Amount too low for MercadoPago:', price);
+      return NextResponse.json(
+        { error: `El monto mínimo para suscripciones es $${MINIMUM_AMOUNT} ARS` },
+        { status: 400 }
+      );
+    }
+    
     const { frequency: mpFrequency, frequency_type: mpFrequencyType } = 
       getMercadoPagoFrequencyConfig(frequency as SubscriptionFrequency);
     console.log('🔄 MercadoPago config:', { mpFrequency, mpFrequencyType });
@@ -134,8 +144,20 @@ export async function POST(request: Request) {
           transaction_amount: price,
           currency_id: 'ARS'
         },
-        back_url: 'https://vino-rodante.vercel.app/checkout/success',
-        status: 'pending'
+        back_url: 'https://vinorodante.com/checkout/success',
+        status: 'pending',
+        // Configuración específica para Argentina
+        country_id: 'AR',
+        site_id: 'MLA', // MercadoLibre Argentina
+        // Configuración para suscripciones recurrentes
+        payment_methods: {
+          installments: 1,
+          default_installments: 1,
+          // Para suscripciones, solo permitir métodos que funcionen con PreApproval
+          excluded_payment_types: [
+            { id: "ticket" } // Excluir efectivo
+          ]
+        }
       };
 
       console.log('🔍 PreApproval data validation:', {

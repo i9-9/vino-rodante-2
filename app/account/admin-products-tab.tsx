@@ -85,8 +85,8 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
     name: product.name || '',
     description: product.description || '',
     // Guardar como string para no perder formato parcial (p. ej. "123.", "123,45")
-    price: typeof product.price === 'number' ? String(product.price) : (product.price || ''),
-    stock: typeof product.stock === 'number' ? String(product.stock) : (product.stock || ''),
+    price: typeof product.price === 'number' ? String(product.price) : (product.price ?? ''),
+    stock: typeof product.stock === 'number' ? String(product.stock) : (product.stock ?? ''),
     category: product.category || 'Tinto',
     region: product.region || 'Mendoza',
     year: product.year || '',
@@ -110,8 +110,8 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
     setFormData({
       name: product.name || '',
       description: product.description || '',
-      price: typeof product.price === 'number' ? String(product.price) : (product.price || ''),
-      stock: typeof product.stock === 'number' ? String(product.stock) : (product.stock || ''),
+      price: typeof product.price === 'number' ? String(product.price) : (product.price ?? ''),
+      stock: typeof product.stock === 'number' ? String(product.stock) : (product.stock ?? ''),
       category: product.category || 'Tinto',
       region: product.region || 'Mendoza',
       year: product.year || '',

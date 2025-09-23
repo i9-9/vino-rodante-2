@@ -80,7 +80,7 @@ export function DiscountForm({
         usage_limit: discount.usage_limit,
         applies_to: discount.applies_to,
         target_value: discount.target_value,
-        days_of_week: discount.days_of_week || []
+        days_of_week: Array.isArray(discount.days_of_week) ? discount.days_of_week : []
       })
 
       // Si es descuento por productos específicos, cargar los IDs
@@ -106,7 +106,8 @@ export function DiscountForm({
         is_active: true,
         usage_limit: null,
         applies_to: 'all_products',
-        target_value: ''
+        target_value: '',
+        days_of_week: []
       })
       setSelectedProducts([])
     }
@@ -168,9 +169,9 @@ export function DiscountForm({
   const handleDayToggle = (dayValue: number) => {
     setFormData(prev => ({
       ...prev,
-      days_of_week: prev.days_of_week.includes(dayValue)
-        ? prev.days_of_week.filter(day => day !== dayValue)
-        : [...prev.days_of_week, dayValue]
+      days_of_week: (prev.days_of_week || []).includes(dayValue)
+        ? (prev.days_of_week || []).filter(day => day !== dayValue)
+        : [...(prev.days_of_week || []), dayValue]
     }))
   }
 
@@ -388,7 +389,7 @@ export function DiscountForm({
                   <div key={day.value} className="flex items-center space-x-2">
                     <Checkbox
                       id={`day-${day.value}`}
-                      checked={formData.days_of_week.includes(day.value)}
+                      checked={formData.days_of_week?.includes(day.value) || false}
                       onCheckedChange={() => handleDayToggle(day.value)}
                     />
                     <Label htmlFor={`day-${day.value}`} className="text-sm">

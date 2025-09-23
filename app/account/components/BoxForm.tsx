@@ -249,7 +249,7 @@ export function BoxForm({ onSubmit, onClose, initialData }: BoxFormProps) {
       // Campos básicos
       submitData.set('name', formData.name)
       submitData.set('description', formData.description)
-      submitData.set('price', calculateDiscountedPrice().toString())
+      submitData.set('price', formData.price)
       submitData.set('stock', formData.stock)
       submitData.set('total_wines', formData.total_wines.toString())
       submitData.set('discount_percentage', formData.discount_percentage.toString())
@@ -351,6 +351,24 @@ export function BoxForm({ onSubmit, onClose, initialData }: BoxFormProps) {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="price">Precio del Box (ARS) *</Label>
+            <Input
+              id="price"
+              name="price"
+              type="number"
+              min="0"
+              step="0.01"
+              value={formData.price}
+              onChange={handleInputChange}
+              placeholder="0.00"
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              Precio final del box
+            </p>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="stock">Stock *</Label>
             <Input

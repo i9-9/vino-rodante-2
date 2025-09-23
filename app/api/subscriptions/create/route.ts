@@ -202,6 +202,16 @@ export async function POST(request: Request) {
     const price = calculateSubscriptionPrice(plan, frequency as SubscriptionFrequency);
     console.log('💵 Calculated price:', price);
     
+    // Validar monto mínimo para MercadoPago (mínimo $15 ARS)
+    const MINIMUM_AMOUNT = 15;
+    if (price < MINIMUM_AMOUNT) {
+      console.log('❌ Amount too low for MercadoPago:', price);
+      return NextResponse.json(
+        { error: `El monto mínimo para suscripciones es $${MINIMUM_AMOUNT} ARS` },
+        { status: 400 }
+      );
+    }
+    
     const { frequency: mpFrequency, frequency_type: mpFrequencyType } = 
       getMercadoPagoFrequencyConfig(frequency as SubscriptionFrequency);
     console.log('🔄 MercadoPago config:', { mpFrequency, mpFrequencyType });
