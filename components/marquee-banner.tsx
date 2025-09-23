@@ -5,35 +5,35 @@ export default function MarqueeBanner() {
     <div className="bg-primary text-primary-foreground py-1 overflow-hidden">
       <div className="flex animate-marquee whitespace-nowrap">
         <span className="text-[10px] font-medium">
-          30% DE DESCUENTO DE LUNES A MIÉRCOLES
+          WINE MONDAY. 30% OFF LOS LUNES EN VINOS SELECCIONADOS
         </span>
         <span className="text-[10px] font-medium mx-2">•</span>
         <span className="text-[10px] font-medium">
-          30% DE DESCUENTO DE LUNES A MIÉRCOLES
+          WINE MONDAY. 30% OFF LOS LUNES EN VINOS SELECCIONADOS
         </span>
         <span className="text-[10px] font-medium mx-2">•</span>
         <span className="text-[10px] font-medium">
-          30% DE DESCUENTO DE LUNES A MIÉRCOLES
+          WINE MONDAY. 30% OFF LOS LUNES EN VINOS SELECCIONADOS
         </span>
         <span className="text-[10px] font-medium mx-2">•</span>
         <span className="text-[10px] font-medium">
-          30% DE DESCUENTO DE LUNES A MIÉRCOLES
+          WINE MONDAY. 30% OFF LOS LUNES EN VINOS SELECCIONADOS
         </span>
         <span className="text-[10px] font-medium mx-2">•</span>
         <span className="text-[10px] font-medium">
-          30% DE DESCUENTO DE LUNES A MIÉRCOLES
+          WINE MONDAY. 30% OFF LOS LUNES EN VINOS SELECCIONADOS
         </span>
         <span className="text-[10px] font-medium mx-2">•</span>
         <span className="text-[10px] font-medium">
-          30% DE DESCUENTO DE LUNES A MIÉRCOLES
+          WINE MONDAY. 30% OFF LOS LUNES EN VINOS SELECCIONADOS
         </span>
         <span className="text-[10px] font-medium mx-2">•</span>
         <span className="text-[10px] font-medium">
-          30% DE DESCUENTO DE LUNES A MIÉRCOLES
+          WINE MONDAY. 30% OFF LOS LUNES EN VINOS SELECCIONADOS
         </span>
         <span className="text-[10px] font-medium mx-2">•</span>
         <span className="text-[10px] font-medium">
-          30% DE DESCUENTO DE LUNES A MIÉRCOLES
+          WINE MONDAY. 30% OFF LOS LUNES EN VINOS SELECCIONADOS
         </span>
         <span className="text-[10px] font-medium mx-2">•</span>
       </div>
