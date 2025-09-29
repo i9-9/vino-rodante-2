@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/Users/ivan/Documents/Codigo/vino-2/vino-rodante/logs/.8973cf04176b057b979ebcadaed08b5d20221e7c-audit.json",
+    "files": [
+        {
+            "date": 1759082125892,
+            "name": "/Users/ivan/Documents/Codigo/vino-2/vino-rodante/logs/mcp-puppeteer-2025-09-28.log",
+            "hash": "c1131f2e62d03ef4ae263bff3d103ab556780ec0b571c5184e6d95d3835d751c"
+        }
+    ],
+    "hashType": "sha256"
+}

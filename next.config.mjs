@@ -22,13 +22,26 @@ const nextConfig = {
     ]
   },
   async headers() {
+    // Define allowed origins for CORS
+    const allowedOrigins = [
+      'https://www.vinorodante.com',
+      'https://vinorodante.com',
+      // Add staging/development domains if needed
+      ...(process.env.NODE_ENV === 'development' ? [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000'
+      ] : []),
+      // Add Vercel preview URLs if needed
+      ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : [])
+    ]
+
     return [
       {
         source: '/(.*)',
         headers: [
           {
             key: 'Access-Control-Allow-Origin',
-            value: '*'
+            value: allowedOrigins.join(', ')
           },
           {
             key: 'Access-Control-Allow-Methods',
@@ -36,11 +49,15 @@ const nextConfig = {
           },
           {
             key: 'Access-Control-Allow-Headers',
-            value: 'X-Requested-With, Content-Type, Authorization, apikey, x-client-info, x-supabase-api-version'
+            value: 'X-Requested-With, Content-Type, Authorization, apikey, x-client-info, x-supabase-api-version, x-signature, x-request-id'
           },
           {
             key: 'Access-Control-Allow-Credentials',
             value: 'true'
+          },
+          {
+            key: 'Access-Control-Max-Age',
+            value: '86400' // 24 hours
           }
         ]
       }

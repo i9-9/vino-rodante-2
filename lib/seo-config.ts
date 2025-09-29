@@ -16,6 +16,53 @@ const getBaseUrl = () => {
   return 'https://www.vinorodante.com'
 }
 
+// Función para generar descriptions ricas en keywords
+const generateRichDescription = (product: {
+  name: string
+  description: string
+  price: number
+  region: string
+  varietal?: string
+  year?: string
+  category: string
+}) => {
+  const baseDescription = product.description.slice(0, 80)
+  const keywords = []
+  
+  // Keywords específicos por varietal
+  if (product.varietal) {
+    const varietalLower = product.varietal.toLowerCase()
+    if (varietalLower.includes('malbec')) {
+      keywords.push('malbec argentino', 'mejor malbec')
+    } else if (varietalLower.includes('cabernet')) {
+      keywords.push('cabernet sauvignon', 'cabernet argentino')
+    } else if (varietalLower.includes('chardonnay')) {
+      keywords.push('chardonnay argentino', 'chardonnay premium')
+    } else if (varietalLower.includes('torrontés') || varietalLower.includes('torrontes')) {
+      keywords.push('torrontés argentino', 'torrontés salta')
+    }
+  }
+  
+  // Keywords específicos por región
+  const regionLower = product.region.toLowerCase()
+  if (regionLower.includes('mendoza')) {
+    keywords.push('vinos mendoza', 'malbec mendoza')
+  } else if (regionLower.includes('salta')) {
+    keywords.push('vinos salta', 'torrontés salta')
+  } else if (regionLower.includes('patagonia')) {
+    keywords.push('vinos patagonia', 'pinot noir patagonia')
+  }
+  
+  // Keywords por categoría
+  if (product.category.toLowerCase().includes('box')) {
+    keywords.push('box vinos', 'pack vinos', 'selección vinos')
+  }
+  
+  const keywordString = keywords.length > 0 ? ` ${keywords.slice(0, 3).join(', ')}.` : ''
+  
+  return `🍷 ${product.name} ${product.year ? `(${product.year})` : ''} - ${product.varietal || 'Vino'} de ${product.region}. ${baseDescription}... ¡Comprá online por $${product.price.toFixed(2)}! Envío gratis en compras +$5000.${keywordString} Vinos argentinos premium.`
+}
+
 export const defaultSEO: NextSeoProps = {
   title: "Vino Rodante | Selección de Vinos Argentinos",
   description: "Descubrí vinos excepcionales de todo el país, cuidadosamente seleccionados para los paladares más exigentes.",
@@ -71,17 +118,17 @@ export const productSEO = (product: {
 }): NextSeoProps => {
   const baseUrl = getBaseUrl()
   const productUrl = `${baseUrl}/products/${product.slug}`
-  const productImage = product.image ? `${baseUrl}${product.image}` : `${baseUrl}/og-image.jpg`
+  const productImage = product.image ? product.image : `${baseUrl}/og-image.jpg`
   
   const title = `${product.name} | Vino Rodante`
-  const description = `🍷 ${product.name} ${product.year ? `(${product.year})` : ''} - ${product.varietal || 'Vino'} de ${product.region}. ${product.description.slice(0, 100)}... ¡Comprá ahora por $${product.price.toFixed(2)}! Envío gratis en compras +$5000.`
+  const description = generateRichDescription(product)
   
   const baseSEO: NextSeoProps = {
     title,
     description,
     canonical: productUrl,
     openGraph: {
-      type: 'product',
+      type: 'website',
       locale: 'es_AR',
       url: productUrl,
       siteName: 'Vino Rodante',
@@ -104,7 +151,7 @@ export const productSEO = (product: {
     additionalMetaTags: [
       {
         name: 'keywords',
-        content: `vino, ${product.name}, ${product.varietal || ''}, ${product.region}, ${product.category}, vinos argentinos, comprar vino, vinorodante`
+        content: `vino, ${product.name}, ${product.varietal || ''}, ${product.region}, ${product.category}, vinos argentinos, comprar vino online, vinorodante, delivery vino, vinos premium, ${product.varietal ? `${product.varietal.toLowerCase()} argentino` : ''}, vinos ${product.region.toLowerCase()}, tienda vinos`
       },
       {
         property: 'product:price:amount',
@@ -175,7 +222,7 @@ export const collectionSEO = (collection: {
     additionalMetaTags: [
       {
         name: 'keywords',
-        content: `vino, ${collection.name}, vinos argentinos, colección, ${collection.slug}, vinorodante`
+        content: `vino, ${collection.name}, vinos argentinos, colección, ${collection.slug}, vinorodante, comprar vino online, delivery vino, vinos premium, tienda vinos, club de vinos`
       }
     ]
   }
@@ -187,7 +234,7 @@ export const collectionSEO = (collection: {
 export const homeSEO: NextSeoProps = {
   ...defaultSEO,
   title: "Vino Rodante | El Vino Rueda en el Tiempo y Crece con la Historia",
-  description: "🍷 Descubrí los mejores vinos argentinos en Vino Rodante. Malbec, Cabernet, Chardonnay y más. ¡Comprá online con envío gratis! Club de vino semanal disponible.",
+  description: "🍷 Descubrí los mejores vinos argentinos en Vino Rodante. Malbec, Cabernet, Chardonnay, Torrontés y más. ¡Comprá online con envío gratis! Club de vino semanal disponible. Vinos premium de Mendoza, Salta y toda Argentina.",
   canonical: getBaseUrl(),
 }
 

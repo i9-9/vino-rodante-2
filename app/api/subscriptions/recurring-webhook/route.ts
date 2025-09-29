@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { MercadoPagoConfig, PreApproval } from 'mercadopago';
 import { calculateNextDeliveryDate } from '@/utils/subscription-helpers';
+import { validateMercadoPagoSignature } from '@/lib/webhook-validation';
 import type { SubscriptionFrequency } from '@/types/subscription';
 
 const mp = new MercadoPagoConfig({ 
@@ -10,15 +11,39 @@ const mp = new MercadoPagoConfig({
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await request.text();
+    const signature = request.headers.get('x-signature');
+    const requestId = request.headers.get('x-request-id');
+    
+    // Parse the body to get data ID for validation
+    let dataId: string | null = null;
+    try {
+      const parsedBody = JSON.parse(body);
+      dataId = parsedBody.data?.id;
+    } catch {
+      // If parsing fails, we'll still validate with null dataId
+    }
+
+    // Validate webhook signature for production security
+    if (!validateMercadoPagoSignature(body, signature, requestId, dataId)) {
+      console.error('Recurring webhook signature validation failed - rejecting request');
+      return NextResponse.json(
+        { error: 'Invalid signature' },
+        { status: 403 }
+      );
+    }
+
+    console.log('Recurring webhook signature validated successfully');
+
+    const data = JSON.parse(body);
     
     // Verificar que sea una notificación de suscripción recurrente
-    if (body.type !== 'preapproval') {
+    if (data.type !== 'preapproval') {
       return NextResponse.json({ message: 'Notificación ignorada' });
     }
 
     const preApproval = new PreApproval(mp);
-    const preApprovalData = await preApproval.get({ id: body.data.id });
+    const preApprovalData = await preApproval.get({ id: data.data.id });
 
     // Obtener la referencia externa de la suscripción
     const { external_reference, status } = preApprovalData;

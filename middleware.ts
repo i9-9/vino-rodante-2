@@ -36,33 +36,6 @@ export async function middleware(request: NextRequest) {
     },
   })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
   // Solo proteger rutas específicas que requieren autenticación
   const isProtectedRoute = protectedRoutes.some(route => 
     request.nextUrl.pathname.startsWith(route)
@@ -77,23 +50,53 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(route)
   )
 
-  // Solo redirigir si:
-  // 1. No hay usuario autenticado
-  // 2. Está intentando acceder a una ruta protegida
-  // 3. No está ya en una ruta de auth
-  // 4. NO es una ruta de API pública (las APIs públicas manejan su propia autenticación)
-  
-  if (!user && isProtectedRoute && !isAuthRoute && !isPublicApiRoute) {
-    const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = '/auth/sign-in'
-    return NextResponse.redirect(redirectUrl)
-  }
+  // Solo crear cliente Supabase si necesitamos verificar autenticación
+  if (isProtectedRoute || isAuthRoute) {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+            response = NextResponse.next({
+              request: {
+                headers: request.headers,
+              },
+            })
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options)
+            )
+          },
+        },
+      }
+    )
 
-  // Si el usuario está autenticado y está en una ruta de auth, redirigir al dashboard
-  if (user && isAuthRoute) {
-    const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = '/account'
-    return NextResponse.redirect(redirectUrl)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    // Solo redirigir si:
+    // 1. No hay usuario autenticado
+    // 2. Está intentando acceder a una ruta protegida
+    // 3. No está ya en una ruta de auth
+    // 4. NO es una ruta de API pública (las APIs públicas manejan su propia autenticación)
+    
+    if (!user && isProtectedRoute && !isAuthRoute && !isPublicApiRoute) {
+      const redirectUrl = request.nextUrl.clone()
+      redirectUrl.pathname = '/auth/sign-in'
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    // Si el usuario está autenticado y está en una ruta de auth, redirigir al dashboard
+    if (user && isAuthRoute) {
+      const redirectUrl = request.nextUrl.clone()
+      redirectUrl.pathname = '/account'
+      return NextResponse.redirect(redirectUrl)
+    }
   }
 
   return response

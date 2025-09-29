@@ -4,13 +4,7 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getPaymentStatus } from "@/lib/mercadopago"
 import { sendEmail, renderCustomerOrderEmail, renderAdminOrderEmail } from "@/lib/emails/resend"
 import { sendAccountCreatedEmail } from "@/lib/emails/send-account-created"
-
-// Validate webhook signature (optional but recommended for production)
-function validateWebhookSignature(): boolean {
-  // In production, you should validate the webhook signature
-  // For now, we'll skip this for development
-  return true
-}
+import { validateMercadoPagoSignature } from "@/lib/webhook-validation"
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,6 +38,21 @@ export async function POST(request: NextRequest) {
       dataId: data.data?.id,
       timestamp: new Date().toISOString()
     })
+
+    // Validate webhook signature for production security
+    const signature = request.headers.get('x-signature')
+    const requestId = request.headers.get('x-request-id')
+    const dataId = norm.data?.id
+
+    if (!validateMercadoPagoSignature(body, signature, requestId, dataId)) {
+      console.error('Webhook signature validation failed - rejecting request')
+      return NextResponse.json(
+        { error: 'Invalid signature' },
+        { status: 403 }
+      )
+    }
+
+    console.log('Webhook signature validated successfully')
 
     // Validate the webhook
     const supabase = await createClient()
@@ -81,13 +90,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Invalid webhook format" }, { status: 400 })
     }
 
-    // Validate webhook signature in production
-    if (process.env.NODE_ENV === "production") {
-      if (!validateWebhookSignature()) {
-        console.error("Invalid webhook signature")
-        return NextResponse.json({ message: "Invalid signature" }, { status: 401 })
-      }
-    }
 
     // Get payment details
     

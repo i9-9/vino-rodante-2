@@ -140,9 +140,9 @@ export default function SubscriptionCheckoutPage() {
         throw new Error('No se encontraron los datos de suscripción. Por favor, vuelve a seleccionar un plan.')
       }
 
-      // Validar datos requeridos
-      if (!customerInfo.name || !customerInfo.email || !customerInfo.address1 || !customerInfo.city || !customerInfo.state || !customerInfo.postalCode) {
-        throw new Error('Por favor completa todos los campos requeridos para la suscripción')
+      // Validar datos requeridos - teléfono es obligatorio para coordinar entregas
+      if (!customerInfo.name || !customerInfo.email || !customerInfo.phone || !customerInfo.address1 || !customerInfo.city || !customerInfo.state || !customerInfo.postalCode) {
+        throw new Error('Por favor completa todos los campos requeridos para coordinar la entrega de tu suscripción')
       }
 
       // Obtener usuario autenticado
@@ -556,13 +556,17 @@ export default function SubscriptionCheckoutPage() {
                     </div>
 
                     <div>
-                      <Label htmlFor="phone">Teléfono</Label>
+                      <Label htmlFor="phone">Teléfono *</Label>
                       <Input
                         id="phone"
                         name="phone"
+                        type="tel"
                         value={customerInfo.phone}
                         onChange={handleInputChange}
+                        placeholder="Ej: +54 9 11 1234-5678"
+                        required
                       />
+                      <p className="text-sm text-gray-600">Obligatorio - Te contactaremos para coordinar la entrega</p>
                     </div>
 
                     <div>

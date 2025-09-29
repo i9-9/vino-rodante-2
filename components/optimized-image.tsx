@@ -32,7 +32,7 @@ export function OptimizedImage({
   fill = false,
   className,
   priority = false,
-  quality = 75, // Reducir calidad por defecto para ahorrar egress
+  quality = 80, // Calidad HD optimizada para mejor performance
   sizes,
   placeholder = 'blur',
   blurDataURL,
@@ -88,8 +88,8 @@ export function OptimizedImage({
         }
       },
       {
-        rootMargin: '50px', // Start loading 50px before the image comes into view
-        threshold: 0.1
+        rootMargin: '100px', // Start loading 100px before the image comes into view
+        threshold: 0.01 // Más agresivo para mejor UX
       }
     )
 

@@ -4,6 +4,7 @@ import { SubscriptionBanner } from '@/components/ui/banner-image'
 import ClubTabs from "./ClubTabs"
 import SubscriptionSelector from "./SubscriptionSelector"
 import { Accordion } from "@/components/ui/accordion"
+import { collectionSEO } from '@/lib/seo-config'
 
 const CLUB_INFO = {
   tinto: {
@@ -63,6 +64,25 @@ const CLUB_INFO = {
     ]
   }
 } as const
+
+export async function generateMetadata({ params }: { params: Promise<{ club: string }> }) {
+  const { club } = await params
+  const clubInfo = CLUB_INFO[club as keyof typeof CLUB_INFO]
+  
+  if (!clubInfo) {
+    return {
+      title: "Club Not Found | Vino Rodante",
+      description: "The requested wine club could not be found.",
+    }
+  }
+
+  return collectionSEO({
+    name: clubInfo.title,
+    description: clubInfo.description,
+    slug: `weekly-wine/${club}`,
+    image: clubInfo.image
+  })
+}
 
 export default async function ClubPage({ params }: { params: Promise<{ club: string }> }) {
   const { club } = await params

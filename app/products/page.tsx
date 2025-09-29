@@ -10,23 +10,19 @@ export const revalidate = 1800 // 30 minutos en segundos
 export async function generateMetadata() {
   const t = await getTranslations()
   
-  return {
-    title: t.products.title,
-    description: t.products.description,
-  }
+  // Usar la configuración SEO completa para la colección de productos
+  return collectionSEO({
+    name: t.products.title || "Todos los Vinos",
+    description: t.products.description || "Descubre nuestra completa selección de vinos argentinos",
+    slug: "products"
+  })
 }
 
 export default async function ProductsPage() {
   const t = await getTranslations()
   
-  const seoConfig = collectionSEO({
-    name: t.products.title || "Todos los Vinos",
-    description: t.products.description || "Descubre nuestra completa selección de vinos argentinos",
-    slug: "products"
-  })
-  
   return (
-    <SEO seo={seoConfig}>
+    <SEO>
       <ProductsClient t={t} />
     </SEO>
   )

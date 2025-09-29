@@ -132,6 +132,185 @@ export const generateWebsiteStructuredData = () => {
   }
 }
 
+export const generateLocalBusinessSchema = () => {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.vinorodante.com'
+
+  return {
+    "@context": "https://schema.org",
+    "@type": ["Organization", "LocalBusiness", "Store"],
+    "name": "Vino Rodante",
+    "description": "Tienda online especializada en vinos argentinos premium. Selección curada de los mejores vinos de Mendoza, Salta, San Juan y todas las regiones vitivinícolas de Argentina.",
+    "url": baseUrl,
+    "logo": {
+      "@type": "ImageObject",
+      "url": `${baseUrl}/logo/logo_vr.svg`,
+      "width": 400,
+      "height": 400
+    },
+    "image": {
+      "@type": "ImageObject",
+      "url": `${baseUrl}/og-image.jpg`,
+      "width": 1200,
+      "height": 630
+    },
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": "AR",
+      "addressRegion": "Argentina",
+      "addressLocality": "Buenos Aires"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "-34.6118",
+      "longitude": "-58.3960"
+    },
+    "areaServed": [
+      {
+        "@type": "Country",
+        "name": "Argentina"
+      },
+      {
+        "@type": "AdministrativeArea",
+        "name": "Buenos Aires"
+      },
+      {
+        "@type": "AdministrativeArea",
+        "name": "Córdoba"
+      },
+      {
+        "@type": "AdministrativeArea",
+        "name": "Santa Fe"
+      },
+      {
+        "@type": "AdministrativeArea",
+        "name": "Mendoza"
+      }
+    ],
+    "serviceType": "Venta de vinos online",
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Catálogo de Vinos Argentinos",
+      "itemListElement": [
+        {
+          "@type": "OfferCategory",
+          "name": "Vinos Tintos"
+        },
+        {
+          "@type": "OfferCategory",
+          "name": "Vinos Blancos"
+        },
+        {
+          "@type": "OfferCategory",
+          "name": "Vinos Rosados"
+        },
+        {
+          "@type": "OfferCategory",
+          "name": "Vinos Espumantes"
+        },
+        {
+          "@type": "OfferCategory",
+          "name": "Club de Vinos"
+        }
+      ]
+    },
+    "makesOffer": [
+      {
+        "@type": "Offer",
+        "itemOffered": {
+          "@type": "Service",
+          "name": "Envío gratis en compras superiores a $15,000",
+          "description": "Envío sin costo a todo el país en pedidos superiores a $15,000"
+        },
+        "areaServed": {
+          "@type": "Country",
+          "name": "Argentina"
+        }
+      },
+      {
+        "@type": "Offer",
+        "itemOffered": {
+          "@type": "Service",
+          "name": "Club de Vinos Mensual",
+          "description": "Suscripción mensual con selección curada de vinos argentinos"
+        }
+      }
+    ],
+    "openingHours": "Mo-Su 00:00-23:59",
+    "telephone": "+54-11-xxxx-xxxx",
+    "email": "info@vinorodante.com",
+    "priceRange": "$$",
+    "paymentAccepted": ["Credit Card", "Debit Card", "MercadoPago"],
+    "currenciesAccepted": "ARS",
+    "foundingDate": "2023",
+    "specialty": "Vinos argentinos premium",
+    "keywords": "vinos argentinos, malbec, cabernet sauvignon, chardonnay, torrontés, vinos mendoza, vinos salta, club de vinos, suscripción vino",
+    "sameAs": [
+      "https://www.instagram.com/vinorodante",
+      "https://www.facebook.com/vinorodante"
+    ],
+    "potentialAction": [
+      {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": `${baseUrl}/products?search={search_term_string}`
+        },
+        "query-input": "required name=search_term_string"
+      },
+      {
+        "@type": "OrderAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": `${baseUrl}/checkout`
+        }
+      }
+    ]
+  }
+}
+
+export const generateOrganizationSchema = () => {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.vinorodante.com'
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Vino Rodante",
+    "alternateName": "Vino Rodante Argentina",
+    "description": "El Vino Rueda en el Tiempo y Crece con la Historia - Especialistas en vinos argentinos premium",
+    "url": baseUrl,
+    "logo": {
+      "@type": "ImageObject",
+      "url": `${baseUrl}/logo/logo_vr.svg`
+    },
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "telephone": "+54-11-xxxx-xxxx",
+      "contactType": "customer service",
+      "areaServed": "AR",
+      "availableLanguage": "Spanish"
+    },
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": "AR",
+      "addressRegion": "Buenos Aires"
+    },
+    "foundingDate": "2023",
+    "numberOfEmployees": "1-10",
+    "knowsAbout": [
+      "Vinos Argentinos",
+      "Malbec",
+      "Cabernet Sauvignon",
+      "Chardonnay",
+      "Torrontés",
+      "Vinos de Mendoza",
+      "Vinos de Salta",
+      "Maridajes",
+      "Cata de vinos"
+    ],
+    "award": "Selección Premium de Vinos Argentinos 2024"
+  }
+}
+
 export const addStructuredDataToSEO = (seo: NextSeoProps, structuredData: any): NextSeoProps => {
   return {
     ...seo,

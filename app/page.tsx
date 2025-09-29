@@ -9,6 +9,10 @@ import { getHomeSEOWithStructuredData } from '@/lib/seo-config'
 // Usar SSG con revalidación cada 1 hora
 export const revalidate = 3600 // 1 hora en segundos
 
+export async function generateMetadata() {
+  return getHomeSEOWithStructuredData()
+}
+
 // Componente asíncrono para cargar productos destacados
 async function ProductSection() {
   
@@ -37,7 +41,7 @@ async function ProductSection() {
 
 export default function Home() {
   return (
-    <SEO seo={getHomeSEOWithStructuredData()}>
+    <SEO>
       <main className="flex min-h-screen flex-col items-center">
         <Hero />
         <Suspense 

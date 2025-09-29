@@ -8,6 +8,8 @@ import { ProductDiscountBadge } from '@/components/ProductDiscountBadge'
 import SEO from '@/components/SEO'
 import { productSEO } from '@/lib/seo-config'
 import { getApiUrl } from '@/lib/url-utils'
+import { Breadcrumbs } from '@/components/breadcrumbs'
+import { generateBreadcrumbStructuredData } from '@/lib/breadcrumb-utils'
 
 // Usar SSG con revalidación cada 2 horas
 export const revalidate = 7200 // 2 horas en segundos
@@ -23,10 +25,19 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     }
   }
 
-  return {
-    title: `${product.name} | Vino Rodante`,
+  // Usar la configuración SEO completa del producto
+  return productSEO({
+    name: product.name,
     description: product.description,
-  }
+    image: product.image,
+    price: product.price,
+    region: product.region,
+    varietal: product.varietal,
+    year: product.year,
+    category: product.category,
+    slug: product.slug,
+    stock: product.stock
+  })
 }
 
 export async function generateStaticParams() {
@@ -156,9 +167,38 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     stock: productWithDiscounts.stock
   })
 
+  // Generar breadcrumbs para el producto
+  const breadcrumbItems = [
+    { label: 'Productos', href: '/products' },
+    ...(productWithDiscounts.varietal ? [{ 
+      label: productWithDiscounts.varietal, 
+      href: `/collections/varietal/${productWithDiscounts.varietal.toLowerCase().replace(/\s+/g, '-')}` 
+    }] : []),
+    { 
+      label: productWithDiscounts.category, 
+      href: `/collections/${productWithDiscounts.category.toLowerCase()}` 
+    },
+    { label: productWithDiscounts.name, current: true }
+  ]
+
+  // Agregar structured data de breadcrumbs al SEO
+  const breadcrumbStructuredData = generateBreadcrumbStructuredData(breadcrumbItems)
+  const seoWithBreadcrumbs = {
+    ...seoConfig,
+    additionalMetaTags: [
+      ...(seoConfig.additionalMetaTags || []),
+      {
+        type: 'application/ld+json',
+        content: JSON.stringify(breadcrumbStructuredData)
+      }
+    ]
+  }
+
   return (
-    <SEO seo={seoConfig}>
+    <SEO>
       <div className="container px-4 py-12">
+        {/* Breadcrumbs */}
+        <Breadcrumbs items={breadcrumbItems} className="mb-6" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           <SimpleProductZoom
             src={productWithDiscounts.image || "/placeholder.svg"}
@@ -173,9 +213,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
             <div className="mb-6">
               {/* Mostrar precio con descuento si existe */}
-              {productWithDiscounts.discount ? (
+              {(productWithDiscounts as any).discount ? (
                 <div className="mb-4">
-                  <ProductDiscountBadge product={productWithDiscounts} size="lg" />
+                  <ProductDiscountBadge product={productWithDiscounts as any} size="lg" />
                 </div>
               ) : (
                 <div className="mb-4">

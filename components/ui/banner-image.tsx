@@ -21,7 +21,7 @@ export function BannerImage({
   alt,
   className,
   priority = true,
-  quality = 100,
+  quality = 85, // Calidad HD alta para banners pero optimizada
   sizes = "100vw",
   fallbackSrc = "/placeholder.svg",
   overlay = false,

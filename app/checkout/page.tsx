@@ -164,9 +164,9 @@ export default function CheckoutPage() {
       }
     }
 
-    // Validate required fields
-    if (!customerInfo.name || !customerInfo.email || !customerInfo.address1 || !customerInfo.city || !customerInfo.postalCode) {
-      setError(t.checkout.allFieldsRequired || "All fields are required")
+    // Validate required fields - teléfono es obligatorio para coordinar entregas
+    if (!customerInfo.name || !customerInfo.email || !customerInfo.phone || !customerInfo.address1 || !customerInfo.city || !customerInfo.postalCode) {
+      setError(t.checkout.allFieldsRequired || "Todos los campos son obligatorios para coordinar la entrega")
       setIsSubmitting(false)
       return
     }
@@ -390,7 +390,7 @@ export default function CheckoutPage() {
                           />
                         </div>
                         <div className="space-y-2 md:col-span-2">
-                          <Label htmlFor="phone">{t.checkout?.phone || "Teléfono"}</Label>
+                          <Label htmlFor="phone">{t.checkout?.phone || "Teléfono"} *</Label>
                           <Input 
                             id="phone" 
                             name="phone" 
@@ -399,8 +399,9 @@ export default function CheckoutPage() {
                             onChange={handleInputChange} 
                             autoComplete="tel"
                             placeholder="Ej: +54 9 11 1234-5678"
+                            required
                           />
-                          <p className="text-sm text-gray-600">Opcional - Te contactaremos para coordinar la entrega</p>
+                          <p className="text-sm text-gray-600">Obligatorio - Te contactaremos para coordinar la entrega</p>
                         </div>
                       </div>
                     </div>

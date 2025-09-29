@@ -46,6 +46,7 @@ export interface DiscountWithProducts extends Discount {
 export interface ProductWithDiscount {
   id: string
   name: string
+  description: string
   price: number
   category: string
   region: string

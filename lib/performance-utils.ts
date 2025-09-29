@@ -1,11 +1,11 @@
 // Performance utilities for SEO optimization
 export const performanceConfig = {
-  // Image optimization settings
+  // Image optimization settings - Balance HD/Performance
   imageQuality: {
-    hero: 90,
-    product: 85,
-    thumbnail: 75,
-    gallery: 80
+    hero: 85,        // HD para banners principales
+    product: 80,     // HD para productos con mejor performance
+    thumbnail: 75,   // Optimizado para miniaturas
+    gallery: 80       // HD para galerías
   },
   
   // Lazy loading thresholds
