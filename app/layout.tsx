@@ -15,6 +15,7 @@ import { AuthProvider } from "@/lib/providers/auth-provider"
 import { TranslationsProvider } from "@/lib/providers/translations-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { generateLocalBusinessSchema, generateOrganizationSchema } from "@/lib/seo-utils"
+import { Analytics } from "@vercel/analytics/next"
 
 
 const getBaseUrl = () => {
@@ -151,6 +152,7 @@ export default function RootLayout({
               </div>
               <WhatsappButton />
               <Toaster />
+              <Analytics />
             </CartProvider>
           </AuthProvider>
         </TranslationsProvider>
