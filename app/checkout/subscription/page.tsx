@@ -486,6 +486,18 @@ export default function SubscriptionCheckoutPage() {
                       Podrás pausar o cancelar en cualquier momento desde tu cuenta.
                     </p>
                   </div>
+                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-800">
+                      <strong>💳 Métodos de Pago:</strong> Para que tu suscripción se procese correctamente, podés usar:
+                    </p>
+                    <ul className="text-sm text-green-800 mt-2 ml-4 list-disc">
+                      <li>Tarjeta de crédito</li>
+                      <li>Cuenta de Mercado Pago</li>
+                    </ul>
+                    <p className="text-sm text-green-800 mt-2">
+                      Esto garantiza que los pagos automáticos se realicen sin inconvenientes y que tu suscripción se renueve correctamente.
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
