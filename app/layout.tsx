@@ -121,7 +121,15 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
+        {/* Preload critical fonts for faster FCP */}
+        <link rel="preconnect" href="https://use.typekit.net" />
+        <link rel="preload" href="https://use.typekit.net/brq4dey.css" as="style" />
         <link rel="stylesheet" href="https://use.typekit.net/brq4dey.css" />
+        
+        {/* Preload critical images */}
+        <link rel="preload" href="/logo/logo2.svg" as="image" type="image/svg+xml" />
+        <link rel="preload" href="/og-image.jpg" as="image" />
+        
         {/* hreflang for regional targeting */}
         <link rel="alternate" hrefLang="es-AR" href="https://www.vinorodante.com" />
         <link rel="alternate" hrefLang="es" href="https://www.vinorodante.com" />
