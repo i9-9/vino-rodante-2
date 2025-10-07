@@ -77,10 +77,24 @@ export default function MegaMenu() {
   const regionsData = getAllWineRegions(t)
   const varietalsData = getAllWineVarietals(t)
 
+  // Mapeo de slugs en inglés a español para las URLs
+  const englishToSpanishSlugs: Record<string, string> = {
+    'red': 'tinto',
+    'white': 'blanco',
+    'rose': 'rosado',
+    'sparkling': 'espumante',
+    'naranjo': 'naranjo',
+    'dessert': 'dulce',
+    'cider': 'sidra',
+    'gin': 'gin',
+    'other-drinks': 'otras-bebidas',
+    'boxes': 'boxes'
+  }
+
   const allTypes = wineTypesData.map(type => ({
     name: type.name,
-    slug: type.slug,
-    href: `/collections/${type.slug}`,
+    slug: englishToSpanishSlugs[type.slug] || type.slug,
+    href: `/collections/${englishToSpanishSlugs[type.slug] || type.slug}`,
   }))
 
   const allRegions = regionsData.map(region => ({
@@ -98,8 +112,10 @@ export default function MegaMenu() {
     // Si hay error o no hay productos, no mostrar ningún tipo
     if (isErrorProducts || !products || products.length === 0) return false
     
-    const slug = type.href.split('/').pop() || ''
-    const dbCategories = CATEGORY_SLUG_MAP[slug] || [slug]
+    const spanishSlug = type.href.split('/').pop() || ''
+    // Convertir el slug en español al slug en inglés para buscar en CATEGORY_SLUG_MAP
+    const englishSlug = Object.keys(englishToSpanishSlugs).find(key => englishToSpanishSlugs[key] === spanishSlug) || spanishSlug
+    const dbCategories = CATEGORY_SLUG_MAP[englishSlug] || [englishSlug]
     
     // Verificar si hay productos de esta categoría
     return products.some(product => {

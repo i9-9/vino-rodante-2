@@ -70,7 +70,7 @@ export const getMockReviews = (productName: string): Review[] => [
     id: "2", 
     author: "Carlos Mendoza",
     rating: 4,
-    reviewBody: `Muy buen vino, buena relación calidad-precio. Lo recomiendo para maridar con carnes.`,
+    reviewBody: `Muy buen vino, buena relación calidad-precio. Lo recomiendo para acompañar con carnes.`,
     datePublished: "2024-01-10",
     helpful: 8
   },
@@ -154,7 +154,7 @@ export const getProductReviews = (productName: string, category: string): Review
       id: "7", 
       author: "Sofía López",
       rating: 4,
-      reviewBody: `Fresco y frutal, ideal para el verano. Perfecto para maridar con pescados.`,
+      reviewBody: `Fresco y frutal, ideal para el verano. Perfecto para acompañar con pescados.`,
       datePublished: "2024-01-18",
       helpful: 9
     })

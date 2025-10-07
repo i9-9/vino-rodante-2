@@ -10,6 +10,10 @@ import { productSEO } from '@/lib/seo-config'
 import { getApiUrl } from '@/lib/url-utils'
 import { Breadcrumbs } from '@/components/breadcrumbs'
 import { generateBreadcrumbStructuredData } from '@/lib/breadcrumb-utils'
+import { faqConfigs, generateFAQStructuredData } from '@/lib/faq-schema'
+import { FAQSection } from '@/components/faq-section'
+import { generateImageAltText } from '@/lib/image-seo-utils'
+import { useProductTracking } from '@/lib/hooks/use-tracking'
 
 // Usar SSG con revalidación cada 2 horas
 export const revalidate = 7200 // 2 horas en segundos
@@ -183,13 +187,27 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   // Agregar structured data de breadcrumbs al SEO
   const breadcrumbStructuredData = generateBreadcrumbStructuredData(breadcrumbItems)
-  const seoWithBreadcrumbs = {
+  
+  // Generar FAQs específicas para el producto
+  const productFAQs = faqConfigs.product(
+    productWithDiscounts.name,
+    productWithDiscounts.region,
+    productWithDiscounts.varietal,
+    productWithDiscounts.category
+  )
+  const faqStructuredData = generateFAQStructuredData(productFAQs)
+  
+  const seoWithBreadcrumbsAndFAQ = {
     ...seoConfig,
     additionalMetaTags: [
       ...(seoConfig.additionalMetaTags || []),
       {
         type: 'application/ld+json',
         content: JSON.stringify(breadcrumbStructuredData)
+      },
+      {
+        type: 'application/ld+json',
+        content: JSON.stringify(faqStructuredData)
       }
     ]
   }
@@ -202,7 +220,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           <SimpleProductZoom
             src={productWithDiscounts.image || "/placeholder.svg"}
-            alt={productWithDiscounts.name}
+            alt={generateImageAltText.product({
+              name: productWithDiscounts.name,
+              varietal: productWithDiscounts.varietal,
+              region: productWithDiscounts.region,
+              year: productWithDiscounts.year,
+              category: productWithDiscounts.category,
+              isBox: isBox
+            })}
           />
 
           <div className="flex flex-col">
@@ -283,6 +308,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </div>
           </div>
         )}
+
+        {/* FAQ Section */}
+        <FAQSection 
+          faqs={productFAQs} 
+          title={`Preguntas sobre ${productWithDiscounts.name}`}
+          className="mt-16"
+        />
       </div>
     </SEO>
   )

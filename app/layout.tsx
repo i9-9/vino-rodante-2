@@ -16,6 +16,8 @@ import { TranslationsProvider } from "@/lib/providers/translations-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { generateLocalBusinessSchema, generateOrganizationSchema } from "@/lib/seo-utils"
 import { Analytics } from "@vercel/analytics/next"
+import { WebVitalsMonitor } from "@/components/web-vitals-monitor"
+import { GoogleSearchConsoleMeta } from "@/components/google-search-console"
 
 
 const getBaseUrl = () => {
@@ -133,6 +135,9 @@ export default function RootLayout({
         {/* hreflang for regional targeting */}
         <link rel="alternate" hrefLang="es-AR" href="https://www.vinorodante.com" />
         <link rel="alternate" hrefLang="es" href="https://www.vinorodante.com" />
+        
+        {/* Google Search Console Verification */}
+        <GoogleSearchConsoleMeta />
         {/* Local Business Structured Data */}
         <script
           type="application/ld+json"
@@ -161,6 +166,8 @@ export default function RootLayout({
               <WhatsappButton />
               <Toaster />
               <Analytics />
+              <GoogleAnalytics />
+              <WebVitalsMonitor />
             </CartProvider>
           </AuthProvider>
         </TranslationsProvider>

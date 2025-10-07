@@ -216,21 +216,21 @@ export default function MobileMenu({
                 </Link>
                 <div className="pl-3 space-y-1.5 border-l-2 border-muted">
                   <Link
-                    href="/collections/red"
+                    href="/collections/tinto"
                     className="block text-muted-foreground hover:text-foreground text-sm transition-colors py-0.5"
                     onClick={onClose}
                   >
                     {t.navigation.redWines}
                   </Link>
                   <Link
-                    href="/collections/white"
+                    href="/collections/blanco"
                     className="block text-muted-foreground hover:text-foreground text-sm transition-colors py-0.5"
                     onClick={onClose}
                   >
                     {t.navigation.whiteWines}
                   </Link>
                   <Link
-                    href="/collections/sparkling"
+                    href="/collections/espumante"
                     className="block text-muted-foreground hover:text-foreground text-sm transition-colors py-0.5"
                     onClick={onClose}
                   >

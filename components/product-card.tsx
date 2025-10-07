@@ -7,6 +7,8 @@ import Link from "next/link"
 import { useCart } from "@/lib/hooks/use-cart"
 import { useTranslations } from "@/lib/providers/translations-provider"
 import { ProductDiscountBadge } from "./ProductDiscountBadge"
+import { generateImageAltText } from "@/lib/image-seo-utils"
+import { useProductTracking } from "@/lib/hooks/use-tracking"
 
 function capitalizeWords(str: string) {
   return str
@@ -40,6 +42,7 @@ function getValidImageUrl(imageUrl: string | null | undefined): string {
 export default function ProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart()
   const t = useTranslations()
+  const { trackAddToCart, trackProductView } = useProductTracking()
   
   // Detectar si es un box
   const isBox = product.category?.toLowerCase() === 'boxes' || product.category?.toLowerCase() === 'box'
@@ -49,7 +52,14 @@ export default function ProductCard({ product }: { product: Product }) {
       <Link href={`/products/${product.slug}`} className="aspect-square overflow-hidden bg-gray-100">
         <Image
           src={getValidImageUrl(product.image)}
-          alt={product.name}
+          alt={generateImageAltText.thumbnail({
+            name: product.name,
+            varietal: product.varietal,
+            region: product.region,
+            year: product.year,
+            category: product.category,
+            isBox: isBox
+          })}
           width={300}
           height={300}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -73,18 +83,21 @@ export default function ProductCard({ product }: { product: Product }) {
         <div className="mt-auto pt-4 space-y-2">
           <div className="flex items-center justify-between">
             <div className="text-right">
-              {product.discount ? (
-                <ProductDiscountBadge product={product} size="sm" />
+              {(product as any).discount ? (
+                <ProductDiscountBadge product={product as any} size="sm" />
               ) : (
                 <p className="font-medium text-[#1F1F1F]">${product.price.toFixed(2)}</p>
               )}
             </div>
             <Button 
-              onClick={() => addToCart(product)} 
+              onClick={() => {
+                addToCart(product)
+                trackAddToCart(product)
+              }} 
               size="sm" 
               className="bg-[#A83935] hover:bg-[#A83935]/90 text-white"
             >
-              {t.products.addToCart}
+              {(t as any).products?.addToCart || 'Agregar al carrito'}
             </Button>
           </div>
         </div>
