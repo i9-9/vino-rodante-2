@@ -13,25 +13,36 @@ export const CATEGORIES = [
 
 // Lista completa de regiones para formularios CRUD
 export const REGIONS = [
-  'Mendoza',
-  'San Juan', 
-  'La Rioja',
-  'Salta',
+  'Buenos Aires',
   'Catamarca',
+  'Chaco',
+  'Chapadmalal',
+  'Chubut',
+  'Córdoba',
+  'Corrientes',
+  'Entre Ríos',
+  'Formosa',
   'Jujuy',
-  'Tucumán',
+  'La Pampa',
+  'La Rioja',
+  'Mendoza',
+  'Misiones',
+  'Múltiples', // Para boxes
   'Neuquén',
   'Río Negro',
-  'Córdoba',
-  'Buenos Aires',
-  'Entre Ríos',
-  'Chapadmalal',
-  'Valle de Uco',
-  'Valle del Pedernal',
+  'Salta',
+  'San Juan',
+  'San Luis',
+  'Santa Cruz',
+  'Santa Fe',
+  'Santiago del Estero',
+  'Tierra del Fuego',
+  'Tucumán',
   'Valle Calchaquí',
   'Valle de Famatina',
-  'Valle del Río Colorado',
-  'Múltiples' // Para boxes
+  'Valle de Uco',
+  'Valle del Pedernal',
+  'Valle del Río Colorado'
 ] as const
 
 // Lista completa de varietales para formularios CRUD
@@ -66,18 +77,18 @@ export const VARIETALS = [
 const BaseProductSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().min(1, 'El nombre es requerido').max(100),
-  description: z.string().min(1, 'La descripción es requerida').max(500),
+  description: z.string().min(1, 'La descripción es requerida').max(2000),
   price: z.number().min(0, 'El precio debe ser positivo'),
   stock: z.number().min(0, 'El stock debe ser positivo'),
   category: z.enum(CATEGORIES, {
-    errorMap: () => ({ message: 'Categoría inválida' })
+    errorMap: () => ({ message: `Categoría inválida. Valores permitidos: ${CATEGORIES.join(', ')}` })
   }),
   region: z.enum(REGIONS, {
-    errorMap: () => ({ message: 'Región inválida' })
+    errorMap: () => ({ message: `Región inválida. Valores permitidos: ${REGIONS.join(', ')}` })
   }),
   year: z.string().optional().default(''),
   varietal: z.enum(VARIETALS, {
-    errorMap: () => ({ message: 'Varietal inválido' })
+    errorMap: () => ({ message: `Varietal inválido. Valores permitidos: ${VARIETALS.join(', ')}` })
   }),
   image: z.string().optional(),
   featured: z.boolean().default(false),

@@ -461,7 +461,6 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
                   <SelectValue placeholder="Seleccionar categoría" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Seleccionar categoría</SelectItem>
                   {CATEGORIES.map((cat) => (
                     <SelectItem key={cat} value={cat}>
                       {cat}
@@ -483,7 +482,6 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
                   <SelectValue placeholder="Seleccionar región" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Seleccionar región</SelectItem>
                   {REGIONS.map((reg) => (
                     <SelectItem key={reg} value={reg}>
                       {reg}

@@ -68,12 +68,12 @@ const CATEGORY_MAPPING: Record<string, string> = {
   'rosados': 'Rosado',
   
   // Naranja/Naranjo
-  'Naranja': 'Naranja',
-  'naranja': 'Naranja',
-  'NARANJA': 'Naranja',
-  'Naranjo': 'Naranja', // Unificar a "Naranja"
-  'naranjo': 'Naranja',
-  'NARANJO': 'Naranja',
+  'Naranja': 'Naranjo',
+  'naranja': 'Naranjo',
+  'NARANJA': 'Naranjo',
+  'Naranjo': 'Naranjo',
+  'naranjo': 'Naranjo',
+  'NARANJO': 'Naranjo',
   
   // Espumantes
   'Espumante': 'Espumante',
