@@ -1,5 +1,5 @@
 // Core Web Vitals monitoring for Vino Rodante
-import { getCLS, getFID, getFCP, getLCP, getTTFB } from 'web-vitals'
+import { onCLS, onINP, onFCP, onLCP, onTTFB } from 'web-vitals'
 
 export interface WebVitalMetric {
   name: string
@@ -21,7 +21,7 @@ export interface WebVitalsConfig {
 // Core Web Vitals thresholds
 const THRESHOLDS = {
   LCP: { good: 2500, poor: 4000 },
-  FID: { good: 100, poor: 300 },
+  INP: { good: 200, poor: 500 },
   CLS: { good: 0.1, poor: 0.25 },
   FCP: { good: 1800, poor: 3000 },
   TTFB: { good: 800, poor: 1800 }
@@ -97,7 +97,7 @@ export function initWebVitals(config: WebVitalsConfig = {}) {
   }
   
   // Monitor Largest Contentful Paint
-  getLCP((metric) => {
+  onLCP((metric) => {
     const webVitalMetric: WebVitalMetric = {
       name: 'LCP',
       value: metric.value,
@@ -111,15 +111,15 @@ export function initWebVitals(config: WebVitalsConfig = {}) {
     sendToAnalytics(webVitalMetric, config)
   })
   
-  // Monitor First Input Delay
-  getFID((metric) => {
+  // Monitor Interaction to Next Paint (replaces FID)
+  onINP((metric) => {
     const webVitalMetric: WebVitalMetric = {
-      name: 'FID',
+      name: 'INP',
       value: metric.value,
       delta: metric.delta,
       id: metric.id,
       navigationType: metric.navigationType,
-      rating: getRating('FID', metric.value),
+      rating: getRating('INP', metric.value),
       timestamp: Date.now()
     }
     
@@ -127,7 +127,7 @@ export function initWebVitals(config: WebVitalsConfig = {}) {
   })
   
   // Monitor Cumulative Layout Shift
-  getCLS((metric) => {
+  onCLS((metric) => {
     const webVitalMetric: WebVitalMetric = {
       name: 'CLS',
       value: metric.value,
@@ -142,7 +142,7 @@ export function initWebVitals(config: WebVitalsConfig = {}) {
   })
   
   // Monitor First Contentful Paint
-  getFCP((metric) => {
+  onFCP((metric) => {
     const webVitalMetric: WebVitalMetric = {
       name: 'FCP',
       value: metric.value,
@@ -157,7 +157,7 @@ export function initWebVitals(config: WebVitalsConfig = {}) {
   })
   
   // Monitor Time to First Byte
-  getTTFB((metric) => {
+  onTTFB((metric) => {
     const webVitalMetric: WebVitalMetric = {
       name: 'TTFB',
       value: metric.value,

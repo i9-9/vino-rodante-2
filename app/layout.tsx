@@ -17,6 +17,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { generateLocalBusinessSchema, generateOrganizationSchema } from "@/lib/seo-utils"
 import { Analytics } from "@vercel/analytics/next"
 import { WebVitalsMonitor } from "@/components/web-vitals-monitor"
+import { GoogleAnalytics } from "@/components/analytics"
 import { GoogleSearchConsoleMeta } from "@/components/google-search-console"
 
 
