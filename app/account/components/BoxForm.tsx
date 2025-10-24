@@ -251,6 +251,14 @@ export function BoxForm({ onSubmit, onClose, initialData }: BoxFormProps) {
       submitData.set('description', formData.description)
       submitData.set('price', formData.price)
       submitData.set('stock', formData.stock)
+      
+      // ✅ CRÍTICO: Agregar campos requeridos para boxes
+      submitData.set('category', 'Boxes')
+      submitData.set('is_box', 'on')
+      submitData.set('region', 'Múltiples')
+      submitData.set('year', 'N/A')
+      submitData.set('varietal', 'Múltiples')
+      
       submitData.set('total_wines', formData.total_wines.toString())
       submitData.set('discount_percentage', formData.discount_percentage.toString())
       submitData.set('featured', formData.featured ? 'on' : 'off')
@@ -263,6 +271,11 @@ export function BoxForm({ onSubmit, onClose, initialData }: BoxFormProps) {
       // Imagen
       if (selectedFile) {
         submitData.set('image_file', selectedFile)
+      }
+      
+      // ✅ CRÍTICO: Agregar ID si es edición
+      if (initialData?.id) {
+        submitData.set('id', initialData.id)
       }
       
       await onSubmit(submitData)
