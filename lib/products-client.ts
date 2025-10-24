@@ -406,17 +406,23 @@ export async function getProductsByVarietalAndRegion(varietal: string, region: s
     // Convertir slug de región al nombre completo como se almacena en DB
     const dbRegionName = REGION_SLUG_MAP[region] || region
 
+    // Normalizar varietal para búsqueda más flexible (busca "malbec" en "Malbec", "MALBEC", "Malbec Reserva", etc.)
+    const varietalPattern = `%${varietal}%`
+
+    console.log(`🔍 [getProductsByVarietalAndRegion] Searching: varietal like "${varietalPattern}", region = "${dbRegionName}"`)
+
     // Intentar primero con el cliente autenticado
     const supabase = createClient()
     const { data, error } = await supabase
       .from('products')
       .select('*')
-      .ilike('varietal', varietal) // Case-insensitive search for varietal
+      .ilike('varietal', varietalPattern) // Case-insensitive pattern matching
       .eq('region', dbRegionName) // Exact match for region
       .eq('is_visible', true)
       .order('created_at', { ascending: false })
 
     if (data && !error) {
+      console.log(`🔍 [getProductsByVarietalAndRegion] Found ${data.length} products`)
       return { data, error: null }
     }
 
@@ -427,7 +433,7 @@ export async function getProductsByVarietalAndRegion(varietal: string, region: s
       const { data: publicData, error: publicError } = await publicSupabase
         .from('products')
         .select('*')
-        .ilike('varietal', varietal)
+        .ilike('varietal', varietalPattern)
         .eq('region', dbRegionName)
         .eq('is_visible', true)
         .order('created_at', { ascending: false })
@@ -437,6 +443,7 @@ export async function getProductsByVarietalAndRegion(varietal: string, region: s
         return { data: null, error: publicError }
       }
 
+      console.log(`🔍 [getProductsByVarietalAndRegion] Found ${publicData?.length || 0} products with public client`)
       return { data: publicData, error: null }
     }
 

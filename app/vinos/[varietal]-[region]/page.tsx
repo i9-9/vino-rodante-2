@@ -110,9 +110,28 @@ export default async function HybridWinePage({ params }: { params: Promise<{ 'va
   const varietalName = prettyLabel(varietal)
   const regionName = REGION_SLUG_MAP[region] || prettyLabel(region)
 
-  const { data: products, error } = await getProductsByVarietalAndRegion(varietal, region)
+  // Fetch products with error handling
+  let products: any[] = []
+  let fetchError = null
 
-  if (error || !products || products.length === 0) {
+  try {
+    const result = await getProductsByVarietalAndRegion(varietal, region)
+    products = result.data || []
+    fetchError = result.error
+
+    // Log for debugging
+    console.log(`[Hybrid Page] ${varietal}-${region}: Found ${products.length} products`)
+    if (fetchError) {
+      console.error('[Hybrid Page] Error fetching products:', fetchError)
+    }
+  } catch (e) {
+    console.error('[Hybrid Page] Exception:', e)
+    fetchError = e
+  }
+
+  // If no products found, return 404
+  if (!products || products.length === 0) {
+    console.log(`[Hybrid Page] No products for ${varietal}-${region}, returning 404`)
     notFound()
   }
 
@@ -318,7 +337,7 @@ export default async function HybridWinePage({ params }: { params: Promise<{ 'va
                 ¿Cómo es el delivery de vinos en Argentina?
               </h3>
               <p className="text-gray-700">
-                Hacemos envíos a todo el país con envío gratis en compras superiores a $5000. Los vinos son empaquetados
+                Hacemos envíos a todo el país con envío gratis en CABA y $15.000 para el resto del país. Los vinos son empaquetados
                 cuidadosamente para garantizar que lleguen en perfectas condiciones.
               </p>
             </div>
