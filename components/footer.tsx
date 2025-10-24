@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { Mail, Phone, MapPin, Instagram } from "lucide-react"
+import { Mail, Phone, Instagram } from "lucide-react"
 import { NewsletterForm } from "@/components/ui/newsletter-form"
 import { useTranslations } from "@/lib/providers/translations-provider"
 
@@ -75,12 +75,6 @@ export default function Footer() {
           <div>
             <h3 className="font-medium text-lg mb-4">{t.footer.contact}</h3>
             <ul className="space-y-3">
-              <li className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                <span className="text-primary-foreground/70">
-                  Pirán 5728, Villa Urquiza, Buenos Aires, Argentina
-                </span>
-              </li>
               <li className="flex items-center gap-3">
                 <Phone className="h-5 w-5 text-accent flex-shrink-0" />
                 <a 
