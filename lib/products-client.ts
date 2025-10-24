@@ -401,6 +401,52 @@ export async function getProductsByVarietal(varietal: string): Promise<ApiRespon
   }
 }
 
+export async function getProductsByVarietalAndRegion(varietal: string, region: string): Promise<ApiResponse<Product[]>> {
+  try {
+    // Convertir slug de región al nombre completo como se almacena en DB
+    const dbRegionName = REGION_SLUG_MAP[region] || region
+
+    // Intentar primero con el cliente autenticado
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .ilike('varietal', varietal) // Case-insensitive search for varietal
+      .eq('region', dbRegionName) // Exact match for region
+      .eq('is_visible', true)
+      .order('created_at', { ascending: false })
+
+    if (data && !error) {
+      return { data, error: null }
+    }
+
+    // Si hay error de autenticación, usar cliente público
+    if (error && (error.message?.includes('auth') || error.message?.includes('policy') || (error as any).code === 'PGRST116')) {
+      console.log('🔍 [getProductsByVarietalAndRegion] Auth error, trying public client')
+      const publicSupabase = createAdaptiveClient()
+      const { data: publicData, error: publicError } = await publicSupabase
+        .from('products')
+        .select('*')
+        .ilike('varietal', varietal)
+        .eq('region', dbRegionName)
+        .eq('is_visible', true)
+        .order('created_at', { ascending: false })
+
+      if (publicError) {
+        console.error('🔍 [getProductsByVarietalAndRegion] Public client error:', publicError)
+        return { data: null, error: publicError }
+      }
+
+      return { data: publicData, error: null }
+    }
+
+    return { data, error }
+  } catch (error) {
+    console.error('🔍 [getProductsByVarietalAndRegion] Exception:', error)
+    return { data: null, error: error as any }
+  }
+}
+
 export async function searchProducts(query: string): Promise<ApiResponse<Product[]>> {
   try {
     // Intentar primero con el cliente autenticado

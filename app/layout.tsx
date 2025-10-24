@@ -22,18 +22,11 @@ import { GoogleSearchConsoleMeta } from "@/components/google-search-console"
 
 
 const getBaseUrl = () => {
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL
-  }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`
-  }
-  // En desarrollo, detectar el puerto correcto
-  if (process.env.NODE_ENV === 'development') {
-    const port = process.env.PORT || process.env.NEXT_PUBLIC_PORT || '3001'
-    return `http://localhost:${port}`
-  }
-  return 'https://www.vinorodante.com'
+  // Always return production URL for SEO consistency (canonicals, sitemaps, schema)
+  const productionUrl = 'https://www.vinorodante.com'
+
+  // Only use environment URL if explicitly set, otherwise use production
+  return process.env.NEXT_PUBLIC_SITE_URL || productionUrl
 }
 
 export const metadata: Metadata = {
@@ -111,6 +104,10 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#5B0E2D",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
 }
 
 export default function RootLayout({

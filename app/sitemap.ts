@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
 import { getProducts } from '@/lib/products-client'
+import { getAllHybridSlugs } from '@/lib/hybrid-combinations'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.vinorodante.com'
@@ -120,38 +121,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly' as const,
       priority: 0.8,
     },
-    // Auth pages
-    {
-      url: `${baseUrl}/auth/sign-in`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly' as const,
-      priority: 0.3,
-    },
-    {
-      url: `${baseUrl}/auth/sign-up`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly' as const,
-      priority: 0.3,
-    },
-    {
-      url: `${baseUrl}/auth/reset-password`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly' as const,
-      priority: 0.2,
-    },
-    // Checkout pages
-    {
-      url: `${baseUrl}/checkout`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly' as const,
-      priority: 0.4,
-    },
-    {
-      url: `${baseUrl}/checkout/subscription`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly' as const,
-      priority: 0.4,
-    },
   ]
 
   let productPages: MetadataRoute.Sitemap = []
@@ -169,32 +138,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Error generating product sitemap:', error)
   }
 
-  const subscriptionPages: MetadataRoute.Sitemap = [
-    {
-      url: `${baseUrl}/weekly-wine/tinto`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/weekly-wine/blanco`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/weekly-wine/mixto`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/weekly-wine/naranjo`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    }
-  ]
 
   const varietalPages: MetadataRoute.Sitemap = [
     {
@@ -262,11 +205,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   ]
 
+  // Hybrid varietal-region pages (high-value SEO pages)
+  const hybridSlugs = getAllHybridSlugs()
+  const hybridPages: MetadataRoute.Sitemap = hybridSlugs.map(slug => ({
+    url: `${baseUrl}/vinos/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.75, // Higher priority - these are money pages
+  }))
+
   return [
-    ...staticPages, 
-    ...productPages, 
-    ...subscriptionPages, 
-    ...varietalPages, 
-    ...regionPages
+    ...staticPages,
+    ...productPages,
+    ...varietalPages,
+    ...regionPages,
+    ...hybridPages
   ]
 }

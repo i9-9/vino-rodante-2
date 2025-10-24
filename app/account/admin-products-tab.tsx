@@ -28,6 +28,7 @@ import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import Image from 'next/image'
 import { updateProduct, createProduct, deleteProducts, toggleProductVisibility } from './actions/products'
+import { createBox, updateBox } from './actions/boxes'
 import { CreateProductForm } from './components/CreateProductForm'
 import {
   Table,
@@ -1058,19 +1059,34 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
         formData.append('image_file', selectedImage)
       }
       
+      // ✅ CRÍTICO: Detectar si es un box para usar las funciones correctas
+      const isBox = formData.get('category') === 'Boxes' || formData.get('is_box') === 'on'
+      
       let result;
-      // Determinar si es crear o editar
-      if (selectedProduct?.id) {
-        formData.append('id', selectedProduct.id)
-        result = await updateProduct(formData)
+      
+      if (isBox) {
+        // ✅ Usar funciones específicas para boxes
+        if (selectedProduct?.id) {
+          result = await updateBox(selectedProduct.id, formData)
+        } else {
+          result = await createBox(formData)
+        }
       } else {
-        result = await createProduct(formData)
+        // Usar funciones genéricas para productos normales
+        if (selectedProduct?.id) {
+          formData.append('id', selectedProduct.id)
+          result = await updateProduct(formData)
+        } else {
+          result = await createProduct(formData)
+        }
       }
       
       if (result.success) {
         toast({
           title: "Éxito",
-          description: selectedProduct?.id ? "Producto actualizado correctamente" : "Producto creado correctamente",
+          description: selectedProduct?.id 
+            ? (isBox ? "Box actualizado correctamente" : "Producto actualizado correctamente")
+            : (isBox ? "Box creado correctamente" : "Producto creado correctamente"),
         })
         
         // Solicitar refresh de datos al padre si está disponible

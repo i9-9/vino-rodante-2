@@ -11,6 +11,7 @@ export const generateProductStructuredData = (product: {
   category: string
   slug: string
   stock: number
+  id?: string
 }) => {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.vinorodante.com'
   const productUrl = `${baseUrl}/products/${product.slug}`
@@ -21,8 +22,15 @@ export const generateProductStructuredData = (product: {
     "@type": "Product",
     "name": product.name,
     "description": product.description,
-    "image": productImage,
+    "image": {
+      "@type": "ImageObject",
+      "url": productImage,
+      "width": 800,
+      "height": 600,
+      "caption": `${product.name} - ${product.varietal || product.category} de ${product.region}`
+    },
     "url": productUrl,
+    "sku": product.id,
     "brand": {
       "@type": "Brand",
       "name": "Vino Rodante"
@@ -32,6 +40,8 @@ export const generateProductStructuredData = (product: {
       "price": product.price,
       "priceCurrency": "ARS",
       "availability": product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      "url": productUrl,
+      "priceValidUntil": new Date(Date.now() + 30*24*60*60*1000).toISOString(),
       "seller": {
         "@type": "Organization",
         "name": "Vino Rodante"
