@@ -228,8 +228,8 @@ export const generateLocalBusinessSchema = () => {
         "@type": "Offer",
         "itemOffered": {
           "@type": "Service",
-          "name": "Envío gratis en compras superiores a $15,000",
-          "description": "Envío sin costo a todo el país en pedidos superiores a $15,000"
+          "name": "Envío gratis en CABA",
+          "description": "Envío sin costo en Capital Federal, $30.000 en GBA y $55.000 resto del país"
         },
         "areaServed": {
           "@type": "Country",

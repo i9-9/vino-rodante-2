@@ -337,7 +337,7 @@ export default async function HybridWinePage({ params }: { params: Promise<{ 'va
                 ¿Cómo es el delivery de vinos en Argentina?
               </h3>
               <p className="text-gray-700">
-                Hacemos envíos a todo el país con envío gratis en CABA y $15.000 para el resto del país. Los vinos son empaquetados
+                Hacemos envíos a todo el país con envío gratis en CABA, $30.000 en GBA (Gran Buenos Aires) y $55.000 para el resto del país. Los vinos son empaquetados
                 cuidadosamente para garantizar que lleguen en perfectas condiciones.
               </p>
             </div>

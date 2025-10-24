@@ -22,24 +22,24 @@ export const SHIPPING_ZONES: ShippingZone[] = [
       { min: 1800, max: 1899 }, // Zona Sur
       { min: 2000, max: 2999 }  // Conurbano
     ],
-    shippingCost: 10000
+    shippingCost: 3000000
   },
   {
     name: "Interior del país",
     postalCodeRanges: [
       { min: 3000, max: 9999 }
     ],
-    shippingCost: 15000
+    shippingCost: 5500000
   }
 ]
 
 /**
  * Calcula el costo de envío basado en el código postal
  * @param postalCode - Código postal como string
- * @param baseShipping - Costo base de envío (por defecto 15000)
+ * @param baseShipping - Costo base de envío (por defecto 5500000)
  * @returns Costo del envío en centavos
  */
-export function calculateShipping(postalCode: string, baseShipping: number = 15000): number {
+export function calculateShipping(postalCode: string, baseShipping: number = 5500000): number {
   if (!postalCode || postalCode.trim() === "") {
     return baseShipping
   }

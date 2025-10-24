@@ -280,7 +280,7 @@ export const faqConfigs = {
     const commonFAQs: FAQItem[] = [
       {
         question: `¿Hacen envíos a todo el país?`,
-        answer: `Sí, llevamos nuestros vinos a todo el país. Los tiempos de entrega varían según la ubicación, pero generalmente llegamos en 2-5 días hábiles. El envío es gratis en CABA y $15.000 para el resto del país.`
+        answer: `Sí, llevamos nuestros vinos a todo el país. Los tiempos de entrega varían según la ubicación, pero generalmente llegamos en 2-5 días hábiles. El envío es gratis en CABA, $30.000 en GBA (Gran Buenos Aires) y $55.000 para el resto del país.`
       },
       {
         question: `¿Qué garantía tienen los vinos?`,
@@ -329,7 +329,7 @@ export const faqConfigs = {
     },
     {
       question: "¿Hacen envíos a todo el país?",
-      answer: "Sí, hacemos envíos a todas las provincias de Argentina. Los tiempos de entrega varían según la ubicación, generalmente entre 2-5 días hábiles. El envío es gratis en CABA y $15.000 para el resto del país."
+      answer: "Sí, hacemos envíos a todas las provincias de Argentina. Los tiempos de entrega varían según la ubicación, generalmente entre 2-5 días hábiles. El envío es gratis en CABA, $30.000 en GBA (Gran Buenos Aires) y $55.000 para el resto del país."
     },
     {
       question: "¿Qué garantías ofrecen?",
