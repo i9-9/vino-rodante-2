@@ -75,22 +75,12 @@ export function ParallaxCards({ plans, translations }: ParallaxCardsProps) {
           {/* Overlay para texto en hover */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           {/* Contenido del texto */}
-          <div className="absolute bottom-0 left-0 w-full p-3 md:p-4 flex flex-row items-end justify-between gap-2
+          <div className="absolute bottom-0 left-0 w-full p-3 md:p-4
             md:transform md:translate-y-full md:group-hover:translate-y-0 md:transition-transform md:duration-300
             bg-gradient-to-t from-black/70 to-transparent">
-            <div>
-              <div className="font-semibold text-white text-sm md:text-base truncate drop-shadow-lg">
-                {plan.name}
-              </div>
-              {plan.tagline && (
-                <div className="text-white/90 text-xs md:text-sm drop-shadow line-clamp-2 leading-relaxed">
-                  {plan.tagline}
-                </div>
-              )}
+            <div className="font-semibold text-white text-sm md:text-base truncate drop-shadow-lg">
+              {plan.name}
             </div>
-            <Button size="sm" variant="primary" asChild className="mt-2 w-fit">
-              <Link href={`/weekly-wine/${plan.type}`}>{translations.home.hero.cta}</Link>
-            </Button>
           </div>
         </div>
       ))}

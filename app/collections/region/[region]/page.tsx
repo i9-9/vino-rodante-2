@@ -2,10 +2,10 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getProductsByRegion } from "@/lib/products-client"
 import { ProductGrid } from "@/components/product-grid"
-import SEO from '@/components/SEO'
-import { Breadcrumbs, breadcrumbConfigs } from '@/components/breadcrumbs'
+import { Breadcrumbs } from '@/components/breadcrumbs'
 import { collectionSEO } from '@/lib/seo-config'
 import { prettyLabel } from "@/lib/wine-data"
+import SEO from '@/components/SEO'
 
 // Usar SSG con revalidación cada 1 hora
 export const revalidate = 3600 // 1 hora en segundos
@@ -49,19 +49,6 @@ export default async function RegionPage({ params }: { params: Promise<{ region:
     console.log('No se encontraron productos, llamando notFound()')
     notFound()
   }
-
-  const seoConfig = collectionSEO({
-    name: `Vinos de ${regionName}`,
-    description: `Descubrí los mejores vinos de ${regionName.toLowerCase()}. Selección premium de bodegas locales con envío gratis y precios competitivos.`,
-    slug: `region/${region}`,
-    products: products.map(p => ({
-      name: p.name,
-      slug: p.slug,
-      price: p.price,
-      image: p.image
-    }))
-  })
-
 
   const breadcrumbs = [
     { label: 'Colecciones', href: '/collections' },

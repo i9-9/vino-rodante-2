@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
-import { Wine } from 'lucide-react'
+import { MapPin } from 'lucide-react'
 import { collectionSEO } from '@/lib/seo-config'
 import { Breadcrumbs } from '@/components/breadcrumbs'
 import { prettyLabel } from '@/lib/wine-data'
@@ -10,9 +10,9 @@ export const revalidate = 3600 // 1 hora
 
 export async function generateMetadata(): Promise<Metadata> {
   const seoConfig = collectionSEO({
-    name: 'Vinos por Varietal',
-    description: 'Descubrí nuestra selección de vinos argentinos organizados por varietal: Malbec, Cabernet Sauvignon, Torrontés, Chardonnay y más. Envío gratis en compras +$5000.',
-    slug: 'collections/varietal'
+    name: 'Vinos por Región',
+    description: 'Explorá vinos de las principales regiones vitivinícolas argentinas: Mendoza, Salta, Patagonia y más. Descubrí el terroir único de cada región.',
+    slug: 'collections/region'
   })
 
   return {
@@ -26,50 +26,44 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default async function VarietalIndexPage() {
+export default async function RegionIndexPage() {
   const breadcrumbs = [
     { label: 'Colecciones', href: '/collections' },
-    { label: 'Varietales', current: true }
+    { label: 'Regiones', current: true }
   ]
 
-  // Obtener varietales únicos de la base de datos
+  // Obtener regiones únicas de la base de datos
   const supabase = await createClient()
   const { data: products } = await supabase
     .from('products')
-    .select('varietal')
+    .select('region')
     .eq('is_visible', true)
-    .not('varietal', 'is', null)
+    .not('region', 'is', null)
 
-  // Obtener varietales únicos y normalizarlos
-  const uniqueVarietals = Array.from(
+  // Obtener regiones únicas y normalizarlas
+  const uniqueRegions = Array.from(
     new Set(
-      products?.map(p => p.varietal?.toLowerCase().trim()).filter(Boolean) || []
+      products?.map(p => p.region?.toLowerCase().trim()).filter(Boolean) || []
     )
   ).sort()
 
-  // Agrupar varietales destacados (solo los que existen)
-  const featuredVarietalsOrder = [
-    'malbec',
-    'cabernet-sauvignon',
-    'cabernet sauvignon',
-    'torrontes-riojano',
-    'torrontés riojano',
-    'torrontes riojano',
-    'chardonnay',
-    'bonarda',
-    'syrah',
-    'pinot-noir',
-    'pinot noir',
-    'sauvignon-blanc',
-    'sauvignon blanc'
+  // Agrupar regiones destacadas (solo las que existen)
+  const featuredRegionsOrder = [
+    'mendoza',
+    'salta',
+    'patagonia',
+    'san juan',
+    'san-juan',
+    'la rioja',
+    'la-rioja'
   ]
 
-  const featuredVarietals = uniqueVarietals.filter(v => 
-    featuredVarietalsOrder.some(fv => v === fv || v.replace(/\s+/g, '-') === fv)
+  const featuredRegions = uniqueRegions.filter(r => 
+    featuredRegionsOrder.some(fr => r === fr || r.replace(/\s+/g, '-') === fr)
   )
 
-  const otherVarietals = uniqueVarietals.filter(
-    v => !featuredVarietals.includes(v)
+  const otherRegions = uniqueRegions.filter(
+    r => !featuredRegions.includes(r)
   )
 
   return (
@@ -80,31 +74,31 @@ export default async function VarietalIndexPage() {
       {/* Header */}
       <div className="text-center mb-12">
         <div className="flex items-center justify-center gap-3 mb-4">
-          <Wine className="w-10 h-10 text-[#5B0E2D]" />
+          <MapPin className="w-10 h-10 text-[#5B0E2D]" />
           <h1 className="text-4xl lg:text-5xl font-bold text-gray-900">
-            Vinos por Varietal
+            Vinos por Región
           </h1>
         </div>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          Explorá nuestra selección completa de vinos argentinos organizados por cepa.
-          Cada varietal tiene su propia personalidad y características únicas.
+          Explorá los vinos argentinos organizados por sus regiones de origen.
+          Cada región tiene su terroir único que define el carácter de sus vinos.
         </p>
       </div>
 
-      {/* Featured Varietals */}
-      {featuredVarietals.length > 0 && (
+      {/* Featured Regions */}
+      {featuredRegions.length > 0 && (
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Varietales Destacados</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Regiones Destacadas</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {featuredVarietals.map((varietal) => (
+            {featuredRegions.map((region) => (
               <Link
-                key={varietal}
-                href={`/collections/varietal/${varietal.replace(/\s+/g, '-')}`}
+                key={region}
+                href={`/collections/region/${region.replace(/\s+/g, '-')}`}
                 className="group relative overflow-hidden rounded-lg border border-gray-200 bg-white p-6 hover:shadow-lg transition-all duration-300 hover:scale-105 text-center"
               >
-                <Wine className="w-8 h-8 text-[#5B0E2D] mx-auto mb-3 group-hover:scale-110 transition-transform" />
+                <MapPin className="w-8 h-8 text-[#5B0E2D] mx-auto mb-3 group-hover:scale-110 transition-transform" />
                 <h3 className="text-lg font-semibold text-gray-900 group-hover:text-[#5B0E2D] transition-colors">
-                  {prettyLabel(varietal)}
+                  {prettyLabel(region)}
                 </h3>
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#5B0E2D] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               </Link>
@@ -113,19 +107,19 @@ export default async function VarietalIndexPage() {
         </div>
       )}
 
-      {/* Other Varietals */}
-      {otherVarietals.length > 0 && (
+      {/* Other Regions */}
+      {otherRegions.length > 0 && (
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Otros Varietales</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Otras Regiones</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {otherVarietals.map((varietal) => (
+            {otherRegions.map((region) => (
               <Link
-                key={varietal}
-                href={`/collections/varietal/${varietal.replace(/\s+/g, '-')}`}
+                key={region}
+                href={`/collections/region/${region.replace(/\s+/g, '-')}`}
                 className="group relative overflow-hidden rounded-lg border border-gray-200 bg-white p-4 hover:shadow-md transition-all duration-300 hover:scale-105 text-center"
               >
                 <h3 className="text-base font-medium text-gray-700 group-hover:text-[#5B0E2D] transition-colors">
-                  {prettyLabel(varietal)}
+                  {prettyLabel(region)}
                 </h3>
               </Link>
             ))}
@@ -134,10 +128,10 @@ export default async function VarietalIndexPage() {
       )}
 
       {/* Empty State */}
-      {uniqueVarietals.length === 0 && (
+      {uniqueRegions.length === 0 && (
         <div className="text-center py-12">
-          <Wine className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 text-lg">No hay varietales disponibles en este momento.</p>
+          <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <p className="text-gray-500 text-lg">No hay regiones disponibles en este momento.</p>
         </div>
       )}
     </div>
