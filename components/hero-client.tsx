@@ -5,19 +5,34 @@ import Link from "next/link"
 import Image from "next/image"
 import { Truck, Clock, Wine } from "lucide-react"
 import { useTranslations } from '@/lib/providers/translations-provider'
+import * as React from "react"
+import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel"
 
 interface HeroClientProps {
   weeklyPlans: any[]
 }
 
 export default function HeroClient({ weeklyPlans }: HeroClientProps) {
-  const t = useTranslations()
+  const t = useTranslations() as any
+  const [carouselApi, setCarouselApi] = React.useState<CarouselApi | null>(null)
+
+  React.useEffect(() => {
+    if (!carouselApi) return
+    const intervalId = setInterval(() => {
+      if (carouselApi.canScrollNext()) {
+        carouselApi.scrollNext()
+      } else {
+        carouselApi.scrollTo(0)
+      }
+    }, 3000)
+    return () => clearInterval(intervalId)
+  }, [carouselApi])
 
   return (
-    <section className="w-full bg-white relative lg:h-[calc(100vh-4rem)]">
+    <section className="w-full bg-white relative h-[calc(100vh-4rem)] flex flex-col">
       {/* Columna izquierda: contenido alineado con el logo */}
-      <div className="container h-full">
-        <div className="flex flex-col items-start text-left z-10 h-full justify-center w-full py-10 lg:py-20 mb-0 lg:mb-0">
+      <div className="container lg:h-full">
+        <div className="flex flex-col items-start text-left z-10 w-full py-6 lg:py-20 mb-0 lg:mb-0 lg:h-full lg:justify-center">
           <h1 className="text-4xl lg:text-5xl xl:text-6xl font-medium tracking-[-0.04em] text-[#5B0E2D] leading-tight mb-6 max-w-xl">
             {t.home?.hero?.title || "Weekly Wine"}
           </h1>
@@ -48,11 +63,52 @@ export default function HeroClient({ weeklyPlans }: HeroClientProps) {
           </div>
         </div>
       </div>
-      {/* Mosaico de la derecha: mural absoluto en desktop, bloque normal en mobile/tablet */}
-      <div className="lg:absolute lg:top-0 lg:right-0 lg:w-1/2 lg:h-full h-auto w-full lg:block z-0">
-        <div className="grid grid-cols-2 grid-rows-2 w-full h-full gap-0 min-h-[50vw] md:min-h-[40vw] lg:min-h-0">
+      {/* Mosaico / Slider de la derecha */}
+      <div className="lg:absolute lg:top-0 lg:right-0 lg:w-1/2 lg:h-full h-auto w-full lg:block z-0 flex-1">
+        {/* Mobile: un slider mostrando una tarjeta a la vez */}
+        <div className="block lg:hidden w-full h-[45vh] min-h-[220px]">
           {weeklyPlans.length > 0 ? (
-            weeklyPlans.map((plan, index) => (
+            <div className="container px-4 h-full">
+              <Carousel setApi={setCarouselApi} className="h-full">
+              <CarouselContent className="h-full ml-0">
+                {weeklyPlans.map((plan) => (
+                  <CarouselItem key={plan.id} className="h-full pl-0">
+                    <div className="group relative flex h-full w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+                      <Link href={`/weekly-wine/${plan.type}`} className="relative block w-full h-full">
+                        <Image
+                          src={plan.image || '/placeholder.svg'}
+                          alt={plan.name}
+                          fill
+                          quality={75}
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          sizes="100vw"
+                          priority
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+                        <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black/70 to-transparent">
+                          <div className="font-semibold text-white text-base truncate drop-shadow-lg">{plan.name}</div>
+                        </div>
+                      </Link>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
+            </div>
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <div className="text-center text-gray-400">
+                <Wine size={32} className="mx-auto mb-2" />
+                <p className="text-sm">{t.home?.hero?.noPlansAvailable || "No hay planes disponibles"}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop: grilla 2x2 */}
+        <div className="hidden lg:grid grid-cols-2 grid-rows-2 w-full h-full gap-0 min-h-0">
+          {weeklyPlans.length > 0 ? (
+            weeklyPlans.map((plan) => (
               <Link
                 key={plan.id}
                 href={`/weekly-wine/${plan.type}`}
@@ -64,17 +120,12 @@ export default function HeroClient({ weeklyPlans }: HeroClientProps) {
                   fill
                   quality={70}
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
-                  sizes="(max-width: 768px) 50vw, 25vw"
+                  sizes="25vw"
                   priority
                 />
-                {/* Overlay gradiente sutil permanente */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-                {/* Overlay para texto en hover */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                {/* Contenido del texto */}
-                <div className="absolute bottom-0 left-0 w-full p-3 md:p-4
-                  md:transform md:translate-y-full md:group-hover:translate-y-0 md:transition-transform md:duration-300
-                  bg-gradient-to-t from-black/70 to-transparent">
+                <div className="absolute bottom-0 left-0 w-full p-3 md:p-4 bg-gradient-to-t from-black/70 to-transparent">
                   <div className="font-semibold text-white text-sm md:text-base truncate drop-shadow-lg">
                     {plan.name}
                   </div>
@@ -82,7 +133,6 @@ export default function HeroClient({ weeklyPlans }: HeroClientProps) {
               </Link>
             ))
           ) : (
-            // Fallback simple cuando no hay planes disponibles
             <div className="col-span-2 row-span-2 flex items-center justify-center">
               <div className="text-center text-gray-400">
                 <Wine size={32} className="mx-auto mb-2" />
