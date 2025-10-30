@@ -15,6 +15,7 @@ interface HeroClientProps {
 export default function HeroClient({ weeklyPlans }: HeroClientProps) {
   const t = useTranslations() as any
   const [carouselApi, setCarouselApi] = React.useState<CarouselApi | null>(null)
+  const [heroHeight, setHeroHeight] = React.useState<number | null>(null)
 
   React.useEffect(() => {
     if (!carouselApi) return
@@ -28,8 +29,23 @@ export default function HeroClient({ weeklyPlans }: HeroClientProps) {
     return () => clearInterval(intervalId)
   }, [carouselApi])
 
+  // Ensure navbar + banner + hero = 100vh (avoid tiny overflow on desktop)
+  React.useEffect(() => {
+    const computeHeight = () => {
+      const header = document.querySelector('header') as HTMLElement | null
+      const banner = document.querySelector('[data-marquee-banner]') as HTMLElement | null
+      const headerHeight = header?.getBoundingClientRect().height || 0
+      const bannerHeight = banner?.getBoundingClientRect().height || 0
+      const available = Math.max(window.innerHeight - headerHeight - bannerHeight, 0)
+      setHeroHeight(available)
+    }
+    computeHeight()
+    window.addEventListener('resize', computeHeight)
+    return () => window.removeEventListener('resize', computeHeight)
+  }, [])
+
   return (
-    <section className="w-full bg-white relative h-[calc(100vh-4rem)] flex flex-col">
+    <section className="w-full bg-white relative h-[calc(100vh-4rem)] flex flex-col overflow-hidden" style={heroHeight ? { height: heroHeight } : undefined}>
       {/* Columna izquierda: contenido alineado con el logo */}
       <div className="container lg:h-full">
         <div className="flex flex-col items-start text-left z-10 w-full py-6 lg:py-20 mb-0 lg:mb-0 lg:h-full lg:justify-center">
