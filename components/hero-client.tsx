@@ -7,13 +7,14 @@ import { Truck, Clock, Wine } from "lucide-react"
 import { useTranslations } from '@/lib/providers/translations-provider'
 import * as React from "react"
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel"
+import type { SubscriptionPlan } from '@/app/account/types'
 
 interface HeroClientProps {
-  weeklyPlans: any[]
+  weeklyPlans: SubscriptionPlan[]
 }
 
 export default function HeroClient({ weeklyPlans }: HeroClientProps) {
-  const t = useTranslations() as any
+  const t = useTranslations()
   const [carouselApi, setCarouselApi] = React.useState<CarouselApi | null>(null)
   const [heroHeight, setHeroHeight] = React.useState<number | null>(null)
 

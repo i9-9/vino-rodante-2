@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { CATEGORY_SLUG_MAP } from "@/lib/wine-data"
+import { ProductCardSkeletonGrid } from "@/components/ui/product-card-skeleton"
+import { LoadingSpinner } from "@/components/ui/progress-bar"
 
 interface ProductsClientProps {
   t: any
@@ -149,7 +151,15 @@ export default function ProductsClient({ t }: ProductsClientProps) {
 
 
   if (loading) {
-    return <div className="container px-6 md:px-8 lg:px-12 py-12">Loading...</div>
+    return (
+      <div className="container px-6 md:px-8 lg:px-12 py-12">
+        <div className="mb-8">
+          <div className="h-8 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded w-1/3 mb-4 animate-pulse"></div>
+          <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded w-2/3 animate-pulse"></div>
+        </div>
+        <ProductCardSkeletonGrid count={9} />
+      </div>
+    )
   }
 
   return (

@@ -7,6 +7,7 @@ import { faqConfigs } from "@/lib/faq-schema"
 import { getFeaturedProducts } from '@/lib/products-client'
 import SEO from '@/components/SEO'
 import { getHomeSEOWithStructuredData } from '@/lib/seo-config'
+import { ProductCardSkeletonGrid } from "@/components/ui/product-card-skeleton"
 
 // Usar SSG con revalidación cada 1 hora
 export const revalidate = 3600 // 1 hora en segundos
@@ -50,19 +51,11 @@ export default function Home() {
           fallback={
             <div className="w-full py-16 bg-[#F2F2F2]">
               <div className="container px-4">
-                <div className="animate-pulse">
-                  <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-2/3 mx-auto mb-8"></div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {[...Array(4)].map((_, i) => (
-                      <div key={i} className="space-y-4">
-                        <div className="h-48 bg-gray-200 rounded"></div>
-                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                      </div>
-                    ))}
-                  </div>
+                <div className="text-center mb-8">
+                  <div className="h-8 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded w-1/3 mx-auto mb-4 animate-pulse"></div>
+                  <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded w-2/3 mx-auto animate-pulse"></div>
                 </div>
+                <ProductCardSkeletonGrid count={4} />
               </div>
             </div>
           }

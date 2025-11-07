@@ -19,6 +19,9 @@ import { calculateShipping, getShippingZone } from "@/lib/shipping-utils"
 import { OrderSummary } from "@/components/checkout/OrderSummary"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ARGENTINA_PROVINCES } from "@/lib/argentina-provinces"
+import { FormInput } from "@/components/ui/form-input"
+import { validateEmail, validatePhone, validatePostalCode, validateRequired } from "@/lib/utils/validation"
+import { AlertCircle } from "lucide-react"
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -41,7 +44,69 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null)
   const [preferenceId, setPreferenceId] = useState<string | null>(null)
   const [step, setStep] = useState<"info" | "payment">("info")
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({})
   const supabase = createClient()
+  
+  const handleFieldChange = (field: string, value: string) => {
+    setCustomerInfo(prev => ({ ...prev, [field]: value }))
+    setTouchedFields(prev => ({ ...prev, [field]: true }))
+    
+    // Validación en tiempo real
+    let validationError: string | undefined
+    
+    switch (field) {
+      case 'email':
+        const emailValidation = validateEmail(value)
+        if (!emailValidation.isValid) {
+          validationError = emailValidation.message
+        }
+        break
+      case 'phone':
+        const phoneValidation = validatePhone(value, true)
+        if (!phoneValidation.isValid) {
+          validationError = phoneValidation.message
+        }
+        break
+      case 'postalCode':
+        const postalValidation = validatePostalCode(value, true)
+        if (!postalValidation.isValid) {
+          validationError = postalValidation.message
+        }
+        break
+      case 'name':
+      case 'address1':
+      case 'city':
+        const requiredValidation = validateRequired(value, field === 'name' ? 'El nombre' : field === 'address1' ? 'La dirección' : 'La ciudad')
+        if (!requiredValidation.isValid) {
+          validationError = requiredValidation.message
+        }
+        break
+    }
+    
+    setFieldErrors(prev => ({
+      ...prev,
+      [field]: validationError || ''
+    }))
+  }
+  
+  const isFormValid = () => {
+    return (
+      customerInfo.name &&
+      customerInfo.email &&
+      customerInfo.phone &&
+      customerInfo.address1 &&
+      customerInfo.city &&
+      customerInfo.state &&
+      customerInfo.postalCode &&
+      !fieldErrors.name &&
+      !fieldErrors.email &&
+      !fieldErrors.phone &&
+      !fieldErrors.address1 &&
+      !fieldErrors.city &&
+      !fieldErrors.postalCode
+    )
+  }
 
   // Prefill from authenticated user metadata fast, before DB fetch completes
   useEffect(() => {
@@ -164,9 +229,19 @@ export default function CheckoutPage() {
       }
     }
 
-    // Validate required fields - teléfono es obligatorio para coordinar entregas
-    if (!customerInfo.name || !customerInfo.email || !customerInfo.phone || !customerInfo.address1 || !customerInfo.city || !customerInfo.postalCode) {
-      setError(t.checkout.allFieldsRequired || "Todos los campos son obligatorios para coordinar la entrega")
+    // Validar formulario antes de enviar
+    if (!isFormValid()) {
+      // Marcar todos los campos como touched para mostrar errores
+      setTouchedFields({
+        name: true,
+        email: true,
+        phone: true,
+        address1: true,
+        city: true,
+        state: true,
+        postalCode: true,
+      })
+      setError("Por favor completa todos los campos requeridos correctamente")
       setIsSubmitting(false)
       return
     }
@@ -371,37 +446,49 @@ export default function CheckoutPage() {
                     <div className="border rounded-lg p-6">
                       <h2 className="text-xl font-semibold mb-4">{t.checkout?.contactInfo || "Contact Information"}</h2>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="name">{t.checkout?.fullName || "Full Name"}</Label>
-                          <Input id="name" name="name" required value={customerInfo.name} onChange={handleInputChange} autoComplete="name" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="email">{t.checkout?.email || "Email"}</Label>
-                          <Input
-                            id="email"
-                            name="email"
-                            type="email"
-                            required
-                            value={customerInfo.email}
-                            onChange={handleInputChange}
-                            readOnly={!!user}
-                            className={user ? "bg-muted" : ""}
-                            autoComplete="email"
-                          />
-                        </div>
-                        <div className="space-y-2 md:col-span-2">
-                          <Label htmlFor="phone">{t.checkout?.phone || "Teléfono"} *</Label>
-                          <Input 
-                            id="phone" 
-                            name="phone" 
+                        <FormInput
+                          id="name"
+                          name="name"
+                          label={t.checkout?.fullName || "Nombre completo"}
+                          value={customerInfo.name}
+                          onChange={(e) => handleFieldChange('name', e.target.value)}
+                          autoComplete="name"
+                          required
+                          showValidation={touchedFields.name}
+                          validation={validateRequired(customerInfo.name, 'El nombre')}
+                          error={fieldErrors.name}
+                        />
+                        <FormInput
+                          id="email"
+                          name="email"
+                          type="email"
+                          label={t.checkout?.email || "Email"}
+                          value={customerInfo.email}
+                          onChange={(e) => handleFieldChange('email', e.target.value)}
+                          readOnly={!!user}
+                          className={user ? "bg-muted" : ""}
+                          autoComplete="email"
+                          required
+                          showValidation={touchedFields.email}
+                          validation={validateEmail(customerInfo.email)}
+                          error={fieldErrors.email}
+                        />
+                        <div className="md:col-span-2">
+                          <FormInput
+                            id="phone"
+                            name="phone"
                             type="tel"
-                            value={customerInfo.phone} 
-                            onChange={handleInputChange} 
+                            label={t.checkout?.phone || "Teléfono"}
+                            value={customerInfo.phone}
+                            onChange={(e) => handleFieldChange('phone', e.target.value)}
                             autoComplete="tel"
                             placeholder="Ej: +54 9 11 1234-5678"
                             required
+                            showValidation={touchedFields.phone}
+                            validation={validatePhone(customerInfo.phone, true)}
+                            error={fieldErrors.phone}
+                            helperText="Obligatorio - Te contactaremos para coordinar la entrega"
                           />
-                          <p className="text-sm text-gray-600">Obligatorio - Te contactaremos para coordinar la entrega</p>
                         </div>
                       </div>
                     </div>
@@ -409,33 +496,49 @@ export default function CheckoutPage() {
                     <div className="border rounded-lg p-6">
                       <h2 className="text-xl font-semibold mb-4">{t.checkout?.shippingAddress || "Shipping Address"}</h2>
                       <div className="grid grid-cols-1 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="address1">{t.checkout?.address1 || "Address Line 1"}</Label>
-                          <Input
-                            id="address1"
-                            name="address1"
-                            required
-                            value={customerInfo.address1}
-                            onChange={handleInputChange}
-                            autoComplete="address-line1"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="address2">{t.checkout?.address2 || "Address Line 2 (Optional)"}</Label>
-                          <Input id="address2" name="address2" value={customerInfo.address2} onChange={handleInputChange} autoComplete="address-line2" />
-                        </div>
+                        <FormInput
+                          id="address1"
+                          name="address1"
+                          label={t.checkout?.address1 || "Dirección"}
+                          value={customerInfo.address1}
+                          onChange={(e) => handleFieldChange('address1', e.target.value)}
+                          autoComplete="address-line1"
+                          required
+                          showValidation={touchedFields.address1}
+                          validation={validateRequired(customerInfo.address1, 'La dirección')}
+                          error={fieldErrors.address1}
+                        />
+                        <FormInput
+                          id="address2"
+                          name="address2"
+                          label={t.checkout?.address2 || "Dirección línea 2 (Opcional)"}
+                          value={customerInfo.address2}
+                          onChange={(e) => handleFieldChange('address2', e.target.value)}
+                          autoComplete="address-line2"
+                        />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormInput
+                            id="city"
+                            name="city"
+                            label={t.checkout?.city || "Ciudad"}
+                            value={customerInfo.city}
+                            onChange={(e) => handleFieldChange('city', e.target.value)}
+                            autoComplete="address-level2"
+                            required
+                            showValidation={touchedFields.city}
+                            validation={validateRequired(customerInfo.city, 'La ciudad')}
+                            error={fieldErrors.city}
+                          />
                           <div className="space-y-2">
-                            <Label htmlFor="city">{t.checkout?.city || "City"}</Label>
-                            <Input id="city" name="city" required value={customerInfo.city} onChange={handleInputChange} autoComplete="address-level2" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="state">{t.checkout?.state || "Provincia"}</Label>
+                            <Label htmlFor="state">{t.checkout?.state || "Provincia"} <span className="text-red-500">*</span></Label>
                             <Select
                               value={customerInfo.state}
-                              onValueChange={(value) => setCustomerInfo(prev => ({ ...prev, state: value }))}
+                              onValueChange={(value) => {
+                                setCustomerInfo(prev => ({ ...prev, state: value }))
+                                setTouchedFields(prev => ({ ...prev, state: true }))
+                              }}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className={!customerInfo.state && touchedFields.state ? "border-red-500" : ""}>
                                 <SelectValue placeholder="Selecciona una provincia" />
                               </SelectTrigger>
                               <SelectContent>
@@ -446,20 +549,28 @@ export default function CheckoutPage() {
                                 ))}
                               </SelectContent>
                             </Select>
+                            {!customerInfo.state && touchedFields.state && (
+                              <p className="text-sm text-red-600 flex items-center gap-1">
+                                <AlertCircle className="h-3 w-3" />
+                                La provincia es requerida
+                              </p>
+                            )}
                           </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="postalCode">{t.checkout?.postalCode || "Código Postal"} *</Label>
-                            <Input
-                              id="postalCode"
-                              name="postalCode"
-                              required
-                              value={customerInfo.postalCode}
-                              onChange={handleInputChange}
-                              autoComplete="postal-code"
-                            />
-                          </div>
+                          <FormInput
+                            id="postalCode"
+                            name="postalCode"
+                            label={t.checkout?.postalCode || "Código Postal"}
+                            value={customerInfo.postalCode}
+                            onChange={(e) => handleFieldChange('postalCode', e.target.value)}
+                            autoComplete="postal-code"
+                            required
+                            showValidation={touchedFields.postalCode}
+                            validation={validatePostalCode(customerInfo.postalCode, true)}
+                            error={fieldErrors.postalCode}
+                            helperText="4 dígitos (ej: 1425)"
+                          />
                           <div className="space-y-2">
                             <Label htmlFor="country">{t.checkout?.country || "Country"}</Label>
                             <Input
@@ -479,7 +590,7 @@ export default function CheckoutPage() {
                   <Button
                     type="submit"
                     className="mt-8 w-full bg-[#A83935] hover:bg-[#A83935]/90 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
-                    disabled={isSubmitting || cartItems.reduce((total, item) => total + item.quantity, 0) < 3}
+                    disabled={isSubmitting || !isFormValid() || cartItems.reduce((total, item) => total + item.quantity, 0) < 3}
                   >
                     {isSubmitting ? (t.checkout?.processing || "Processing...") : (t.checkout?.proceedToPayment || "Proceed to Payment")}
                   </Button>

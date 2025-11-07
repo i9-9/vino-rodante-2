@@ -2,10 +2,6 @@ import type React from "react"
 import type { Metadata, Viewport } from "next"
 import "./globals.css"
 import "../styles/zoom.css"
-import "../styles/zoom-variants.css"
-import "../styles/react-image-magnify.css"
-import "../styles/medium-zoom.css"
-import "../styles/product-gallery.css"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import WhatsappButton from "@/components/whatsapp-button"
@@ -16,7 +12,6 @@ import { TranslationsProvider } from "@/lib/providers/translations-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { generateLocalBusinessSchema, generateOrganizationSchema } from "@/lib/seo-utils"
 import { Analytics } from "@vercel/analytics/next"
-import { WebVitalsMonitor } from "@/components/web-vitals-monitor"
 import { GoogleAnalytics } from "@/components/analytics"
 import { GoogleSearchConsoleMeta } from "@/components/google-search-console"
 
@@ -165,7 +160,6 @@ export default function RootLayout({
               <Toaster />
               <Analytics />
               <GoogleAnalytics />
-              <WebVitalsMonitor />
             </CartProvider>
           </AuthProvider>
         </TranslationsProvider>

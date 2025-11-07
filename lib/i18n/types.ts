@@ -174,5 +174,34 @@ export interface Translations {
     signOutError: string
     [key: string]: string
   }
+  home: {
+    hero: {
+      title: string
+      subtitle: string
+      cta: string
+      secondaryCta: string
+      shipping: string
+      fastDelivery: string
+      curatedSelection: string
+      noPlansAvailable: string
+      [key: string]: string
+    }
+    featuredWines: {
+      title: string
+      subtitle: string
+      viewAll: string
+      description: string
+      [key: string]: string
+    }
+    about: {
+      title: string
+      paragraph1: string
+      paragraph2: string
+      cta: string
+      tagline: string
+      [key: string]: string
+    }
+    [key: string]: unknown
+  }
   [key: string]: unknown
 } 

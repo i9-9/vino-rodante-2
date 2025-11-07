@@ -127,7 +127,32 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const { data: products } = await getProducts()
     if (products) {
-      productPages = products.map((product) => ({
+      // Filtrar productos válidos: deben tener slug y campos requeridos
+      const validProducts = products.filter((product) => {
+        // Debe tener slug
+        if (!product.slug || product.slug.trim() === '') {
+          return false
+        }
+        
+        // Validar campos esenciales
+        const isBox = product.category?.toLowerCase() === 'boxes' || product.category?.toLowerCase() === 'box'
+        const requiredFields = ['name', 'slug', 'description', 'price', 'image', 'category', 'region', 'stock']
+        
+        // Para productos individuales (no boxes), year y varietal son requeridos
+        if (!isBox) {
+          requiredFields.push('year', 'varietal')
+        }
+        
+        // Verificar que todos los campos requeridos estén presentes
+        const hasAllFields = requiredFields.every(field => {
+          const value = (product as any)[field]
+          return value !== null && value !== undefined && value !== ''
+        })
+        
+        return hasAllFields
+      })
+      
+      productPages = validProducts.map((product) => ({
         url: `${baseUrl}/products/${product.slug}`,
         lastModified: new Date(),
         changeFrequency: 'weekly' as const,

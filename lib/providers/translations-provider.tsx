@@ -5,51 +5,9 @@ import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 import { es } from "@/lib/i18n/es"
 import { en } from "@/lib/i18n/en"
+import type { Translations } from "@/lib/i18n/types"
 
 type Language = "es" | "en"
-
-// Definir la estructura completa de las traducciones
-export interface Translations {
-  common: {
-    signIn: string
-    signOut: string
-    account: string
-    menu: string
-    [key: string]: string
-  }
-  navigation: {
-    home: string
-    products: string
-    about: string
-    contact: string
-    account: string
-    weeklyWine: string
-    redWines: string
-    whiteWines: string
-    sparklingWines: string
-    orangeWines: string
-    [key: string]: string
-  }
-  megamenu: {
-    collections: string
-    featured: string
-    newArrivals: string
-    bestsellers: string
-    giftSets: string
-    [key: string]: string
-  }
-  account: {
-    orders: string
-    profile: string
-    title: string
-    profileInfo: string
-    [key: string]: string
-  }
-  language: {
-    [key: string]: string
-  }
-  [key: string]: unknown
-}
 
 interface TranslationsContextType {
   t: Translations

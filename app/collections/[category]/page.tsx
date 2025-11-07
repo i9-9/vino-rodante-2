@@ -5,6 +5,7 @@ import ProductCard from "@/components/product-card"
 import { useEffect, useState, use } from "react"
 import type { Product } from "@/lib/types"
 import { CATEGORY_SLUG_MAP } from "@/lib/wine-data"
+import { ProductCardSkeletonGrid } from "@/components/ui/product-card-skeleton"
 
 // Mapeo de categorías en español a inglés para la consulta a la base de datos
 const SPANISH_TO_ENGLISH_MAP: Record<string, string> = {
@@ -79,9 +80,7 @@ export default function CategoryPage({ params }: { params: Promise<{ category: s
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-medium mb-8">{categoryTitle}</h1>
       {loading ? (
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">Cargando productos...</p>
-        </div>
+        <ProductCardSkeletonGrid count={8} />
       ) : products.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map((product) => (

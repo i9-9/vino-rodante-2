@@ -1,5 +1,6 @@
-import { redirect } from 'next/navigation'
+import { redirect, notFound } from 'next/navigation'
 import { getProductBySlug } from '@/lib/products-client'
+import { Metadata } from 'next'
 
 // Función para convertir una URL malformada a un slug válido
 function fixMalformedSlug(slugSegments: string[]): string {
@@ -62,20 +63,7 @@ export default async function CatchAllProductPage({
     redirect(`/products/${correctSlug}`)
   }
 
-  // Si no encontramos el producto, mostrar página 404
-  return (
-    <div className="container py-12 text-center">
-      <h1 className="text-2xl font-bold mb-4">Producto no encontrado</h1>
-      <p className="text-gray-500 mb-6">
-        El producto que buscas no existe o la URL no es válida.
-      </p>
-      <a 
-        href="/products" 
-        className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-      >
-        Ver todos los productos
-      </a>
-    </div>
-  )
+  // Si no encontramos el producto, retornar 404
+  notFound()
 }
 

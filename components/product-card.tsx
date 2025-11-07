@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import type { Product } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
@@ -9,6 +10,9 @@ import { useTranslations } from "@/lib/providers/translations-provider"
 import { ProductDiscountBadge } from "./ProductDiscountBadge"
 import { generateImageAltText } from "@/lib/image-seo-utils"
 import { useProductTracking } from "@/lib/hooks/use-tracking"
+import { useToast } from "@/components/ui/use-toast"
+import { Loader2, Check, ShoppingCart } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 function capitalizeWords(str: string) {
   return str
@@ -42,10 +46,38 @@ function getValidImageUrl(imageUrl: string | null | undefined): string {
 export default function ProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart()
   const t = useTranslations()
+  const { toast } = useToast()
   const { trackAddToCart, trackProductView } = useProductTracking()
+  const [isAdding, setIsAdding] = useState(false)
+  const [justAdded, setJustAdded] = useState(false)
   
   // Detectar si es un box
   const isBox = product.category?.toLowerCase() === 'boxes' || product.category?.toLowerCase() === 'box'
+
+  const handleAddToCart = async () => {
+    setIsAdding(true)
+    
+    // Pequeño delay para feedback visual
+    await new Promise(resolve => setTimeout(resolve, 150))
+    
+    addToCart(product)
+    trackAddToCart(product)
+    
+    // Mostrar toast notification con mejor feedback
+    toast({
+      title: "¡Agregado!",
+      description: `${product.name} agregado al carrito`,
+      duration: 2000,
+    })
+    
+    setJustAdded(true)
+    setIsAdding(false)
+    
+    // Resetear después de 1.5 segundos
+    setTimeout(() => {
+      setJustAdded(false)
+    }, 1500)
+  }
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md">
@@ -93,14 +125,34 @@ export default function ProductCard({ product }: { product: Product }) {
               )}
             </div>
             <Button 
-              onClick={() => {
-                addToCart(product)
-                trackAddToCart(product)
-              }} 
+              onClick={handleAddToCart}
               size="sm" 
-              className="bg-[#A83935] hover:bg-[#A83935]/90 text-white"
+              disabled={isAdding || justAdded}
+              className={cn(
+                "text-white transition-all duration-300 relative overflow-hidden font-medium",
+                justAdded 
+                  ? "bg-green-600 hover:bg-green-700" 
+                  : "bg-[#A83935] hover:bg-[#7A2521] active:bg-[#6B1F1C] shadow-sm hover:shadow-md"
+              )}
             >
-              {(t as any).products?.addToCart || 'Agregar al carrito'}
+              <span className="flex items-center gap-1.5">
+                {isAdding ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span className="text-xs">Agregando...</span>
+                  </>
+                ) : justAdded ? (
+                  <>
+                    <Check className="w-3 h-3" />
+                    <span className="text-xs">¡Agregado!</span>
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="w-3 h-3" />
+                    <span className="text-xs">{(t as any).products?.addToCart || 'Agregar'}</span>
+                  </>
+                )}
+              </span>
             </Button>
           </div>
         </div>

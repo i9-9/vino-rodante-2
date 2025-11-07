@@ -13,7 +13,7 @@ import { generateBreadcrumbStructuredData } from '@/lib/breadcrumb-utils'
 import { faqConfigs, generateFAQStructuredData } from '@/lib/faq-schema'
 import { FAQSection } from '@/components/faq-section'
 import { generateImageAltText } from '@/lib/image-seo-utils'
-import { useProductTracking } from '@/lib/hooks/use-tracking'
+import { notFound } from 'next/navigation'
 
 // Usar SSG con revalidación cada 2 horas
 export const revalidate = 7200 // 2 horas en segundos
@@ -90,12 +90,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   }
 
   if (!productWithDiscounts) {
-    return (
-      <div className="container py-12 text-center">
-        <h1 className="text-2xl font-bold mb-4">{t.products.title || "Producto no encontrado"}</h1>
-        <p className="text-gray-500">{t.products.description || "El producto solicitado no existe o fue eliminado."}</p>
-      </div>
-    )
+    notFound()
   }
 
   // Validar campos esenciales - diferente validación para boxes vs botellas
@@ -113,12 +108,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const missingFields = requiredFields.filter(field => (productWithDiscounts as any)[field] === null || (productWithDiscounts as any)[field] === undefined || (productWithDiscounts as any)[field] === "")
 
   if (missingFields.length > 0) {
-    return (
-      <div className="container py-12 text-center">
-        <h1 className="text-2xl font-bold mb-4">{t.products.title || "Producto con información incompleta"}</h1>
-        <p className="text-gray-500">Faltan los siguientes campos: {missingFields.join(", ")}</p>
-      </div>
-    )
+    // Producto con información incompleta - no indexar
+    notFound()
   }
 
   // Obtener productos relacionados
@@ -126,12 +117,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   let related: Product[] = []
   
   if (!product) {
-    return (
-      <div className="container py-12 text-center">
-        <h1 className="text-2xl font-bold mb-4">Producto no encontrado</h1>
-        <p className="text-gray-500">El producto que buscas no existe o no está disponible.</p>
-      </div>
-    )
+    notFound()
   }
   
   console.log('🔍 [ProductPage] Product details:', {

@@ -66,8 +66,6 @@ const formatName = (name: string, t: any) => {
 export default function MegaMenu() {
   const t = useTranslations()
   const router = useRouter()
-  const [isWeeklyWineOpen, setIsWeeklyWineOpen] = useState(false)
-  const [isProductsOpen, setIsProductsOpen] = useState(false)
   const [isLoadingProducts, setIsLoadingProducts] = useState(false)
   const [isErrorProducts, setIsErrorProducts] = useState(false)
   const [products, setProducts] = useState<Product[]>([])
@@ -186,12 +184,8 @@ export default function MegaMenu() {
     })
   })
 
-  const closeWeeklyWineMenu = () => {
-    setIsWeeklyWineOpen(false)
-  }
-
-  const closeProductsMenu = () => {
-    setIsProductsOpen(false)
+  const closeMenus = () => {
+    // Los menús se cierran automáticamente con Radix UI
   }
 
   useEffect(() => {
@@ -246,7 +240,11 @@ export default function MegaMenu() {
   ]
 
   return (
-    <NavigationMenu className="hidden md:flex justify-center">
+    <NavigationMenu 
+      className="hidden md:flex justify-center"
+      delayDuration={200}
+      skipDelayDuration={300}
+    >
       <NavigationMenuList className="flex items-center space-x-6">
         <NavigationMenuItem key="home">
           <Link href="/" legacyBehavior passHref>
@@ -255,30 +253,18 @@ export default function MegaMenu() {
         </NavigationMenuItem>
 
         {/* WEEKLY WINE: click navega, hover muestra menú */}
-        <NavigationMenuItem key="weekly-wine">
-          <NavigationMenuTrigger
-            onPointerDown={e => {
-              // Si es click izquierdo, navegar
-              if (e.pointerType === "mouse" && e.button === 0) {
-                e.preventDefault();
-                router.push("/weekly-wine");
-              }
-            }}
-            onClick={e => {
-              // Para accesibilidad (teclado)
-              if (e.detail === 0) {
-                router.push("/weekly-wine");
-              }
-            }}
-            className={isWeeklyWineOpen ? "text-primary" : ""}
-          >
+        <NavigationMenuItem 
+          key="weekly-wine"
+          value="weekly-wine"
+        >
+          <NavigationMenuTrigger>
             {t.navigation?.weeklyWine || "Weekly Wine"}
           </NavigationMenuTrigger>
           <NavigationMenuContent className="left-1/2 -translate-x-1/2 w-auto max-w-6xl bg-background border border-border rounded-lg shadow-lg overflow-visible [&[data-state=open]]:bg-background">
             <div className="px-6 py-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-2xl font-medium border-b pb-2">{t.navigation?.weeklyWine || "Weekly Wine"}</h3>
-                      <Link href="/weekly-wine" className="text-primary hover:underline" onClick={closeWeeklyWineMenu}>
+                      <Link href="/weekly-wine" className="text-primary hover:underline" onClick={closeMenus}>
                         {t.common?.view || "Ver todos"} {t.common?.all || "los clubs"}
                       </Link>
                     </div>
@@ -287,7 +273,7 @@ export default function MegaMenu() {
                         <Link
                           key={club.slug}
                           href={club.href}
-                          onClick={closeWeeklyWineMenu}
+                          onClick={closeMenus}
                           className="block select-none rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground shadow group"
                         >
                           <div className="relative w-full aspect-square mb-2 rounded overflow-hidden">
@@ -310,21 +296,11 @@ export default function MegaMenu() {
         </NavigationMenuItem>
 
         {/* PRODUCTS: click navega, hover muestra menú */}
-        <NavigationMenuItem key="products">
-          <NavigationMenuTrigger
-            onPointerDown={e => {
-              if (e.pointerType === "mouse" && e.button === 0) {
-                e.preventDefault();
-                router.push("/products");
-              }
-            }}
-            onClick={e => {
-              if (e.detail === 0) {
-                router.push("/products");
-              }
-            }}
-            className={isProductsOpen ? "text-primary" : ""}
-          >
+        <NavigationMenuItem 
+          key="products"
+          value="products"
+        >
+          <NavigationMenuTrigger>
             {t.navigation?.products || "Productos"}
           </NavigationMenuTrigger>
           <NavigationMenuContent className="left-1/2 -translate-x-1/2 w-auto max-w-6xl bg-background border border-border rounded-lg shadow-lg overflow-visible p-0 [&[data-state=open]]:bg-background">
@@ -336,7 +312,7 @@ export default function MegaMenu() {
                     <ul className="space-y-2">
                       {finalAvailableTypes.map((type) => (
                         <li key={type.href}>
-                          <Link href={type.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={closeProductsMenu}>
+                          <Link href={type.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={closeMenus}>
                             {formatName(type.name, t)}
                           </Link>
                         </li>
@@ -347,7 +323,7 @@ export default function MegaMenu() {
                     <ul className="space-y-2">
                       {collections.map((collection) => (
                         <li key={collection.href}>
-                          <Link href={collection.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={closeProductsMenu}>
+                          <Link href={collection.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={closeMenus}>
                             {collection.name}
                           </Link>
                         </li>
@@ -361,7 +337,7 @@ export default function MegaMenu() {
                     <ul className="space-y-2">
                       {availableRegions.map((region) => (
                         <li key={region.href}>
-                          <Link href={region.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={closeProductsMenu}>
+                          <Link href={region.href} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={closeMenus}>
                             {formatName(region.name, t)}
                           </Link>
                         </li>
@@ -375,7 +351,7 @@ export default function MegaMenu() {
                     <ul className="space-y-2">
                       {availableVarietals.map((varietal) => (
                         <li key={varietal.slug}>
-                          <Link href={`/collections/varietal/${varietal.slug}`} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={closeProductsMenu}>
+                          <Link href={`/collections/varietal/${varietal.slug}`} className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={closeMenus}>
                             {formatName(varietal.name, t)}
                           </Link>
                         </li>
