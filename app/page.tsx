@@ -2,6 +2,8 @@ import { Suspense } from "react"
 import Hero from "@/components/hero"
 import ProductShowcase from "@/components/product-showcase"
 import AboutUs from "@/components/about-us"
+import { FAQSection } from "@/components/faq-section"
+import { faqConfigs } from "@/lib/faq-schema"
 import { getFeaturedProducts } from '@/lib/products-client'
 import SEO from '@/components/SEO'
 import { getHomeSEOWithStructuredData } from '@/lib/seo-config'
@@ -68,6 +70,8 @@ export default function Home() {
           <ProductSection />
         </Suspense>
         <AboutUs />
+        {/* FAQ antes del footer */}
+        <FAQSection faqs={faqConfigs.general()} className="w-full" />
       </main>
     </SEO>
   )
