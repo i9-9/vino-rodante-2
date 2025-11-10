@@ -4,6 +4,9 @@ import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import type { Discount, DiscountFormData } from '../types/discount'
+import { verifyAdmin } from '@/lib/admin-utils'
+import type { ActionResponse } from '@/lib/types/action-response'
+import { successResponse, errorResponse, handleActionError } from '@/lib/types/action-response'
 
 // Schema de validación para descuentos
 const DiscountSchema = z.object({
@@ -37,35 +40,10 @@ const DiscountSchema = z.object({
   path: ["discount_value"]
 })
 
-export interface ActionResponse {
-  success: boolean
-  data?: any
-  error?: string
-  message?: string
-}
-
-async function verifyAdmin() {
-  const supabase = await createClient()
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  if (userError || !user) {
-    throw new Error('No autorizado')
-  }
-
-  const { data: customerData } = await supabase
-    .from('customers')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single()
-
-  if (!customerData?.is_admin) {
-    throw new Error('No autorizado - Se requiere ser admin')
-  }
-
-  return user.id
-}
+// ActionResponse y verifyAdmin ahora se importan de módulos centralizados
 
 // Obtener todos los descuentos
-export async function getAllDiscounts(): Promise<ActionResponse> {
+export async function getAllDiscounts(): Promise<ActionResponse<Discount[]>> {
   try {
     await verifyAdmin()
     const supabase = await createClient()
@@ -77,20 +55,14 @@ export async function getAllDiscounts(): Promise<ActionResponse> {
 
     if (error) throw error
 
-    return { 
-      success: true, 
-      data: discounts 
-    }
+    return successResponse(discounts || [])
   } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error al obtener descuentos' 
-    }
+    return handleActionError(error, 'Error al obtener descuentos')
   }
 }
 
 // Obtener descuento por ID
-export async function getDiscountById(id: string): Promise<ActionResponse> {
+export async function getDiscountById(id: string): Promise<ActionResponse<Discount>> {
   try {
     await verifyAdmin()
     const supabase = await createClient()
@@ -103,15 +75,9 @@ export async function getDiscountById(id: string): Promise<ActionResponse> {
 
     if (error) throw error
 
-    return { 
-      success: true, 
-      data: discount 
-    }
+    return successResponse(discount)
   } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error al obtener descuento' 
-    }
+    return handleActionError(error, 'Error al obtener descuento')
   }
 }
 
@@ -151,13 +117,10 @@ export async function createDiscount(formData: FormData): Promise<ActionResponse
     if (error) throw error
 
     revalidatePath('/account')
-    return { success: true, data, message: 'Descuento creado correctamente' }
+    return successResponse(data, 'Descuento creado correctamente')
 
   } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error al crear descuento'
-    }
+    return handleActionError(error, 'Error al crear descuento')
   }
 }
 
@@ -169,7 +132,7 @@ export async function updateDiscount(formData: FormData): Promise<ActionResponse
 
     const id = formData.get('id') as string
     if (!id) {
-      return { success: false, error: 'ID de descuento requerido' }
+      return errorResponse('ID de descuento requerido')
     }
 
     // Extraer datos del formulario
@@ -201,13 +164,10 @@ export async function updateDiscount(formData: FormData): Promise<ActionResponse
     if (error) throw error
 
     revalidatePath('/account')
-    return { success: true, message: 'Descuento actualizado correctamente' }
+    return successResponse(undefined, 'Descuento actualizado correctamente')
 
   } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error al actualizar descuento'
-    }
+    return handleActionError(error, 'Error al actualizar descuento')
   }
 }
 
@@ -225,13 +185,10 @@ export async function deleteDiscount(id: string): Promise<ActionResponse> {
     if (error) throw error
 
     revalidatePath('/account')
-    return { success: true, message: 'Descuento eliminado correctamente' }
+    return successResponse(undefined, 'Descuento eliminado correctamente')
 
   } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error al eliminar descuento'
-    }
+    return handleActionError(error, 'Error al eliminar descuento')
   }
 }
 
@@ -253,16 +210,13 @@ export async function toggleDiscountActive(
 
     revalidatePath('/account')
     
-    return { 
-      success: true, 
-      message: `Descuento ${isActive ? 'activado' : 'desactivado'} correctamente` 
-    }
+    return successResponse(
+      { discountId, isActive },
+      `Descuento ${isActive ? 'activado' : 'desactivado'} correctamente`
+    )
 
   } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error al cambiar estado del descuento' 
-    }
+    return handleActionError(error, 'Error al cambiar estado del descuento')
   }
 }
 
@@ -325,15 +279,9 @@ export async function getActiveDiscountsForProduct(productId: string): Promise<A
       updated_at: discount.updated_at
     }))
 
-    return { 
-      success: true, 
-      data: cleanedDiscounts 
-    }
+    return successResponse(cleanedDiscounts)
   } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error al obtener descuentos del producto' 
-    }
+    return handleActionError(error, 'Error al obtener descuentos del producto')
   }
 }
 
@@ -409,14 +357,8 @@ export async function getProductsWithDiscounts(): Promise<ActionResponse> {
       }
     }) || []
 
-    return { 
-      success: true, 
-      data: productsWithDiscounts 
-    }
+    return successResponse(productsWithDiscounts)
   } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error al obtener productos con descuentos' 
-    }
+    return handleActionError(error, 'Error al obtener productos con descuentos')
   }
 }

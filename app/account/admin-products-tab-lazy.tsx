@@ -14,16 +14,41 @@ export default function AdminProductsTabLazy({ t }: AdminProductsTabLazyProps) {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 20,
+    total: 0,
+    totalPages: 0
+  })
 
   const supabase = createClient()
 
+  const loadProducts = async (page: number = 1, pageSize: number = 20) => {
+    try {
+      setLoading(true)
+      const { getProductsPaginated } = await import('./actions/products')
+      const result = await getProductsPaginated(page, pageSize)
+      
+      if (result.success && result.data) {
+        setProducts(result.data.products)
+        setPagination({
+          page: result.data.page,
+          pageSize: result.data.pageSize,
+          total: result.data.total,
+          totalPages: result.data.totalPages
+        })
+      } else {
+        setError(result.error || 'Error al cargar productos')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const refresh = async () => {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(100)
-    if (!error) setProducts(data || [])
+    await loadProducts(pagination.page, pagination.pageSize)
   }
 
   useEffect(() => {
@@ -74,21 +99,9 @@ export default function AdminProductsTabLazy({ t }: AdminProductsTabLazyProps) {
 
         console.log('✅ Usuario verificado como admin, cargando productos...')
 
-        // Cargar todos los productos
-        const { data, error, count } = await supabase
-          .from('products')
-          .select('*', { count: 'exact' })
-          .order('created_at', { ascending: false })
-
-        if (!isMounted) return
-
-        if (error) {
-          console.error('❌ Error al cargar productos:', error)
-          setError(`Error al cargar productos: ${error.message}`)
-        } else {
-          console.log(`✅ Productos cargados exitosamente: ${data?.length || 0} de ${count} total`)
-          console.log('📋 Productos:', data)
-          setProducts(data || [])
+        // Cargar productos con paginación
+        if (isMounted) {
+          await loadProducts(1, 20)
         }
       } catch (err) {
         console.error('💥 Error inesperado al cargar productos:', err)
@@ -121,5 +134,13 @@ export default function AdminProductsTabLazy({ t }: AdminProductsTabLazyProps) {
     )
   }
 
-  return <AdminProductsTab products={products} t={t as unknown as import('@/lib/i18n/types').Translations} onRefresh={refresh} />
+  return (
+    <AdminProductsTab 
+      products={products} 
+      t={t as unknown as import('@/lib/i18n/types').Translations} 
+      onRefresh={refresh}
+      pagination={pagination}
+      onPageChange={loadProducts}
+    />
+  )
 } 

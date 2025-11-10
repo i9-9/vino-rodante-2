@@ -70,6 +70,13 @@ interface AdminProductsTabProps {
   t: Translations
   onEdit?: (product: Product) => void
   onRefresh?: () => Promise<void> | void
+  pagination?: {
+    page: number
+    pageSize: number
+    total: number
+    totalPages: number
+  }
+  onPageChange?: (page: number, pageSize: number) => Promise<void>
 }
 
 type VisibilityFilter = 'all' | 'visible' | 'hidden'
@@ -734,7 +741,7 @@ function capitalizeWords(str: string) {
     .join(' ');
 }
 
-export default function AdminProductsTab({ products, t, onRefresh }: AdminProductsTabProps) {
+export default function AdminProductsTab({ products, t, onRefresh, pagination, onPageChange }: AdminProductsTabProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [visibilityFilter, setVisibilityFilter] = useState<VisibilityFilter>('all')
@@ -1008,24 +1015,34 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
     }
   ], [])
 
+  // Si hay paginación del servidor, usar esos datos directamente
+  // Si no, usar paginación en memoria (modo legacy)
+  const tableData = pagination ? products : filteredProducts
+
   const table = useReactTable({
-    data: filteredProducts,
+    data: tableData,
     columns,
     state: {
       sorting,
       rowSelection,
+      pagination: pagination ? {
+        pageIndex: pagination.page - 1,
+        pageSize: pagination.pageSize
+      } : undefined
     },
     onSortingChange: setSorting,
     onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    getFilteredRowModel: pagination ? undefined : getFilteredRowModel(),
+    getPaginationRowModel: pagination ? undefined : getPaginationRowModel(),
     enableSorting: true,
     enableRowSelection: true,
+    manualPagination: !!pagination,
+    pageCount: pagination?.totalPages || -1,
     initialState: {
       pagination: {
-        pageSize: 20, // Mostrar 20 productos por página
+        pageSize: pagination?.pageSize || 20,
       },
     },
   })
@@ -1043,11 +1060,15 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
   }
 
   const handleEditProduct = async (formData: FormData) => {
+    // Guardar estado anterior para rollback en caso de error
+    const previousProducts = [...products]
+    const isBox = formData.get('category') === 'Boxes' || formData.get('is_box') === 'on'
+    const isUpdate = !!selectedProduct?.id
+
     try {
       // Check if the image is a Google Drive link
       const imageUrl = formData.get('image') as string;
       if (imageUrl && imageUrl.includes('drive.google.com')) {
-        // If using toast, show a warning
         toast({
           title: "Advertencia sobre imagen",
           description: "Los enlaces de Google Drive no se mostrarán correctamente. Por favor, sube la imagen directamente o usa una URL de imagen pública.",
@@ -1059,20 +1080,15 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
         formData.append('image_file', selectedImage)
       }
       
-      // ✅ CRÍTICO: Detectar si es un box para usar las funciones correctas
-      const isBox = formData.get('category') === 'Boxes' || formData.get('is_box') === 'on'
-      
       let result;
       
       if (isBox) {
-        // ✅ Usar funciones específicas para boxes
         if (selectedProduct?.id) {
           result = await updateBox(selectedProduct.id, formData)
         } else {
           result = await createBox(formData)
         }
       } else {
-        // Usar funciones genéricas para productos normales
         if (selectedProduct?.id) {
           formData.append('id', selectedProduct.id)
           result = await updateProduct(formData)
@@ -1089,7 +1105,7 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
             : (isBox ? "Box creado correctamente" : "Producto creado correctamente"),
         })
         
-        // Solicitar refresh de datos al padre si está disponible
+        // Refresh de datos (esto reemplazará el estado optimista)
         if (onRefresh) {
           await onRefresh()
         }
@@ -1098,43 +1114,66 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
         setSelectedImage(null)
         setImagePreview(null)
       } else {
+        // Rollback en caso de error
         throw new Error(result.error || 'Error desconocido')
       }
       
     } catch (error) {
+      // En caso de error, el refresh restaurará el estado anterior
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error al procesar el producto",
         variant: "destructive",
       })
+      // Refresh para restaurar estado correcto
+      if (onRefresh) {
+        await onRefresh()
+      }
     }
   }
 
   const handleDeleteProduct = async () => {
     if (!productToDelete?.id) return
 
+    // Optimistic update: remover de la lista inmediatamente
+    const productId = productToDelete.id
+    const previousProducts = [...products]
+    const optimisticProducts = products.filter(p => p.id !== productId)
+    
+    // Actualizar estado optimista (solo si no hay paginación del servidor)
+    // Si hay paginación, esperamos el refresh del servidor
+
     setIsDeleting(true)
     try {
-      await deleteProducts([productToDelete.id])
+      const result = await deleteProducts([productId])
       
-      toast({
-        title: "Éxito",
-        description: "Producto eliminado correctamente",
-      })
-      
-      // Solicitar refresh de datos al padre si está disponible
-      if (onRefresh) {
-        await onRefresh()
+      if (result.success) {
+        toast({
+          title: "Éxito",
+          description: "Producto eliminado correctamente",
+        })
+        
+        // Refresh de datos (esto confirmará la eliminación)
+        if (onRefresh) {
+          await onRefresh()
+        }
+        
+        setDeleteDialogOpen(false)
+        setProductToDelete(null)
+      } else {
+        throw new Error(result.error || 'Error desconocido')
       }
-      
-      setDeleteDialogOpen(false)
-      setProductToDelete(null)
     } catch (error) {
+      // En caso de error, restaurar estado anterior
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error al eliminar el producto",
         variant: "destructive",
       })
+      // Refresh para restaurar estado correcto
+      if (onRefresh) {
+        await onRefresh()
+      }
     } finally {
       setIsDeleting(false)
     }
@@ -1417,33 +1456,55 @@ export default function AdminProductsTab({ products, t, onRefresh }: AdminProduc
       <div className="flex items-center justify-between px-2 py-4">
         <div className="flex items-center space-x-2">
           <p className="text-sm font-medium">
-            Mostrando {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} a{' '}
-            {Math.min(
-              (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-              table.getFilteredRowModel().rows.length
-            )}{' '}
-            de {table.getFilteredRowModel().rows.length} productos
+            {pagination ? (
+              <>
+                Mostrando {(pagination.page - 1) * pagination.pageSize + 1} a{' '}
+                {Math.min(pagination.page * pagination.pageSize, pagination.total)} de {pagination.total} productos
+              </>
+            ) : (
+              <>
+                Mostrando {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} a{' '}
+                {Math.min(
+                  (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+                  table.getFilteredRowModel().rows.length
+                )}{' '}
+                de {table.getFilteredRowModel().rows.length} productos
+              </>
+            )}
           </p>
         </div>
         <div className="flex items-center space-x-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+            onClick={() => {
+              if (pagination && onPageChange) {
+                onPageChange(pagination.page - 1, pagination.pageSize)
+              } else {
+                table.previousPage()
+              }
+            }}
+            disabled={pagination ? pagination.page <= 1 : !table.getCanPreviousPage()}
           >
             Anterior
           </Button>
           <div className="flex items-center space-x-1">
             <span className="text-sm font-medium">
-              Página {table.getState().pagination.pageIndex + 1} de {table.getPageCount()}
+              Página {pagination ? pagination.page : table.getState().pagination.pageIndex + 1} de{' '}
+              {pagination ? pagination.totalPages : table.getPageCount()}
             </span>
           </div>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
+            onClick={() => {
+              if (pagination && onPageChange) {
+                onPageChange(pagination.page + 1, pagination.pageSize)
+              } else {
+                table.nextPage()
+              }
+            }}
+            disabled={pagination ? pagination.page >= pagination.totalPages : !table.getCanNextPage()}
           >
             Siguiente
           </Button>

@@ -2,8 +2,12 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
-import { ProductSchema } from '../types/product'
+import { ProductSchema, VARIETALS, REGIONS, CATEGORIES } from '../types/product'
 import { CACHE_TAGS } from '@/lib/cache-tags'
+import { verifyAdmin } from '@/lib/admin-utils'
+import type { ActionResponse } from '@/lib/types/action-response'
+import { successResponse, errorResponse, handleActionError } from '@/lib/types/action-response'
+import { logAdminAction } from '@/lib/admin-logger'
 
 // Función para generar slug a partir del nombre
 function generateSlug(name: string): string {
@@ -37,12 +41,7 @@ type DatabaseProduct = {
   created_at?: string
 }
 
-export interface ActionResponse {
-  success: boolean
-  data?: any
-  error?: string
-  message?: string
-}
+// ActionResponse ahora se importa de @/lib/types/action-response
 
 // Mapeo de categorías del formulario a valores de la base de datos
 const CATEGORY_MAPPING: Record<string, string> = {
@@ -106,7 +105,26 @@ const CATEGORY_MAPPING: Record<string, string> = {
 
 // Función helper interna para convertir categoría del formulario a base de datos
 function mapCategoryToDB(category: string): string {
-  return CATEGORY_MAPPING[category] || category
+  const mapped = CATEGORY_MAPPING[category]
+  
+  if (mapped) {
+    // Verificar que el valor mapeado esté en el enum
+    if (CATEGORIES.includes(mapped as typeof CATEGORIES[number])) {
+      return mapped
+    }
+  }
+  
+  // Si la categoría original está en el enum, retornarla
+  if (CATEGORIES.includes(category as typeof CATEGORIES[number])) {
+    return category
+  }
+  
+  // Buscar case-insensitive
+  const found = CATEGORIES.find(c => 
+    c.toLowerCase() === category.toLowerCase()
+  )
+  
+  return found || category // Retornar el encontrado o el original como fallback
 }
 
 // Función para normalizar varietales (evitar duplicados por tildes/mayúsculas)
@@ -131,18 +149,68 @@ function normalizeVarietal(varietal: string): string {
     'malbec': 'Malbec',
     'cabernet sauvignon': 'Cabernet Sauvignon',
     'cabernet-sauvignon': 'Cabernet Sauvignon',
+    'cabernet franc': 'Cabernet Franc',
+    'cabernet-franc': 'Cabernet Franc',
     'chardonnay': 'Chardonnay',
     'sauvignon blanc': 'Sauvignon Blanc',
     'sauvignon-blanc': 'Sauvignon Blanc',
     'pinot noir': 'Pinot Noir',
     'pinot-noir': 'Pinot Noir',
+    'pinot grigio': 'Pinot Grigio',
+    'pinot-grigio': 'Pinot Grigio',
     'merlot': 'Merlot',
     'syrah': 'Syrah',
     'tempranillo': 'Tempranillo',
-    'bonarda': 'Bonarda'
+    'bonarda': 'Bonarda',
+    'sangiovese': 'Sangiovese',
+    'riesling': 'Riesling',
+    'viognier': 'Viognier',
+    'semillon': 'Semillón',
+    'semillón': 'Semillón',
+    'chenin blanc': 'Chenin Blanc',
+    'chenin-blanc': 'Chenin Blanc',
+    'gewurztraminer': 'Gewürztraminer',
+    'gewürztraminer': 'Gewürztraminer',
+    'moscato': 'Moscato',
+    'prosecco': 'Prosecco',
+    'champagne': 'Champagne',
+    'cava': 'Cava',
+    'blend': 'Blend',
+    'múltiples': 'Múltiples',
+    'multiples': 'Múltiples'
   }
   
-  return varietalMapping[normalized] || varietal.charAt(0).toUpperCase() + varietal.slice(1).toLowerCase()
+  // Si encontramos el varietal en el mapeo, retornarlo
+  if (varietalMapping[normalized]) {
+    const mapped = varietalMapping[normalized]
+    // Verificar que el valor mapeado esté en el enum
+    if (VARIETALS.includes(mapped as typeof VARIETALS[number])) {
+      return mapped
+    }
+  }
+  
+  // Si no está en el mapeo, intentar capitalizar correctamente palabras compuestas
+  // Dividir por espacios y capitalizar cada palabra
+  const words = varietal.split(/\s+/).map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+  )
+  
+  const capitalized = words.join(' ')
+  
+  // Verificar si el valor capitalizado está en el enum
+  if (VARIETALS.includes(capitalized as typeof VARIETALS[number])) {
+    return capitalized
+  }
+  
+  // Si aún no coincide, buscar el más cercano (case-insensitive)
+  const found = VARIETALS.find(v => 
+    v.toLowerCase().replace(/[áéíóúñ]/g, (m) => {
+      const map: Record<string, string> = { 'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'ñ': 'n' }
+      return map[m] || m
+    }) === normalized
+  )
+  
+  return found || capitalized // Retornar el encontrado o el capitalizado como fallback
 }
 
 // Función para normalizar regiones (evitar duplicados por tildes/mayúsculas)
@@ -162,73 +230,115 @@ function normalizeRegion(region: string): string {
   
   // Mapeo de variantes comunes a formato estándar
   const regionMapping: Record<string, string> = {
-    'mendoza': 'Mendoza',
-    'san juan': 'San Juan',
-    'san-juan': 'San Juan',
-    'salta': 'Salta',
+    // Regiones principales
+    'buenos aires': 'Buenos Aires',
+    'buenos-aires': 'Buenos Aires',
+    'catamarca': 'Catamarca',
+    'chaco': 'Chaco',
+    'chapadmalal': 'Chapadmalal',
+    'chubut': 'Chubut',
+    'cordoba': 'Córdoba',
+    'córdoba': 'Córdoba',
+    'corrientes': 'Corrientes',
+    'entre rios': 'Entre Ríos',
+    'entre-rios': 'Entre Ríos',
+    'entre ríos': 'Entre Ríos',
+    'formosa': 'Formosa',
+    'jujuy': 'Jujuy',
+    'la pampa': 'La Pampa',
+    'la-pampa': 'La Pampa',
     'la rioja': 'La Rioja',
     'la-rioja': 'La Rioja',
     'rioja': 'La Rioja',
-    'patagonia': 'Patagonia',
+    'mendoza': 'Mendoza',
+    'misiones': 'Misiones',
+    'multiples': 'Múltiples',
+    'múltiples': 'Múltiples',
     'neuquen': 'Neuquén',
     'neuquén': 'Neuquén',
     'rio negro': 'Río Negro',
     'rio-negro': 'Río Negro',
-    'buenos aires': 'Buenos Aires',
-    'buenos-aires': 'Buenos Aires'
+    'río negro': 'Río Negro',
+    'salta': 'Salta',
+    'san juan': 'San Juan',
+    'san-juan': 'San Juan',
+    'san luis': 'San Luis',
+    'san-luis': 'San Luis',
+    'santa cruz': 'Santa Cruz',
+    'santa-cruz': 'Santa Cruz',
+    'santa fe': 'Santa Fe',
+    'santa-fe': 'Santa Fe',
+    'santiago del estero': 'Santiago del Estero',
+    'santiago-del-estero': 'Santiago del Estero',
+    'tierra del fuego': 'Tierra del Fuego',
+    'tierra-del-fuego': 'Tierra del Fuego',
+    'tucuman': 'Tucumán',
+    'tucumán': 'Tucumán',
+    // Valles
+    'valle calchaqui': 'Valle Calchaquí',
+    'valle-calchaqui': 'Valle Calchaquí',
+    'valle calchaquí': 'Valle Calchaquí',
+    'valle de famatina': 'Valle de Famatina',
+    'valle-de-famatina': 'Valle de Famatina',
+    'valle de uco': 'Valle de Uco',
+    'valle-de-uco': 'Valle de Uco',
+    'valle del pedernal': 'Valle del Pedernal',
+    'valle-del-pedernal': 'Valle del Pedernal',
+    'valle del rio colorado': 'Valle del Río Colorado',
+    'valle-del-rio-colorado': 'Valle del Río Colorado',
+    'valle del río colorado': 'Valle del Río Colorado'
   }
   
-  return regionMapping[normalized] || region.charAt(0).toUpperCase() + region.slice(1).toLowerCase()
+  // Si encontramos la región en el mapeo, retornarla
+  if (regionMapping[normalized]) {
+    const mapped = regionMapping[normalized]
+    // Verificar que el valor mapeado esté en el enum
+    if (REGIONS.includes(mapped as typeof REGIONS[number])) {
+      return mapped
+    }
+  }
+  
+  // Si no está en el mapeo, intentar capitalizar correctamente palabras compuestas
+  // Dividir por espacios y capitalizar cada palabra
+  const words = region.split(/\s+/).map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+  )
+  
+  const capitalized = words.join(' ')
+  
+  // Verificar si el valor capitalizado está en el enum
+  if (REGIONS.includes(capitalized as typeof REGIONS[number])) {
+    return capitalized
+  }
+  
+  // Si aún no coincide, buscar el más cercano (case-insensitive)
+  const found = REGIONS.find(r => 
+    r.toLowerCase().replace(/[áéíóúñ]/g, (m) => {
+      const map: Record<string, string> = { 'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'ñ': 'n' }
+      return map[m] || m
+    }) === normalized
+  )
+  
+  return found || capitalized // Retornar el encontrado o el capitalizado como fallback
 }
 
 
 
 
-async function verifyAdmin() {
-  const supabase = await createClient()
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  if (userError || !user) {
-    throw new Error('No autorizado')
-  }
-
-  const { data: customerData } = await supabase
-    .from('customers')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single()
-
-  if (!customerData?.is_admin) {
-    throw new Error('No autorizado - Se requiere ser admin')
-  }
-
-  return user.id
-}
+// verifyAdmin ahora se importa de @/lib/admin-utils
 
 
 
 export async function updateProduct(formData: FormData): Promise<ActionResponse> {
+  let userId: string | undefined
   try {
+    // Verificar permisos de admin
+    userId = await verifyAdmin()
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return { success: false, error: 'No autorizado' }
-    }
-
-    // Verificar si es admin
-    const { data: customer } = await supabase
-      .from('customers')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single()
-
-    if (!customer?.is_admin) {
-      return { success: false, error: 'No autorizado - Se requiere ser admin' }
-    }
 
     const id = formData.get('id') as string
     if (!id) {
-      return { success: false, error: 'ID de producto requerido' }
+      return errorResponse('ID de producto requerido')
     }
 
     const name = formData.get('name') as string
@@ -310,38 +420,30 @@ export async function updateProduct(formData: FormData): Promise<ActionResponse>
     revalidateTag(CACHE_TAGS.PRODUCTS)
     revalidateTag(CACHE_TAGS.PRODUCT_BY_SLUG)
     revalidateTag(`product-${updateData.slug}`)
-    return { success: true, message: 'Producto actualizado correctamente' }
+    
+    // Log de acción exitosa
+    if (userId) {
+      logAdminAction.productUpdated(userId, id, name, updateData)
+    }
+    
+    return successResponse(updateData, 'Producto actualizado correctamente')
 
   } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error al actualizar producto'
+    if (userId) {
+      logAdminAction.error(userId, 'updateProduct', error instanceof Error ? error : new Error(String(error)))
     }
+    return handleActionError(error, 'Error al actualizar producto')
   }
 }
 
 
 
 export async function createProduct(formData: FormData): Promise<ActionResponse> {
-  const supabase = await createClient()
-
-  // Validar que el usuario sea admin
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return { success: false, error: 'No autorizado' }
-  }
-
+  let userId: string | undefined
   try {
-    // Verificar si es admin
-    const { data: customer } = await supabase
-      .from('customers')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single()
-
-    if (!customer?.is_admin) {
-      return { success: false, error: 'No autorizado - Se requiere ser admin' }
-    }
+    // Verificar permisos de admin
+    userId = await verifyAdmin()
+    const supabase = await createClient()
     // Extraer datos básicos
     const category = formData.get('category') as string
     const isBox = category === 'Boxes'
@@ -400,26 +502,29 @@ export async function createProduct(formData: FormData): Promise<ActionResponse>
     revalidateTag(CACHE_TAGS.PRODUCTS)
     revalidateTag(CACHE_TAGS.PRODUCT_BY_SLUG)
     revalidateTag(`product-${validatedData.slug}`)
-    return { success: true, data }
+    
+    // Log de acción exitosa
+    if (userId && data) {
+      logAdminAction.productCreated(userId, data.id, validatedData.name)
+    }
+    
+    return successResponse(data, 'Producto creado correctamente')
 
   } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error al crear producto'
+    if (userId) {
+      logAdminAction.error(userId, 'createProduct', error instanceof Error ? error : new Error(String(error)))
     }
+    return handleActionError(error, 'Error al crear producto')
   }
 }
 
-export async function deleteProducts(ids: string[]) {
-  const supabase = await createClient()
-
-  // Validar que el usuario sea admin
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    throw new Error('No autorizado')
-  }
-
+export async function deleteProducts(ids: string[]): Promise<ActionResponse> {
+  let userId: string | undefined
   try {
+    // Verificar permisos de admin
+    userId = await verifyAdmin()
+    const supabase = await createClient()
+
     // Obtener las imágenes de los productos a eliminar
     const { data: products } = await supabase
       .from('products')
@@ -452,9 +557,18 @@ export async function deleteProducts(ids: string[]) {
     revalidateTag(CACHE_TAGS.PRODUCT_BY_SLUG)
     // Revalidar todos los productos eliminados
     ids.forEach(id => revalidateTag(`product-${id}`))
-    return { success: true }
+    
+    // Log de acción exitosa
+    if (userId) {
+      logAdminAction.productDeleted(userId, ids)
+    }
+    
+    return successResponse(undefined, `${ids.length} producto(s) eliminado(s) correctamente`)
   } catch (error) {
-    throw error
+    if (userId) {
+      logAdminAction.error(userId, 'deleteProducts', error instanceof Error ? error : new Error(String(error)))
+    }
+    return handleActionError(error, 'Error al eliminar productos')
   }
 }
 
@@ -462,11 +576,10 @@ export async function toggleProductVisibility(
   productId: string, 
   visible: boolean
 ): Promise<ActionResponse> {
+  let userId: string | undefined
   try {
-    // 1. Verificar permisos de admin
-    await verifyAdmin()
-
-    // 2. Actualizar visibilidad
+    // Verificar permisos de admin
+    userId = await verifyAdmin()
     const supabase = await createClient()
     
     const { error } = await supabase
@@ -481,16 +594,21 @@ export async function toggleProductVisibility(
     revalidateTag(CACHE_TAGS.PRODUCT_BY_SLUG)
     revalidateTag(`product-${productId}`)
     
-    return { 
-      success: true, 
-      message: `Producto ${visible ? 'visible' : 'oculto'} correctamente` 
+    // Log de acción exitosa
+    if (userId) {
+      logAdminAction.productVisibilityToggled(userId, productId, visible)
     }
+    
+    return successResponse(
+      { productId, visible },
+      `Producto ${visible ? 'visible' : 'oculto'} correctamente`
+    )
 
   } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error al cambiar visibilidad del producto' 
+    if (userId) {
+      logAdminAction.error(userId, 'toggleProductVisibility', error instanceof Error ? error : new Error(String(error)))
     }
+    return handleActionError(error, 'Error al cambiar visibilidad del producto')
   }
 }
 
@@ -499,10 +617,8 @@ export async function toggleProductFeatured(
   featured: boolean
 ): Promise<ActionResponse> {
   try {
-    // 1. Verificar permisos de admin
+    // Verificar permisos de admin
     await verifyAdmin()
-
-    // 2. Actualizar featured
     const supabase = await createClient()
     
     const { error } = await supabase
@@ -518,16 +634,13 @@ export async function toggleProductFeatured(
     revalidateTag(CACHE_TAGS.PRODUCT_BY_SLUG)
     revalidateTag(`product-${productId}`)
     
-    return { 
-      success: true, 
-      message: `Producto ${featured ? 'destacado' : 'no destacado'} correctamente` 
-    }
+    return successResponse(
+      { productId, featured },
+      `Producto ${featured ? 'destacado' : 'no destacado'} correctamente`
+    )
 
   } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error al cambiar estado destacado del producto' 
-    }
+    return handleActionError(error, 'Error al cambiar estado destacado del producto')
   }
 }
 
@@ -551,10 +664,8 @@ export async function uploadProductImage(file: File, slug: string) {
 
 export async function getAllProducts(): Promise<ActionResponse> {
   try {
-    // 1. Verificar permisos de admin
+    // Verificar permisos de admin
     await verifyAdmin()
-
-    // 2. Obtener todos los productos
     const supabase = await createClient()
     
     const { data: products, error } = await supabase
@@ -564,15 +675,66 @@ export async function getAllProducts(): Promise<ActionResponse> {
 
     if (error) throw error
 
-    return { 
-      success: true, 
-      data: products 
-    }
+    return successResponse(products)
 
   } catch (error) {
-    return { 
-      success: false, 
-      error: 'Error al obtener productos' 
+    return handleActionError(error, 'Error al obtener productos')
+  }
+}
+
+/**
+ * Obtener productos con paginación real desde el servidor
+ */
+export async function getProductsPaginated(
+  page: number = 1,
+  pageSize: number = 20,
+  filters?: {
+    visibility?: 'all' | 'visible' | 'hidden'
+    search?: string
+  }
+): Promise<ActionResponse<{ products: any[], total: number, page: number, pageSize: number, totalPages: number }>> {
+  try {
+    // Verificar permisos de admin
+    await verifyAdmin()
+    const supabase = await createClient()
+    
+    let query = supabase
+      .from('products')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+
+    // Aplicar filtros
+    if (filters?.visibility === 'visible') {
+      query = query.eq('is_visible', true)
+    } else if (filters?.visibility === 'hidden') {
+      query = query.eq('is_visible', false)
     }
+
+    if (filters?.search) {
+      query = query.or(`name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`)
+    }
+
+    // Aplicar paginación
+    const from = (page - 1) * pageSize
+    const to = from + pageSize - 1
+    
+    query = query.range(from, to)
+
+    const { data: products, error, count } = await query
+
+    if (error) throw error
+
+    const totalPages = Math.ceil((count || 0) / pageSize)
+
+    return successResponse({
+      products: products || [],
+      total: count || 0,
+      page,
+      pageSize,
+      totalPages
+    })
+
+  } catch (error) {
+    return handleActionError(error, 'Error al obtener productos paginados')
   }
 } 

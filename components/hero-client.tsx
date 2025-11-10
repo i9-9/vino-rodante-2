@@ -91,7 +91,7 @@ export default function HeroClient({ weeklyPlans }: HeroClientProps) {
                 {weeklyPlans.map((plan) => (
                   <CarouselItem key={plan.id} className="h-full pl-0">
                     <div className="group relative flex h-full w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-                      <Link href={`/weekly-wine/${plan.type}`} className="relative block w-full h-full">
+                      <Link href={`/weekly-wine/${plan.club}`} className="relative block w-full h-full">
                         <Image
                           src={plan.image || '/placeholder.svg'}
                           alt={plan.name}
@@ -128,7 +128,7 @@ export default function HeroClient({ weeklyPlans }: HeroClientProps) {
             weeklyPlans.map((plan) => (
               <Link
                 key={plan.id}
-                href={`/weekly-wine/${plan.type}`}
+                href={`/weekly-wine/${plan.club}`}
                 className="group relative w-full h-full min-h-[140px] aspect-[4/5] overflow-hidden hover:shadow-lg transition-shadow duration-300 block"
               >
                 <Image
