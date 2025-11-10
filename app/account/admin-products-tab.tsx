@@ -77,6 +77,9 @@ interface AdminProductsTabProps {
     totalPages: number
   }
   onPageChange?: (page: number, pageSize: number) => Promise<void>
+  visibilityFilter?: VisibilityFilter
+  onVisibilityFilterChange?: (filter: VisibilityFilter) => void
+  totals?: { all: number, visible: number, hidden: number } | null
 }
 
 type VisibilityFilter = 'all' | 'visible' | 'hidden'
@@ -391,6 +394,7 @@ function EditProductDialog({ product, isOpen, onClose, onSubmit }: EditProductDi
             <DialogTitle>Editar Box</DialogTitle>
           </DialogHeader>
           <BoxForm
+            key={`box-${product.id}-${product.updated_at || Date.now()}`}
             onSubmit={onSubmit}
             onClose={onClose}
             initialData={product}
@@ -741,10 +745,23 @@ function capitalizeWords(str: string) {
     .join(' ');
 }
 
-export default function AdminProductsTab({ products, t, onRefresh, pagination, onPageChange }: AdminProductsTabProps) {
+export default function AdminProductsTab({ 
+  products, 
+  t, 
+  onRefresh, 
+  pagination, 
+  onPageChange,
+  visibilityFilter: externalVisibilityFilter,
+  onVisibilityFilterChange,
+  totals
+}: AdminProductsTabProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
-  const [visibilityFilter, setVisibilityFilter] = useState<VisibilityFilter>('all')
+  const [internalVisibilityFilter, setInternalVisibilityFilter] = useState<VisibilityFilter>('all')
+  
+  // Usar filtro externo si está disponible (paginación del servidor), sino usar interno
+  const visibilityFilter = externalVisibilityFilter ?? internalVisibilityFilter
+  const setVisibilityFilter = onVisibilityFilterChange ?? setInternalVisibilityFilter
   const [sorting, setSorting] = useState<SortingState>([])
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -1340,19 +1357,25 @@ export default function AdminProductsTab({ products, t, onRefresh, pagination, o
               <SelectItem value="all">
                 <div className="flex items-center justify-between w-full">
                   <span>Todos</span>
-                  <span className="ml-2 text-xs text-gray-500">({products.length})</span>
+                  <span className="ml-2 text-xs text-gray-500">
+                    ({totals ? totals.all : products.length})
+                  </span>
                 </div>
               </SelectItem>
               <SelectItem value="visible">
                 <div className="flex items-center justify-between w-full">
                   <span>Visibles</span>
-                  <span className="ml-2 text-xs text-green-600">({products.filter(p => p.is_visible).length})</span>
+                  <span className="ml-2 text-xs text-green-600">
+                    ({totals ? totals.visible : products.filter(p => p.is_visible).length})
+                  </span>
                 </div>
               </SelectItem>
               <SelectItem value="hidden">
                 <div className="flex items-center justify-between w-full">
                   <span>Ocultos</span>
-                  <span className="ml-2 text-xs text-gray-600">({products.filter(p => !p.is_visible).length})</span>
+                  <span className="ml-2 text-xs text-gray-600">
+                    ({totals ? totals.hidden : products.filter(p => !p.is_visible).length})
+                  </span>
                 </div>
               </SelectItem>
             </SelectContent>

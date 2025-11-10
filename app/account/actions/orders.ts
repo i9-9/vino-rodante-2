@@ -1,30 +1,13 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { ActionResponse } from '../types'
 import { validateOrderStatus } from '../utils/validation'
+import { verifyAdmin } from '@/lib/admin-utils'
+import { successResponse, errorResponse, handleActionError } from '@/lib/types/action-response'
 
-async function verifyAdmin() {
-  const supabase = await createClient()
-  
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  if (userError || !user) {
-    throw new Error('No autorizado')
-  }
-
-  const { data: customer } = await supabase
-    .from('customers')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single()
-
-  if (!customer?.is_admin) {
-    throw new Error('No autorizado - Se requiere ser admin')
-  }
-
-  return user.id
-}
+// verifyAdmin ahora se importa de @/lib/admin-utils
 
 export async function updateOrderStatus(
   orderId: string, 
@@ -34,15 +17,12 @@ export async function updateOrderStatus(
     // 1. Verificar permisos de admin
     await verifyAdmin()
 
-    // 2. Validar status
+    // Validar status
     if (!validateOrderStatus(status)) {
-      return { 
-        success: false, 
-        error: 'Estado de orden inválido' 
-      }
+      return errorResponse('Estado de orden inválido')
     }
 
-    // 3. Actualizar estado de la orden
+    // Actualizar estado de la orden
     const supabase = await createClient()
     
     const { error } = await supabase
@@ -54,17 +34,10 @@ export async function updateOrderStatus(
 
     revalidatePath('/account')
     
-    return { 
-      success: true, 
-      message: 'Estado de orden actualizado correctamente' 
-    }
+    return successResponse({ orderId, status }, 'Estado de orden actualizado correctamente')
 
   } catch (error) {
-    console.error('Error updating order status:', error)
-    return { 
-      success: false, 
-      error: 'Error al actualizar estado de orden' 
-    }
+    return handleActionError(error, 'Error al actualizar estado de orden')
   }
 }
 
@@ -87,11 +60,11 @@ export async function getOrdersByUser(userId: string): Promise<ActionResponse> {
         .single()
 
       if (!customer?.is_admin) {
-        return { success: false, error: 'No autorizado' }
+        return errorResponse('No autorizado')
       }
     }
 
-    // 3. Obtener órdenes con items y productos
+    // Obtener órdenes con items y productos
     const { data: orders, error } = await supabase
       .from('orders')
       .select(`
@@ -120,26 +93,17 @@ export async function getOrdersByUser(userId: string): Promise<ActionResponse> {
 
     if (error) throw error
 
-    return { 
-      success: true, 
-      data: orders 
-    }
+    return successResponse(orders)
 
   } catch (error) {
-    console.error('Error getting orders:', error)
-    return { 
-      success: false, 
-      error: 'Error al obtener órdenes' 
-    }
+    return handleActionError(error, 'Error al obtener órdenes')
   }
 }
 
 export async function getAllOrders(): Promise<ActionResponse> {
   try {
-    // 1. Verificar permisos de admin
+    // Verificar permisos de admin
     await verifyAdmin()
-
-    // 2. Obtener todas las órdenes con detalles
     const supabase = await createClient()
     
     const { data: orders, error } = await supabase
@@ -169,17 +133,10 @@ export async function getAllOrders(): Promise<ActionResponse> {
 
     if (error) throw error
 
-    return { 
-      success: true, 
-      data: orders 
-    }
+    return successResponse(orders)
 
   } catch (error) {
-    console.error('Error getting all orders:', error)
-    return { 
-      success: false, 
-      error: 'Error al obtener órdenes' 
-    }
+    return handleActionError(error, 'Error al obtener órdenes')
   }
 }
 
@@ -187,13 +144,13 @@ export async function getOrderDetails(orderId: string): Promise<ActionResponse> 
   try {
     const supabase = await createClient()
     
-    // 1. Obtener usuario actual
+    // Obtener usuario actual
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) {
-      return { success: false, error: 'No autorizado' }
+      return errorResponse('No autorizado')
     }
 
-    // 2. Obtener orden con todos los detalles
+    // Obtener orden con todos los detalles
     const { data: order, error } = await supabase
       .from('orders')
       .select(`
@@ -217,7 +174,7 @@ export async function getOrderDetails(orderId: string): Promise<ActionResponse> 
 
     if (error) throw error
 
-    // 3. Verificar que el usuario puede ver esta orden
+    // Verificar que el usuario puede ver esta orden
     if (order.user_id !== user.id) {
       const { data: customer } = await supabase
         .from('customers')
@@ -226,20 +183,13 @@ export async function getOrderDetails(orderId: string): Promise<ActionResponse> 
         .single()
 
       if (!customer?.is_admin) {
-        return { success: false, error: 'No autorizado' }
+        return errorResponse('No autorizado')
       }
     }
 
-    return { 
-      success: true, 
-      data: order 
-    }
+    return successResponse(order)
 
   } catch (error) {
-    console.error('Error getting order details:', error)
-    return { 
-      success: false, 
-      error: 'Error al obtener detalles de orden' 
-    }
+    return handleActionError(error, 'Error al obtener detalles de orden')
   }
 }

@@ -692,7 +692,18 @@ export async function getProductsPaginated(
     visibility?: 'all' | 'visible' | 'hidden'
     search?: string
   }
-): Promise<ActionResponse<{ products: any[], total: number, page: number, pageSize: number, totalPages: number }>> {
+): Promise<ActionResponse<{ 
+  products: any[], 
+  total: number, 
+  page: number, 
+  pageSize: number, 
+  totalPages: number,
+  totals?: {
+    all: number
+    visible: number
+    hidden: number
+  }
+}>> {
   try {
     // Verificar permisos de admin
     await verifyAdmin()
@@ -726,12 +737,29 @@ export async function getProductsPaginated(
 
     const totalPages = Math.ceil((count || 0) / pageSize)
 
+    // Obtener totales si no hay filtro de búsqueda (para mostrar en el dropdown)
+    let totals: { all: number, visible: number, hidden: number } | undefined
+    if (!filters?.search) {
+      const [allResult, visibleResult, hiddenResult] = await Promise.all([
+        supabase.from('products').select('*', { count: 'exact', head: true }),
+        supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_visible', true),
+        supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_visible', false)
+      ])
+      
+      totals = {
+        all: allResult.count || 0,
+        visible: visibleResult.count || 0,
+        hidden: hiddenResult.count || 0
+      }
+    }
+
     return successResponse({
       products: products || [],
       total: count || 0,
       page,
       pageSize,
-      totalPages
+      totalPages,
+      totals
     })
 
   } catch (error) {

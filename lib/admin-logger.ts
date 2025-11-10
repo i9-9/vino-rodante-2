@@ -129,6 +129,27 @@ export const logAdminAction = {
     )
   },
 
+  orderStatusUpdated: (userId: string, orderId: string, newStatus: string) => {
+    adminLogger.info(
+      { userId, action: 'order_status_updated', resource: 'order', resourceId: orderId, metadata: { newStatus } },
+      `Estado de orden actualizado: ${newStatus}`
+    )
+  },
+
+  orderDeleted: (userId: string, orderId: string) => {
+    adminLogger.warn(
+      { userId, action: 'order_deleted', resource: 'order', resourceId: orderId },
+      `Orden eliminada: ${orderId}`
+    )
+  },
+
+  orderNotesAdded: (userId: string, orderId: string) => {
+    adminLogger.info(
+      { userId, action: 'order_notes_added', resource: 'order', resourceId: orderId },
+      `Notas agregadas a orden: ${orderId}`
+    )
+  },
+
   unauthorizedAccess: (userId: string | undefined, action: string) => {
     adminLogger.error(
       { userId, action: 'unauthorized_access', metadata: { attemptedAction: action } },

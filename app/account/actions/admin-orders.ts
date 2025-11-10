@@ -4,6 +4,10 @@ import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { sendEmail, renderCustomerOrderEmail } from '@/lib/emails/resend'
 import type { OrderStatus } from '../types'
+import { verifyAdmin } from '@/lib/admin-utils'
+import type { ActionResponse } from '@/lib/types/action-response'
+import { successResponse, errorResponse, handleActionError } from '@/lib/types/action-response'
+import { logAdminAction } from '@/lib/admin-logger'
 
 interface DbOrderItem {
   id: string
@@ -44,139 +48,95 @@ interface RawOrderResponse {
   order_items: DbOrderItem[]
 }
 
-async function verifyAdmin() {
-  const supabase = await createClient()
-  
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  if (userError || !user) {
-    throw new Error('No autorizado')
-  }
+// verifyAdmin ahora se importa de @/lib/admin-utils
 
-  const { data: customer } = await supabase
-    .from('customers')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single()
+export async function getAllOrders(): Promise<ActionResponse> {
+  try {
+    // Verificar permisos de admin
+    await verifyAdmin()
+    const supabase = await createClient()
 
-  if (!customer?.is_admin) {
-    throw new Error('No autorizado - Se requiere ser admin')
-  }
-
-  return user.id
-}
-
-export async function getAllOrders() {
-  const supabase = await createClient()
-
-  console.log('Fetching all orders as admin')
-
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  if (userError || !user) {
-    console.log('No user found or error:', userError)
-    return { data: null, error: new Error('No autorizado') }
-  }
-
-  // Verificar si es admin
-  const { data: customerData } = await supabase
-    .from('customers')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single()
-
-  console.log('Customer admin check:', customerData)
-
-  if (!customerData?.is_admin) {
-    console.log('User is not admin')
-    return { data: null, error: new Error('No autorizado - Se requiere ser admin') }
-  }
-
-  console.log('Fetching orders with details')
-
-  const { data, error } = await supabase
-    .from('orders')
-    .select(`
-      id,
-      user_id,
-      status,
-      total,
-      created_at,
-      shipping_address:addresses!shipping_address_id (
-        line1,
-        line2,
-        city,
-        state,
-        postal_code,
-        country
-      ),
-      customer:customers!user_id (
+    const { data, error } = await supabase
+      .from('orders')
+      .select(`
         id,
-        name,
-        email
-      ),
-      order_items (
-        id,
-        product_id,
-        quantity,
-        price,
-        products (
+        user_id,
+        status,
+        total,
+        created_at,
+        shipping_address:addresses!shipping_address_id (
+          line1,
+          line2,
+          city,
+          state,
+          postal_code,
+          country
+        ),
+        customer:customers!user_id (
           id,
           name,
-          description,
-          image,
+          email
+        ),
+        order_items (
+          id,
+          product_id,
+          quantity,
           price,
-          varietal,
-          year,
-          region
+          products (
+            id,
+            name,
+            description,
+            image,
+            price,
+            varietal,
+            year,
+            region
+          )
         )
-      )
-    `)
-    .order('created_at', { ascending: false })
+      `)
+      .order('created_at', { ascending: false })
 
-  console.log('Orders query result:', { data, error })
+    if (error) throw error
 
-  if (error) {
-    console.error('Error fetching orders:', error)
-    return { data: null, error }
-  }
-
-  // Transformar los datos para que coincidan con la interfaz Order
-  const transformedOrders = (data as unknown as RawOrderResponse[]).map((order) => ({
-    id: order.id,
-    user_id: order.user_id,
-    status: order.status,
-    total: order.total,
-    created_at: order.created_at,
-    shipping_address: order.shipping_address,
-    customer: order.customer || { 
-      id: order.user_id,
-      name: 'Cliente no encontrado',
-      email: 'No disponible'
-    },
-    order_items: order.order_items.map((item) => ({
-      id: item.id,
-      order_id: order.id,
-      product_id: item.product_id,
-      quantity: item.quantity,
-      price: item.price,
-      product: item.products || {
-        id: item.product_id,
-        name: 'Producto no encontrado',
-        price: item.price
-      }
+    // Transformar los datos para que coincidan con la interfaz Order
+    const transformedOrders = (data as unknown as RawOrderResponse[]).map((order) => ({
+      id: order.id,
+      user_id: order.user_id,
+      status: order.status,
+      total: order.total,
+      created_at: order.created_at,
+      shipping_address: order.shipping_address,
+      customer: order.customer || { 
+        id: order.user_id,
+        name: 'Cliente no encontrado',
+        email: 'No disponible'
+      },
+      order_items: order.order_items.map((item) => ({
+        id: item.id,
+        order_id: order.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        price: item.price,
+        product: item.products || {
+          id: item.product_id,
+          name: 'Producto no encontrado',
+          price: item.price
+        }
+      }))
     }))
-  }))
 
-  console.log('Transformed orders:', transformedOrders)
+    return successResponse(transformedOrders)
 
-  return { data: transformedOrders, error: null }
+  } catch (error) {
+    return handleActionError(error, 'Error al obtener órdenes')
+  }
 }
 
-export async function updateOrderStatus(orderId: string, newStatus: OrderStatus) {
+export async function updateOrderStatus(orderId: string, newStatus: OrderStatus): Promise<ActionResponse> {
+  let userId: string | undefined
   try {
-    // 1. Verificar permisos de admin
-    await verifyAdmin()
-
-    // 2. Actualizar estado de la orden
+    // Verificar permisos de admin
+    userId = await verifyAdmin()
     const supabase = await createClient()
     
     const { error } = await supabase
@@ -234,31 +194,38 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
       console.error('Error sending status update email:', notifyError)
     }
     
-    return { success: true }
+    // Log de acción exitosa
+    if (userId) {
+      logAdminAction.orderStatusUpdated(userId, orderId, newStatus)
+    }
+    
+    return successResponse({ orderId, status: newStatus }, `Estado de orden actualizado a ${newStatus}`)
   } catch (error) {
-    console.error('Error updating order status:', error)
-    throw error
+    if (userId) {
+      logAdminAction.error(userId, 'updateOrderStatus', error instanceof Error ? error : new Error(String(error)))
+    }
+    return handleActionError(error, 'Error al actualizar estado de la orden')
   }
 }
 
-export async function getOrderById(orderId: string) {
+export async function getOrderById(orderId: string): Promise<ActionResponse> {
   try {
     const supabase = await createClient()
     
-    // 1. Obtener usuario actual
+    // Obtener usuario actual
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) {
-      return { data: null, error: new Error('No autorizado') }
+      return errorResponse('No autorizado')
     }
 
-    // 2. Verificar permisos
+    // Verificar permisos
     const { data: customer } = await supabase
       .from('customers')
       .select('is_admin')
       .eq('id', user.id)
       .single()
 
-    // 3. Obtener orden con todos los detalles
+    // Obtener orden con todos los detalles
     const { data, error } = await supabase
       .from('orders')
       .select(`
@@ -302,22 +269,21 @@ export async function getOrderById(orderId: string) {
 
     if (error) throw error
 
-    // 4. Verificar que el usuario puede ver esta orden
+    // Verificar que el usuario puede ver esta orden
     if (!customer?.is_admin && data.user_id !== user.id) {
-      return { data: null, error: new Error('No autorizado para ver este pedido') }
+      return errorResponse('No autorizado para ver este pedido')
     }
 
-    return { data, error: null }
+    return successResponse(data)
   } catch (error) {
-    console.error('Error fetching order:', error)
-    return { data: null, error }
+    return handleActionError(error, 'Error al obtener orden')
   }
 }
 
-export async function deleteOrder(orderId: string) {
+export async function deleteOrder(orderId: string): Promise<ActionResponse> {
+  let userId: string | undefined
   try {
-    await verifyAdmin()
-    
+    userId = await verifyAdmin()
     const supabase = await createClient()
     
     const { error } = await supabase
@@ -329,17 +295,24 @@ export async function deleteOrder(orderId: string) {
 
     revalidatePath('/account')
     
-    return { success: true }
+    // Log de acción exitosa
+    if (userId) {
+      logAdminAction.orderDeleted(userId, orderId)
+    }
+    
+    return successResponse(undefined, 'Orden eliminada correctamente')
   } catch (error) {
-    console.error('Error deleting order:', error)
-    throw error
+    if (userId) {
+      logAdminAction.error(userId, 'deleteOrder', error instanceof Error ? error : new Error(String(error)))
+    }
+    return handleActionError(error, 'Error al eliminar orden')
   }
 }
 
-export async function addOrderNotes(orderId: string, notes: string) {
+export async function addOrderNotes(orderId: string, notes: string): Promise<ActionResponse> {
+  let userId: string | undefined
   try {
-    await verifyAdmin()
-    
+    userId = await verifyAdmin()
     const supabase = await createClient()
     
     const { error } = await supabase
@@ -354,9 +327,16 @@ export async function addOrderNotes(orderId: string, notes: string) {
 
     revalidatePath('/account')
     
-    return { success: true }
+    // Log de acción exitosa
+    if (userId) {
+      logAdminAction.orderNotesAdded(userId, orderId)
+    }
+    
+    return successResponse({ orderId, notes }, 'Notas agregadas correctamente')
   } catch (error) {
-    console.error('Error adding order notes:', error)
-    throw error
+    if (userId) {
+      logAdminAction.error(userId, 'addOrderNotes', error instanceof Error ? error : new Error(String(error)))
+    }
+    return handleActionError(error, 'Error al agregar notas a la orden')
   }
 } 

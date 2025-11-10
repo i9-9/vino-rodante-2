@@ -1,35 +1,20 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
-import { revalidatePath } from 'next/cache'
+import { createClient } from '@/utils/supabase/server'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { CreateBoxSchema, UpdateBoxSchema } from '../types/box'
-
-export type ActionResponse = {
-  success: boolean
-  data?: unknown
-  error?: string
-}
+import { verifyAdmin } from '@/lib/admin-utils'
+import type { ActionResponse } from '@/lib/types/action-response'
+import { successResponse, errorResponse, handleActionError } from '@/lib/types/action-response'
+import { logAdminAction } from '@/lib/admin-logger'
+import { CACHE_TAGS } from '@/lib/cache-tags'
 
 export async function createBox(formData: FormData): Promise<ActionResponse> {
-  const supabase = await createClient()
-
-  // Validar que el usuario sea admin
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return { success: false, error: 'No autorizado' }
-  }
-
+  let userId: string | undefined
   try {
-    // Verificar si es admin
-    const { data: customerData } = await supabase
-      .from('customers')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single()
-
-    if (!customerData?.is_admin) {
-      return { success: false, error: 'No autorizado - Se requiere ser admin' }
-    }
+    // Verificar permisos de admin
+    userId = await verifyAdmin()
+    const supabase = await createClient()
 
     // Extraer y validar datos básicos
     const rawData = {
@@ -107,36 +92,30 @@ export async function createBox(formData: FormData): Promise<ActionResponse> {
     }
 
     revalidatePath('/account')
-    return { success: true, data: boxData }
+    revalidateTag(CACHE_TAGS.PRODUCTS)
+    revalidateTag(CACHE_TAGS.PRODUCT_BY_SLUG)
+    
+    // Log de acción exitosa
+    if (userId && boxData) {
+      logAdminAction.productCreated(userId, boxData.id, validatedData.name)
+    }
+    
+    return successResponse(boxData, 'Box creado correctamente')
 
   } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error desconocido al crear el box' 
+    if (userId) {
+      logAdminAction.error(userId, 'createBox', error instanceof Error ? error : new Error(String(error)))
     }
+    return handleActionError(error, 'Error al crear el box')
   }
 }
 
 export async function updateBox(boxId: string, formData: FormData): Promise<ActionResponse> {
-  const supabase = await createClient()
-
-  // Validar que el usuario sea admin
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return { success: false, error: 'No autorizado' }
-  }
-
+  let userId: string | undefined
   try {
-    // Verificar si es admin
-    const { data: customerData } = await supabase
-      .from('customers')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single()
-
-    if (!customerData?.is_admin) {
-      return { success: false, error: 'No autorizado - Se requiere ser admin' }
-    }
+    // Verificar permisos de admin
+    userId = await verifyAdmin()
+    const supabase = await createClient()
 
     // Extraer y validar datos
     const rawData = {
@@ -215,36 +194,30 @@ export async function updateBox(boxId: string, formData: FormData): Promise<Acti
     }
 
     revalidatePath('/account')
-    return { success: true, data: boxData }
+    revalidateTag(CACHE_TAGS.PRODUCTS)
+    revalidateTag(CACHE_TAGS.PRODUCT_BY_SLUG)
+    
+    // Log de acción exitosa
+    if (userId && boxData) {
+      logAdminAction.productUpdated(userId, boxId, validatedData.name || '', validatedData)
+    }
+    
+    return successResponse(boxData, 'Box actualizado correctamente')
 
   } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error desconocido al actualizar el box' 
+    if (userId) {
+      logAdminAction.error(userId, 'updateBox', error instanceof Error ? error : new Error(String(error)))
     }
+    return handleActionError(error, 'Error al actualizar el box')
   }
 }
 
 export async function deleteBox(boxId: string): Promise<ActionResponse> {
-  const supabase = await createClient()
-
-  // Validar que el usuario sea admin
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return { success: false, error: 'No autorizado' }
-  }
-
+  let userId: string | undefined
   try {
-    // Verificar si es admin
-    const { data: customerData } = await supabase
-      .from('customers')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single()
-
-    if (!customerData?.is_admin) {
-      return { success: false, error: 'No autorizado - Se requiere ser admin' }
-    }
+    // Verificar permisos de admin
+    userId = await verifyAdmin()
+    const supabase = await createClient()
 
     // Eliminar relaciones box-productos primero
     await supabase
@@ -261,13 +234,21 @@ export async function deleteBox(boxId: string): Promise<ActionResponse> {
     if (deleteError) throw deleteError
 
     revalidatePath('/account')
-    return { success: true }
+    revalidateTag(CACHE_TAGS.PRODUCTS)
+    revalidateTag(CACHE_TAGS.PRODUCT_BY_SLUG)
+    
+    // Log de acción exitosa
+    if (userId) {
+      logAdminAction.productDeleted(userId, [boxId])
+    }
+    
+    return successResponse(undefined, 'Box eliminado correctamente')
 
   } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error desconocido al eliminar el box' 
+    if (userId) {
+      logAdminAction.error(userId, 'deleteBox', error instanceof Error ? error : new Error(String(error)))
     }
+    return handleActionError(error, 'Error al eliminar el box')
   }
 }
 

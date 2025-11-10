@@ -9,30 +9,9 @@ import type {
   SubscriptionFrequency
 } from '../types'
 import { redirect } from 'next/navigation'
+import { verifyAdmin } from '@/lib/admin-utils'
 
-
-
-// Funciones auxiliares
-async function verifyAdmin() {
-  const supabase = await createClient()
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  
-  if (userError || !user) {
-    throw new Error('No autorizado')
-  }
-
-  const { data: customer, error: customerError } = await supabase
-    .from('customers')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single()
-
-  if (customerError || !customer?.is_admin) {
-    throw new Error('Se requieren permisos de administrador')
-  }
-
-  return user
-}
+// verifyAdmin ahora se importa de @/lib/admin-utils
 
 // Funciones para usuarios normales
 export async function getUserSubscriptions(userId: string): Promise<UserSubscription[]> {

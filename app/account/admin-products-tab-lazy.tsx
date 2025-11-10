@@ -20,14 +20,22 @@ export default function AdminProductsTabLazy({ t }: AdminProductsTabLazyProps) {
     total: 0,
     totalPages: 0
   })
+  const [visibilityFilter, setVisibilityFilter] = useState<'all' | 'visible' | 'hidden'>('all')
+  const [totals, setTotals] = useState<{ all: number, visible: number, hidden: number } | null>(null)
 
   const supabase = createClient()
 
-  const loadProducts = async (page: number = 1, pageSize: number = 20) => {
+  const loadProducts = async (
+    page: number = 1, 
+    pageSize: number = 20,
+    filter?: 'all' | 'visible' | 'hidden'
+  ) => {
     try {
       setLoading(true)
       const { getProductsPaginated } = await import('./actions/products')
-      const result = await getProductsPaginated(page, pageSize)
+      const result = await getProductsPaginated(page, pageSize, {
+        visibility: filter || visibilityFilter
+      })
       
       if (result.success && result.data) {
         setProducts(result.data.products)
@@ -37,6 +45,9 @@ export default function AdminProductsTabLazy({ t }: AdminProductsTabLazyProps) {
           total: result.data.total,
           totalPages: result.data.totalPages
         })
+        if (result.data.totals) {
+          setTotals(result.data.totals)
+        }
       } else {
         setError(result.error || 'Error al cargar productos')
       }
@@ -48,7 +59,12 @@ export default function AdminProductsTabLazy({ t }: AdminProductsTabLazyProps) {
   }
 
   const refresh = async () => {
-    await loadProducts(pagination.page, pagination.pageSize)
+    await loadProducts(pagination.page, pagination.pageSize, visibilityFilter)
+  }
+
+  const handleFilterChange = (filter: 'all' | 'visible' | 'hidden') => {
+    setVisibilityFilter(filter)
+    loadProducts(1, pagination.pageSize, filter)
   }
 
   useEffect(() => {
@@ -140,7 +156,10 @@ export default function AdminProductsTabLazy({ t }: AdminProductsTabLazyProps) {
       t={t as unknown as import('@/lib/i18n/types').Translations} 
       onRefresh={refresh}
       pagination={pagination}
-      onPageChange={loadProducts}
+      onPageChange={(page, pageSize) => loadProducts(page, pageSize, visibilityFilter)}
+      visibilityFilter={visibilityFilter}
+      onVisibilityFilterChange={handleFilterChange}
+      totals={totals}
     />
   )
 } 

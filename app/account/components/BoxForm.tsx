@@ -30,6 +30,7 @@ interface BoxFormProps {
   onSubmit: (formData: FormData) => Promise<void>
   onClose: () => void
   initialData?: any // Datos del box existente para editar (simplificado)
+  key?: string | number // Para forzar re-render cuando cambia el producto
 }
 
 interface BoxProductItem {
@@ -69,8 +70,19 @@ export function BoxForm({ onSubmit, onClose, initialData }: BoxFormProps) {
     loadAvailableProducts()
     if (initialData?.id) {
       loadBoxProducts()
+    } else {
+      // Si no hay ID, limpiar los productos del box (es un nuevo box)
+      setBoxProducts([])
     }
   }, [initialData?.id])
+  
+  // Recargar productos cuando se monta el componente o cuando cambia el initialData
+  // Esto asegura que los productos se carguen correctamente después de ediciones
+  useEffect(() => {
+    if (initialData?.id) {
+      loadBoxProducts()
+    }
+  }, [initialData?.id, initialData?.updated_at])
 
   const loadAvailableProducts = async () => {
     try {
