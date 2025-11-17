@@ -253,8 +253,9 @@ export function BoxForm({ onSubmit, onClose, initialData }: BoxFormProps) {
         throw new Error('Debe agregar al menos un producto al box')
       }
 
-      // Validar cantidad de vinos solo si hay productos modificados
-      if (boxProducts.length > 0 && boxProducts.length !== formData.total_wines) {
+      // Validar cantidad de vinos SOLO en boxes nuevos
+      // Para boxes existentes, permitir actualizar precio/descripción sin validar productos
+      if (!initialData?.id && boxProducts.length > 0 && boxProducts.length !== formData.total_wines) {
         throw new Error(`El box debe contener exactamente ${formData.total_wines} vinos`)
       }
 
@@ -292,10 +293,13 @@ export function BoxForm({ onSubmit, onClose, initialData }: BoxFormProps) {
       submitData.set('featured', formData.featured ? 'on' : 'off')
       submitData.set('is_visible', formData.is_visible ? 'on' : 'off')
       submitData.set('free_shipping', formData.free_shipping ? 'on' : 'off')
-      
-      // Productos del box
-      submitData.set('box_products', JSON.stringify(boxProducts))
-      
+
+      // Productos del box - solo enviar si es un box nuevo O si hay productos cargados
+      // Esto evita borrar accidentalmente los productos cuando solo se edita el precio
+      if (!initialData?.id || boxProducts.length > 0) {
+        submitData.set('box_products', JSON.stringify(boxProducts))
+      }
+
       // Imagen
       if (selectedFile) {
         submitData.set('image_file', selectedFile)
