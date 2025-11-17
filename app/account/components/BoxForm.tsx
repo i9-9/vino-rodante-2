@@ -246,13 +246,15 @@ export function BoxForm({ onSubmit, onClose, initialData }: BoxFormProps) {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsSubmitting(true)
-    
+
     try {
-      if (boxProducts.length === 0) {
+      // Solo validar productos en boxes nuevos
+      if (!initialData?.id && boxProducts.length === 0) {
         throw new Error('Debe agregar al menos un producto al box')
       }
 
-      if (boxProducts.length !== formData.total_wines) {
+      // Validar cantidad de vinos solo si hay productos modificados
+      if (boxProducts.length > 0 && boxProducts.length !== formData.total_wines) {
         throw new Error(`El box debe contener exactamente ${formData.total_wines} vinos`)
       }
 
@@ -563,7 +565,7 @@ export function BoxForm({ onSubmit, onClose, initialData }: BoxFormProps) {
           </Button>
           <Button
             type="submit"
-            disabled={isSubmitting || boxProducts.length === 0}
+            disabled={isSubmitting || (!initialData?.id && boxProducts.length === 0)}
           >
             {isSubmitting && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
