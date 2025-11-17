@@ -115,18 +115,25 @@ export function DiscountForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     const form = new FormData()
     form.append('name', formData.name)
     form.append('description', formData.description)
     form.append('discount_type', formData.discount_type)
-    form.append('discount_value', formData.discount_value.toString())
-    form.append('min_purchase_amount', formData.min_purchase_amount.toString())
-    form.append('max_discount_amount', formData.max_discount_amount?.toString() || '')
+
+    // Normalizar valores numéricos
+    const normalizedDiscountValue = formData.discount_value.toString().replace(',', '.')
+    const normalizedMinPurchase = formData.min_purchase_amount.toString().replace(',', '.')
+    const normalizedMaxDiscount = formData.max_discount_amount?.toString().replace(',', '.') || ''
+    const normalizedUsageLimit = formData.usage_limit?.toString() || ''
+
+    form.append('discount_value', normalizedDiscountValue)
+    form.append('min_purchase_amount', normalizedMinPurchase)
+    form.append('max_discount_amount', normalizedMaxDiscount)
     form.append('start_date', formData.start_date)
     form.append('end_date', formData.end_date)
     form.append('is_active', formData.is_active ? 'on' : '')
-    form.append('usage_limit', formData.usage_limit?.toString() || '')
+    form.append('usage_limit', normalizedUsageLimit)
     form.append('applies_to', formData.applies_to)
     
     // Determinar target_value basado en applies_to

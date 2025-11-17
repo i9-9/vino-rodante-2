@@ -87,18 +87,23 @@ export async function createDiscount(formData: FormData): Promise<ActionResponse
     await verifyAdmin()
     const supabase = await createClient()
 
-    // Extraer datos del formulario
+    // Extraer datos del formulario con normalización de números
+    const rawDiscountValue = (formData.get('discount_value') as string || '0').replace(',', '.')
+    const rawMinPurchase = (formData.get('min_purchase_amount') as string || '0').replace(',', '.')
+    const rawMaxDiscount = formData.get('max_discount_amount') as string
+    const rawUsageLimit = formData.get('usage_limit') as string
+
     const rawData = {
       name: formData.get('name') as string,
       description: formData.get('description') as string || null,
       discount_type: formData.get('discount_type') as 'percentage' | 'fixed_amount',
-      discount_value: Number(formData.get('discount_value')),
-      min_purchase_amount: Number(formData.get('min_purchase_amount')) || 0,
-      max_discount_amount: formData.get('max_discount_amount') ? Number(formData.get('max_discount_amount')) : null,
+      discount_value: Number(rawDiscountValue),
+      min_purchase_amount: Number(rawMinPurchase) || 0,
+      max_discount_amount: rawMaxDiscount ? Number(rawMaxDiscount.replace(',', '.')) : null,
       start_date: formData.get('start_date') as string,
       end_date: formData.get('end_date') as string,
       is_active: formData.get('is_active') === 'on',
-      usage_limit: formData.get('usage_limit') ? Number(formData.get('usage_limit')) : null,
+      usage_limit: rawUsageLimit ? Number(rawUsageLimit) : null,
       applies_to: formData.get('applies_to') as 'all_products' | 'category' | 'specific_products',
       target_value: formData.get('target_value') as string,
       days_of_week: formData.get('days_of_week') ? JSON.parse(formData.get('days_of_week') as string) : []
@@ -135,18 +140,23 @@ export async function updateDiscount(formData: FormData): Promise<ActionResponse
       return errorResponse('ID de descuento requerido')
     }
 
-    // Extraer datos del formulario
+    // Extraer datos del formulario con normalización de números
+    const rawDiscountValue = (formData.get('discount_value') as string || '0').replace(',', '.')
+    const rawMinPurchase = (formData.get('min_purchase_amount') as string || '0').replace(',', '.')
+    const rawMaxDiscount = formData.get('max_discount_amount') as string
+    const rawUsageLimit = formData.get('usage_limit') as string
+
     const rawData = {
       name: formData.get('name') as string,
       description: formData.get('description') as string || null,
       discount_type: formData.get('discount_type') as 'percentage' | 'fixed_amount',
-      discount_value: Number(formData.get('discount_value')),
-      min_purchase_amount: Number(formData.get('min_purchase_amount')) || 0,
-      max_discount_amount: formData.get('max_discount_amount') ? Number(formData.get('max_discount_amount')) : null,
+      discount_value: Number(rawDiscountValue),
+      min_purchase_amount: Number(rawMinPurchase) || 0,
+      max_discount_amount: rawMaxDiscount ? Number(rawMaxDiscount.replace(',', '.')) : null,
       start_date: formData.get('start_date') as string,
       end_date: formData.get('end_date') as string,
       is_active: formData.get('is_active') === 'on',
-      usage_limit: formData.get('usage_limit') ? Number(formData.get('usage_limit')) : null,
+      usage_limit: rawUsageLimit ? Number(rawUsageLimit) : null,
       applies_to: formData.get('applies_to') as 'all_products' | 'category' | 'specific_products',
       target_value: formData.get('target_value') as string,
       days_of_week: formData.get('days_of_week') ? JSON.parse(formData.get('days_of_week') as string) : []

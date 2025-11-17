@@ -261,8 +261,22 @@ export function BoxForm({ onSubmit, onClose, initialData }: BoxFormProps) {
       // Campos básicos
       submitData.set('name', formData.name)
       submitData.set('description', formData.description)
-      submitData.set('price', formData.price)
-      submitData.set('stock', formData.stock)
+
+      // Normalizar precio (acepta "," o "." como separador decimal)
+      const normalizedPrice = (formData.price ?? '').trim().replace(',', '.')
+      const priceNumber = Number(normalizedPrice)
+      if (!Number.isFinite(priceNumber) || priceNumber < 0) {
+        throw new Error('Precio inválido')
+      }
+      submitData.set('price', priceNumber.toString())
+
+      // Normalizar stock (solo dígitos)
+      const stockDigits = (formData.stock ?? '').toString().replace(/[^0-9]/g, '')
+      const stockNumber = stockDigits === '' ? 0 : parseInt(stockDigits, 10)
+      if (!Number.isFinite(stockNumber) || stockNumber < 0) {
+        throw new Error('Stock inválido')
+      }
+      submitData.set('stock', stockNumber.toString())
       
       // ✅ CRÍTICO: Agregar campos requeridos para boxes
       submitData.set('category', 'Boxes')

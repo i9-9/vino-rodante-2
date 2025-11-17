@@ -16,15 +16,20 @@ export async function createBox(formData: FormData): Promise<ActionResponse> {
     userId = await verifyAdmin()
     const supabase = await createClient()
 
-    // Extraer y validar datos básicos
+    // Extraer y validar datos básicos con normalización de números
+    const rawPrice = (formData.get('price') as string || '0').replace(',', '.')
+    const rawStock = (formData.get('stock') as string || '0').replace(/[^0-9]/g, '')
+    const rawTotalWines = formData.get('total_wines') as string || '3'
+    const rawDiscountPercentage = (formData.get('discount_percentage') as string || '0').replace(',', '.')
+
     const rawData = {
       name: formData.get('name'),
       description: formData.get('description'),
-      price: Number(formData.get('price')),
-      stock: Number(formData.get('stock')),
+      price: Number(rawPrice),
+      stock: Number(rawStock),
       category: 'Boxes',
-      total_wines: Number(formData.get('total_wines')),
-      discount_percentage: Number(formData.get('discount_percentage')) || 0,
+      total_wines: Number(rawTotalWines),
+      discount_percentage: Number(rawDiscountPercentage) || 0,
       featured: formData.get('featured') === 'on',
       is_visible: formData.get('is_visible') === 'on',
       slug: (formData.get('name') as string)?.toLowerCase().replace(/\s+/g, '-') || '',
@@ -117,14 +122,19 @@ export async function updateBox(boxId: string, formData: FormData): Promise<Acti
     userId = await verifyAdmin()
     const supabase = await createClient()
 
-    // Extraer y validar datos
+    // Extraer y validar datos con normalización de números
+    const rawPrice = (formData.get('price') as string || '0').replace(',', '.')
+    const rawStock = (formData.get('stock') as string || '0').replace(/[^0-9]/g, '')
+    const rawTotalWines = formData.get('total_wines') as string || '3'
+    const rawDiscountPercentage = (formData.get('discount_percentage') as string || '0').replace(',', '.')
+
     const rawData = {
       name: formData.get('name'),
       description: formData.get('description'),
-      price: Number(formData.get('price')),
-      stock: Number(formData.get('stock')),
-      total_wines: Number(formData.get('total_wines')),
-      discount_percentage: Number(formData.get('discount_percentage')) || 0,
+      price: Number(rawPrice),
+      stock: Number(rawStock),
+      total_wines: Number(rawTotalWines),
+      discount_percentage: Number(rawDiscountPercentage) || 0,
       featured: formData.get('featured') === 'on',
       is_visible: formData.get('is_visible') === 'on',
       slug: (formData.get('name') as string)?.toLowerCase().replace(/\s+/g, '-') || ''
