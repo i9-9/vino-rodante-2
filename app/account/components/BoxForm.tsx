@@ -46,8 +46,8 @@ interface BoxProductItem {
 
 export function BoxForm({ onSubmit, onClose, initialData }: BoxFormProps) {
   const [formData, setFormData] = useState({
-    name: initialData?.name || '',
-    description: initialData?.description || '',
+    name: (initialData?.name || '').slice(0, 100), // Truncate to 100 chars
+    description: (initialData?.description || '').slice(0, 2000), // Truncate to 2000 chars
     price: initialData?.price ? String(initialData.price) : '',
     stock: initialData?.stock ? String(initialData.stock) : '',
     total_wines: initialData?.total_wines || 3,
@@ -345,8 +345,12 @@ export function BoxForm({ onSubmit, onClose, initialData }: BoxFormProps) {
             value={formData.name}
             onChange={handleInputChange}
             placeholder="Ej: Box Malbec Premium"
+            maxLength={100}
             required
           />
+          <p className="text-xs text-muted-foreground text-right">
+            {formData.name.length}/100 caracteres
+          </p>
         </div>
 
         <div className="space-y-2">
@@ -357,8 +361,12 @@ export function BoxForm({ onSubmit, onClose, initialData }: BoxFormProps) {
             value={formData.description}
             onChange={handleInputChange}
             placeholder="Describe el contenido del box..."
+            maxLength={2000}
             required
           />
+          <p className="text-xs text-muted-foreground text-right">
+            {formData.description.length}/2000 caracteres
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

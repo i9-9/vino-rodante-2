@@ -16,7 +16,7 @@ export const BoxProductSchema = z.object({
 export const BoxSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().min(1, 'El nombre del box es requerido').max(100),
-  description: z.string().min(1, 'La descripción del box es requerida').max(500),
+  description: z.string().min(1, 'La descripción del box es requerida').max(2000),
   price: z.number().min(0, 'El precio debe ser positivo'),
   stock: z.number().min(0, 'El stock debe ser positivo'),
   category: z.literal('Boxes'),
