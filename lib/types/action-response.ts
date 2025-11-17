@@ -41,6 +41,12 @@ export function handleActionError(error: unknown, defaultMessage: string): Actio
   if (error instanceof Error) {
     return errorResponse(error, defaultMessage)
   }
+
+  // Manejar errores de Supabase (PostgrestError)
+  if (error && typeof error === 'object' && 'message' in error) {
+    return errorResponse(String(error.message), defaultMessage)
+  }
+
   return errorResponse(String(error), defaultMessage)
 }
 

@@ -60,18 +60,55 @@ export async function createBox(formData: FormData): Promise<ActionResponse> {
     }
 
     // Crear el box en la tabla de productos
-    const { data: boxData, error: boxError } = await supabase
+    // Intentar primero con todos los campos (incluyendo discount_percentage y total_wines)
+    const insertData = {
+      ...validatedData,
+      year: 'N/A', // Los boxes no tienen año específico
+      region: 'Múltiples', // Los boxes pueden tener múltiples regiones
+      varietal: 'Múltiples' // Los boxes pueden tener múltiples varietales
+    }
+    
+    let { data: boxData, error: boxError } = await supabase
       .from('products')
-      .insert({
-        ...validatedData,
-        year: 'N/A', // Los boxes no tienen año específico
-        region: 'Múltiples', // Los boxes pueden tener múltiples regiones
-        varietal: 'Múltiples' // Los boxes pueden tener múltiples varietales
-      })
+      .insert(insertData)
       .select()
       .single()
 
-    if (boxError) throw boxError
+    // Si falla por columnas faltantes, intentar sin discount_percentage y total_wines
+    if (boxError && (
+      boxError.message?.includes('discount_percentage') || 
+      boxError.message?.includes('total_wines') ||
+      boxError.message?.includes('schema cache') ||
+      boxError.code === 'PGRST116'
+    )) {
+      // Crear una copia sin los campos problemáticos
+      const { discount_percentage, total_wines, ...dataWithoutNewFields } = insertData
+      
+      const fallbackResult = await supabase
+        .from('products')
+        .insert({
+          ...dataWithoutNewFields,
+          year: 'N/A',
+          region: 'Múltiples',
+          varietal: 'Múltiples'
+        })
+        .select()
+        .single()
+      
+      if (fallbackResult.error) {
+        // Si aún falla, lanzar el error original con mejor formato
+        throw new Error(fallbackResult.error.message || String(fallbackResult.error))
+      }
+      
+      boxData = fallbackResult.data
+      boxError = null
+    }
+
+    if (boxError) {
+      // Convertir el error a un formato legible
+      const errorMessage = boxError.message || String(boxError)
+      throw new Error(`Error al crear box: ${errorMessage}`)
+    }
 
     // Extraer productos del box
     const boxProductsJson = formData.get('box_products') as string
@@ -164,14 +201,45 @@ export async function updateBox(boxId: string, formData: FormData): Promise<Acti
     }
 
     // Actualizar el box en la tabla de productos
-    const { data: boxData, error: boxError } = await supabase
+    // Intentar primero con todos los campos (incluyendo discount_percentage y total_wines)
+    let { data: boxData, error: boxError } = await supabase
       .from('products')
       .update(validatedData)
       .eq('id', boxId)
       .select()
       .single()
 
-    if (boxError) throw boxError
+    // Si falla por columnas faltantes, intentar sin discount_percentage y total_wines
+    if (boxError && (
+      boxError.message?.includes('discount_percentage') || 
+      boxError.message?.includes('total_wines') ||
+      boxError.message?.includes('schema cache') ||
+      boxError.code === 'PGRST116'
+    )) {
+      // Crear una copia sin los campos problemáticos
+      const { discount_percentage, total_wines, ...dataWithoutNewFields } = validatedData
+      
+      const fallbackResult = await supabase
+        .from('products')
+        .update(dataWithoutNewFields)
+        .eq('id', boxId)
+        .select()
+        .single()
+      
+      if (fallbackResult.error) {
+        // Si aún falla, lanzar el error original con mejor formato
+        throw new Error(fallbackResult.error.message || String(fallbackResult.error))
+      }
+      
+      boxData = fallbackResult.data
+      boxError = null
+    }
+
+    if (boxError) {
+      // Convertir el error a un formato legible
+      const errorMessage = boxError.message || String(boxError)
+      throw new Error(`Error al actualizar box: ${errorMessage}`)
+    }
 
     // Actualizar productos del box si se proporcionaron
     const boxProductsJson = formData.get('box_products') as string
@@ -266,15 +334,88 @@ export async function getBoxWithProducts(boxId: string): Promise<Box | null> {
   const supabase = await createClient()
 
   try {
-    // Obtener datos básicos del box
+    // Obtener datos básicos del box - seleccionar columnas explícitamente
+    // Nota: discount_percentage y total_wines pueden no existir hasta que se ejecute la migración
     const { data: boxData, error: boxError } = await supabase
       .from('products')
-      .select('*')
+      .select('id, name, description, price, stock, category, image, featured, is_visible, slug, year, region, varietal, created_at, updated_at, total_wines, free_shipping, discount_percentage')
       .eq('id', boxId)
       .eq('category', 'Boxes')
       .single()
 
-    if (boxError || !boxData) return null
+    if (boxError) {
+      // Si el error es por columnas faltantes, intentar sin discount_percentage
+      if (boxError.message?.includes('discount_percentage') || boxError.message?.includes('schema cache')) {
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('products')
+          .select('id, name, description, price, stock, category, image, featured, is_visible, slug, year, region, varietal, created_at, updated_at, total_wines, free_shipping')
+          .eq('id', boxId)
+          .eq('category', 'Boxes')
+          .single()
+        
+        if (fallbackError || !fallbackData) return null
+        
+        // Agregar discount_percentage con valor por defecto
+        const boxDataWithDiscount = {
+          ...fallbackData,
+          discount_percentage: 0,
+          total_wines: (fallbackData as any).total_wines ?? 0
+        }
+        
+        // Continuar con la carga de productos del box (código duplicado pero necesario)
+        const { data: relations, error: relationsError } = await supabase
+          .from('box_product_relations')
+          .select(`
+            product_id,
+            quantity,
+            products:product_id (
+              id,
+              name,
+              price,
+              image,
+              varietal,
+              year,
+              region
+            )
+          `)
+          .eq('box_id', boxId)
+
+        if (relationsError) {
+          return {
+            ...boxDataWithDiscount,
+            box_products: [],
+            total_wines: boxDataWithDiscount.total_wines
+          } as Box
+        }
+
+        const boxProducts = relations?.map(relation => ({
+          product_id: relation.product_id,
+          quantity: relation.quantity,
+          name: relation.products?.name || '',
+          price: relation.products?.price || 0,
+          image: relation.products?.image || '',
+          varietal: relation.products?.varietal || '',
+          year: relation.products?.year || '',
+          region: relation.products?.region || ''
+        })) || []
+
+        return {
+          ...boxDataWithDiscount,
+          box_products: boxProducts,
+          total_wines: boxProducts.length || boxDataWithDiscount.total_wines
+        } as Box
+      }
+      return null
+    }
+    
+    if (!boxData) return null
+    
+    // Agregar discount_percentage con valor por defecto si no existe
+    const boxDataWithDiscount = {
+      ...boxData,
+      discount_percentage: (boxData as any).discount_percentage ?? 0,
+      total_wines: (boxData as any).total_wines ?? 0
+    }
 
     // Obtener productos del box
     const { data: relations, error: relationsError } = await supabase
@@ -311,7 +452,7 @@ export async function getBoxWithProducts(boxId: string): Promise<Box | null> {
     })) || []
 
     return {
-      ...boxData,
+      ...boxDataWithDiscount,
       box_products: boxProducts,
       total_wines: boxProducts.length
     } as Box
@@ -325,16 +466,36 @@ export async function getAllBoxes(): Promise<Box[]> {
   const supabase = await createClient()
 
   try {
-    const { data, error } = await supabase
+    // Seleccionar columnas explícitamente
+    // Nota: discount_percentage puede no existir hasta que se ejecute la migración
+    let { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select('id, name, description, price, stock, category, image, featured, is_visible, slug, year, region, varietal, created_at, updated_at, total_wines, free_shipping, discount_percentage')
       .eq('category', 'Boxes')
       .eq('is_visible', true)
       .order('name')
 
-    if (error) throw error
+    // Si el error es por columnas faltantes, intentar sin discount_percentage
+    if (error && (error.message?.includes('discount_percentage') || error.message?.includes('schema cache'))) {
+      const fallbackResult = await supabase
+        .from('products')
+        .select('id, name, description, price, stock, category, image, featured, is_visible, slug, year, region, varietal, created_at, updated_at, total_wines, free_shipping')
+        .eq('category', 'Boxes')
+        .eq('is_visible', true)
+        .order('name')
+      
+      if (fallbackResult.error) throw fallbackResult.error
+      data = fallbackResult.data
+    } else if (error) {
+      throw error
+    }
 
-    return data || []
+    // Agregar discount_percentage y total_wines con valores por defecto si no existen
+    return (data || []).map(box => ({
+      ...box,
+      discount_percentage: (box as any).discount_percentage ?? 0,
+      total_wines: (box as any).total_wines ?? 3
+    })) as Box[]
   } catch {
     return []
   }
