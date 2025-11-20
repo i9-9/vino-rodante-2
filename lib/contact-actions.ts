@@ -68,3 +68,80 @@ export async function sendContactFormEmail(formData: FormData) {
     return { success: false, error: error instanceof Error ? error.message : 'Error desconocido' }
   }
 }
+
+export async function sendCorporateGiftsQuoteEmail(formData: FormData) {
+  try {
+    const name = formData.get('name') as string
+    const company = formData.get('company') as string
+    const email = formData.get('email') as string
+    const phone = formData.get('phone') as string
+    const quantity = formData.get('quantity') as string
+    const budget = formData.get('budget') as string
+    const eventDate = formData.get('eventDate') as string
+    const message = formData.get('message') as string
+
+    if (!name || !company || !email || !phone) {
+      throw new Error('Los campos nombre, empresa, email y teléfono son requeridos')
+    }
+
+    // Email al admin con la solicitud de cotización
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Nueva solicitud de cotización - Regalos Empresariales</title>
+    </head>
+    <body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+      <div style="background-color:#5B0E2D;padding:20px;text-align:center;margin-bottom:20px;">
+        <h1 style="color:#ffffff;margin:0;font-family:Georgia,serif;">🍷 Vino Rodante</h1>
+        <p style="color:#ffffff;margin:8px 0 0;opacity:0.9;">Nueva solicitud de cotización - Regalos Empresariales</p>
+      </div>
+      
+      <div style="background-color:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:20px;">
+        <h2 style="color:#5B0E2D;margin:0 0 15px;">Información del contacto</h2>
+        <p style="margin:5px 0;"><strong>Nombre:</strong> ${name}</p>
+        <p style="margin:5px 0;"><strong>Empresa:</strong> ${company}</p>
+        <p style="margin:5px 0;"><strong>Email:</strong> ${email}</p>
+        <p style="margin:5px 0;"><strong>Teléfono:</strong> ${phone}</p>
+        ${quantity ? `<p style="margin:5px 0;"><strong>Cantidad aproximada:</strong> ${quantity}</p>` : ''}
+        ${budget ? `<p style="margin:5px 0;"><strong>Presupuesto estimado:</strong> ${budget}</p>` : ''}
+        ${eventDate ? `<p style="margin:5px 0;"><strong>Fecha del evento:</strong> ${eventDate}</p>` : ''}
+      </div>
+      
+      ${message ? `
+      <div style="margin-bottom:20px;">
+        <h3 style="color:#5B0E2D;margin:0 0 10px;">Mensaje/Requerimientos adicionales:</h3>
+        <div style="background-color:#f5f5f5;padding:15px;border-radius:5px;border-left:4px solid #5B0E2D;">
+          ${message.replace(/\n/g, '<br>')}
+        </div>
+      </div>
+      ` : ''}
+      
+      <div style="text-align:center;margin:20px 0;">
+        <a href="mailto:${email}" style="display:inline-block;background-color:#5B0E2D;color:#ffffff;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:600;">
+          Responder a ${name}
+        </a>
+      </div>
+      
+      <div style="background-color:#f8f9fa;padding:15px;text-align:center;border-top:1px solid #eee;margin-top:20px;">
+        <p style="color:#666;margin:0;font-size:12px;">
+          Email automático del formulario de regalos empresariales - Vino Rodante<br>
+          Recibido el ${new Date().toLocaleDateString('es-AR')} a las ${new Date().toLocaleTimeString('es-AR')}
+        </p>
+      </div>
+    </body>
+    </html>`
+
+    await sendEmail({
+      to: 'info@vinorodante.com',
+      subject: `Cotización Regalos Empresariales: ${company} - ${name}`,
+      html,
+    })
+
+    return { success: true, message: 'Solicitud de cotización enviada exitosamente' }
+  } catch (error: unknown) {
+    console.error('Error sending corporate gifts quote email:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Error desconocido' }
+  }
+}

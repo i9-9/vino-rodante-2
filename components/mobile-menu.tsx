@@ -247,6 +247,14 @@ export default function MobileMenu({
               </div>
 
               <Link
+                href="/corporate-gifts"
+                className="block text-foreground hover:text-primary text-base font-semibold transition-colors py-1"
+                onClick={onClose}
+              >
+                Regalos Empresariales
+              </Link>
+
+              <Link
                 href="/about"
                 className="block text-foreground hover:text-primary text-base font-semibold transition-colors py-1"
                 onClick={onClose}

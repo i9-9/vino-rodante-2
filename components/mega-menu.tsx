@@ -5,7 +5,7 @@ import { useTranslations } from "@/lib/providers/translations-provider"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { WINE_VARIETALS, getAllWineTypes, getAllWineRegions, getAllWineVarietals, prettyLabel, CATEGORY_SLUG_MAP, REGION_SLUG_MAP } from "@/lib/wine-data"
+import { WINE_VARIETALS, getAllWineTypes, getAllWineRegions, getAllWineVarietals, prettyLabel, CATEGORY_SLUG_MAP, REGION_SLUG_MAP, VARIETAL_SLUG_MAP } from "@/lib/wine-data"
 import { getProductsForMenu } from '@/lib/products-client'
 import type { Product } from '@/lib/types'
 import Image from "next/image"
@@ -106,18 +106,42 @@ export default function MegaMenu() {
     slug: varietal.slug,
   }))
 
+  // Función helper para normalizar strings para comparación
+  const normalizeForComparison = (str: string): string => {
+    return str
+      .toLowerCase()
+      .trim()
+      .normalize('NFD') // Descompone caracteres con acentos
+      .replace(/[\u0300-\u036f]/g, '') // Elimina diacríticos
+      .replace(/\s+/g, ' ') // Normaliza espacios múltiples
+      .replace(/[-\s]/g, '') // Elimina guiones y espacios para comparación
+  }
+
   const finalAvailableTypes = allTypes.filter(type => {
-    // Si hay error o no hay productos, no mostrar ningún tipo
-    if (isErrorProducts || !products || products.length === 0) return false
+    // Si hay error, no mostrar ningún tipo
+    if (isErrorProducts) {
+      return false
+    }
+    
+    // Si aún no se han cargado los productos, mostrar todos los tipos definidos
+    // Esto mejora la UX durante la carga inicial
+    if (!hasInitialLoad || isLoadingProducts || !products || products.length === 0) {
+      return true
+    }
     
     const spanishSlug = type.href.split('/').pop() || ''
     // Convertir el slug en español al slug en inglés para buscar en CATEGORY_SLUG_MAP
     const englishSlug = Object.keys(englishToSpanishSlugs).find(key => englishToSpanishSlugs[key] === spanishSlug) || spanishSlug
     const dbCategories = CATEGORY_SLUG_MAP[englishSlug] || [englishSlug]
     
+    // Normalizar categorías para comparación
+    const normalizedDbCategories = dbCategories.map(cat => normalizeForComparison(cat))
+    
     // Verificar si hay productos de esta categoría
     return products.some(product => {
       if (!product.category) return false
+      
+      const normalizedProductCategory = normalizeForComparison(product.category)
       
       // Verificar si la categoría del producto coincide con alguna de las categorías mapeadas
       return dbCategories.some(dbCategory => {
@@ -128,34 +152,56 @@ export default function MegaMenu() {
         if (product.category.toLowerCase() === dbCategory.toLowerCase()) return true
         
         return false
+      }) || normalizedDbCategories.some(normalizedDbCat => {
+        // Comparación normalizada (sin acentos, espacios, guiones)
+        return normalizedProductCategory === normalizedDbCat
       })
     })
   })
 
   const availableRegions = allRegions.filter(region => {
-    // Si hay error o no hay productos, no mostrar ninguna región
-    if (isErrorProducts || !products || products.length === 0) {
+    // Si hay error, no mostrar ninguna región
+    if (isErrorProducts) {
       return false
+    }
+    
+    // Si aún no se han cargado los productos, mostrar todas las regiones definidas
+    // Esto mejora la UX durante la carga inicial
+    if (!hasInitialLoad || isLoadingProducts || !products || products.length === 0) {
+      return true
     }
     
     // Mapear el slug de la región al nombre completo como se almacena en DB
     const dbRegionName = REGION_SLUG_MAP[region.slug] || region.slug
     
+    // Normalizar valores para comparación
+    const normalizedDbRegion = normalizeForComparison(dbRegionName)
+    const normalizedRegionSlug = normalizeForComparison(region.slug)
+    const normalizedRegionName = normalizeForComparison(region.name)
+    
     // Verificar si hay productos en esta región con comparación flexible
     const hasProducts = products.some(product => {
       if (!product.region) return false
       
-      // Comparación exacta
+      const normalizedProductRegion = normalizeForComparison(product.region)
+      
+      // Comparación exacta (original)
       if (product.region === dbRegionName) return true
-      
-      // Comparación case-insensitive
-      if (product.region.toLowerCase() === dbRegionName.toLowerCase()) return true
-      
-      // Comparación por slug original
       if (product.region === region.slug) return true
-      
-      // Comparación con el nombre de la región
       if (product.region === region.name) return true
+      
+      // Comparación case-insensitive (original)
+      if (product.region.toLowerCase() === dbRegionName.toLowerCase()) return true
+      if (product.region.toLowerCase() === region.slug.toLowerCase()) return true
+      if (product.region.toLowerCase() === region.name.toLowerCase()) return true
+      
+      // Comparación normalizada (sin acentos, espacios, guiones)
+      if (normalizedProductRegion === normalizedDbRegion) return true
+      if (normalizedProductRegion === normalizedRegionSlug) return true
+      if (normalizedProductRegion === normalizedRegionName) return true
+      
+      // Comparación parcial (para casos como "Valle de Uco" vs "Valle de Uco, Mendoza")
+      if (normalizedProductRegion.includes(normalizedDbRegion) || normalizedDbRegion.includes(normalizedProductRegion)) return true
       
       return false
     })
@@ -164,21 +210,50 @@ export default function MegaMenu() {
   })
 
   const availableVarietals = allVarietals.filter(varietal => {
-    // Si hay error o no hay productos, no mostrar ningún varietal
-    if (isErrorProducts || !products || products.length === 0) return false
+    // Si hay error, no mostrar ningún varietal
+    if (isErrorProducts) {
+      return false
+    }
     
-    // Verificar si hay productos con este varietal
+    // Si aún no se han cargado los productos, mostrar todos los varietales definidos
+    // Esto mejora la UX durante la carga inicial
+    if (!hasInitialLoad || isLoadingProducts || !products || products.length === 0) {
+      return true
+    }
+    
+    // Mapear el slug del varietal al nombre completo como se almacena en DB
+    const dbVarietalName = VARIETAL_SLUG_MAP[varietal.slug] || varietal.name
+    
+    // Normalizar valores para comparación
+    const normalizedVarietalSlug = normalizeForComparison(varietal.slug)
+    const normalizedVarietalName = normalizeForComparison(varietal.name)
+    const normalizedDbVarietal = normalizeForComparison(dbVarietalName)
+    
+    // Verificar si hay productos con este varietal usando comparación flexible
     return products.some(product => {
       if (!product.varietal) return false
       
-      // Comparación exacta con slug
+      const normalizedProductVarietal = normalizeForComparison(product.varietal)
+      
+      // Comparación exacta (original)
       if (product.varietal === varietal.slug) return true
-      
-      // Comparación con nombre del varietal
       if (product.varietal === varietal.name) return true
+      if (product.varietal === dbVarietalName) return true
       
-      // Comparación case-insensitive
+      // Comparación case-insensitive (original)
       if (product.varietal.toLowerCase() === varietal.slug.toLowerCase()) return true
+      if (product.varietal.toLowerCase() === varietal.name.toLowerCase()) return true
+      if (product.varietal.toLowerCase() === dbVarietalName.toLowerCase()) return true
+      
+      // Comparación normalizada (sin acentos, espacios, guiones)
+      if (normalizedProductVarietal === normalizedVarietalSlug) return true
+      if (normalizedProductVarietal === normalizedVarietalName) return true
+      if (normalizedProductVarietal === normalizedDbVarietal) return true
+      
+      // Comparación parcial (para casos como "Cabernet Franc" vs "Cabernet Franc Reserva")
+      if (normalizedProductVarietal.includes(normalizedVarietalSlug) || normalizedVarietalSlug.includes(normalizedProductVarietal)) return true
+      if (normalizedProductVarietal.includes(normalizedVarietalName) || normalizedVarietalName.includes(normalizedProductVarietal)) return true
+      if (normalizedProductVarietal.includes(normalizedDbVarietal) || normalizedDbVarietal.includes(normalizedProductVarietal)) return true
       
       return false
     })
@@ -361,6 +436,12 @@ export default function MegaMenu() {
                 </div>
               </div>
           </NavigationMenuContent>
+        </NavigationMenuItem>
+
+        <NavigationMenuItem key="corporate-gifts">
+          <Link href="/corporate-gifts" legacyBehavior passHref>
+            <NavigationMenuLink className={navigationMenuTriggerStyle()}>Regalos Empresariales</NavigationMenuLink>
+          </Link>
         </NavigationMenuItem>
 
         <NavigationMenuItem key="about">

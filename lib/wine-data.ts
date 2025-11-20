@@ -208,4 +208,46 @@ export const REGION_SLUG_MAP: Record<string, string> = {
 // Mapping inverso: nombre completo → slug
 export const REGION_NAME_MAP: Record<string, string> = Object.fromEntries(
   Object.entries(REGION_SLUG_MAP).map(([slug, name]) => [name, slug])
+)
+
+// Mapping de varietales: slug → nombre completo (como se almacena en DB)
+// Este mapeo ayuda a convertir slugs de URL a nombres de DB para comparación
+export const VARIETAL_SLUG_MAP: Record<string, string> = {
+  'malbec': 'Malbec',
+  'cabernet-sauvignon': 'Cabernet Sauvignon',
+  'bonarda': 'Bonarda',
+  'syrah': 'Syrah',
+  'merlot': 'Merlot',
+  'tempranillo': 'Tempranillo',
+  'petit-verdot': 'Petit Verdot',
+  'cabernet-franc': 'Cabernet Franc',
+  'tannat': 'Tannat',
+  'pinot-noir': 'Pinot Noir',
+  'torrontes-riojano': 'Torrontés',
+  'chardonnay': 'Chardonnay',
+  'sauvignon-blanc': 'Sauvignon Blanc',
+  'pedro-gimenez': 'Pedro Giménez',
+  'viognier': 'Viognier',
+  'semillon': 'Semillón',
+  'gewurztraminer': 'Gewürztraminer',
+  'riesling': 'Riesling',
+  'chenin-blanc': 'Chenin Blanc',
+  'moscatel-alejandria': 'Moscatel Alejandría',
+  'criolla-chica': 'Criolla Chica',
+  'criolla-grande': 'Criolla Grande',
+  'moscatel-rosado': 'Moscatel Rosado',
+  'torrontes-sanjuanino': 'Torrontés',
+  'torrontes-mendocino': 'Torrontés',
+  'orange-wine': 'Orange Wine',
+  'malvasia': 'Malvasia',
+  'fiano': 'Fiano',
+  'garnacha': 'Garnacha',
+  'barbera': 'Barbera',
+  'nebbiolo': 'Nebbiolo',
+  'blend': 'Blend',
+}
+
+// Mapping inverso: nombre completo → slug
+export const VARIETAL_NAME_MAP: Record<string, string> = Object.fromEntries(
+  Object.entries(VARIETAL_SLUG_MAP).map(([slug, name]) => [name, slug])
 ) 
