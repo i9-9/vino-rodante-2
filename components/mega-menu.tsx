@@ -322,8 +322,8 @@ export default function MegaMenu() {
     >
       <NavigationMenuList className="flex items-center space-x-6">
         <NavigationMenuItem key="home">
-          <Link href="/" legacyBehavior passHref>
-            <NavigationMenuLink className={navigationMenuTriggerStyle()}>{t.navigation?.home || "Inicio"}</NavigationMenuLink>
+          <Link href="/" className={navigationMenuTriggerStyle()}>
+            {t.navigation?.home || "Inicio"}
           </Link>
         </NavigationMenuItem>
 
@@ -439,20 +439,20 @@ export default function MegaMenu() {
         </NavigationMenuItem>
 
         <NavigationMenuItem key="corporate-gifts">
-          <Link href="/corporate-gifts" legacyBehavior passHref>
-            <NavigationMenuLink className={navigationMenuTriggerStyle()}>Regalos Empresariales</NavigationMenuLink>
+          <Link href="/corporate-gifts" className={navigationMenuTriggerStyle()}>
+            Regalos Empresariales
           </Link>
         </NavigationMenuItem>
 
         <NavigationMenuItem key="about">
-          <Link href="/about" legacyBehavior passHref>
-            <NavigationMenuLink className={navigationMenuTriggerStyle()}>{t.navigation?.about || "Nosotros"}</NavigationMenuLink>
+          <Link href="/about" className={navigationMenuTriggerStyle()}>
+            {t.navigation?.about || "Nosotros"}
           </Link>
         </NavigationMenuItem>
 
         <NavigationMenuItem key="contact">
-          <Link href="/contact" legacyBehavior passHref>
-            <NavigationMenuLink className={navigationMenuTriggerStyle()}>{t.navigation?.contact || "Contacto"}</NavigationMenuLink>
+          <Link href="/contact" className={navigationMenuTriggerStyle()}>
+            {t.navigation?.contact || "Contacto"}
           </Link>
         </NavigationMenuItem>
       </NavigationMenuList>

@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next'
 import { getProducts } from '@/lib/products-client'
 import { getAllHybridSlugs } from '@/lib/hybrid-combinations'
+import { getAllBlogPosts } from '@/lib/blog/utils'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.vinorodante.com'
@@ -53,6 +54,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: 'monthly' as const,
       priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
     },
     {
       url: `${baseUrl}/weekly-wine`,
@@ -245,11 +252,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.75, // Higher priority - these are money pages
   }))
 
+  // Blog posts
+  let blogPages: MetadataRoute.Sitemap = []
+  try {
+    const blogPosts = getAllBlogPosts()
+    blogPages = blogPosts.map((post) => ({
+      url: `${baseUrl}/blog/${post.slug}`,
+      lastModified: new Date(post.date),
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    }))
+  } catch (error) {
+    console.error('Error generating blog sitemap:', error)
+  }
+
   return [
     ...staticPages,
     ...productPages,
     ...varietalPages,
     ...regionPages,
-    ...hybridPages
+    ...hybridPages,
+    ...blogPages
   ]
 }
