@@ -7,7 +7,7 @@ author: "Vino Rodante"
 category: "Guías"
 tags: ["malbec", "mendoza", "guía", "vino argentino", "maridaje"]
 image: "/og-image.jpg"
-published: false
+published: true
 ---
 
 # Guía Completa del Malbec Argentino 2024

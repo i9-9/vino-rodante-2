@@ -7,7 +7,7 @@ author: "Vino Rodante"
 category: "Maridajes"
 tags: ["maridaje", "asado", "carnes", "malbec", "cabernet"]
 image: "/og-image.jpg"
-published: false
+published: true
 ---
 
 # Maridaje Perfecto: Vinos para Asado Argentino
