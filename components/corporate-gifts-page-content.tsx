@@ -15,7 +15,7 @@ export default function CorporateGiftsPageContent() {
       {/* Hero Section */}
       <section className="relative h-[50vh] overflow-hidden">
         <Image
-          src="/images/Banner_us.png"
+          src="/images/gifts/gifts.jpg"
           alt="Regalos Empresariales Banner"
           fill
           className="object-cover brightness-[0.7]"
